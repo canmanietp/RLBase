@@ -22,7 +22,7 @@ if __name__ == "__main__":
     init_epsilon = 0.3
     epsilon_min = 0.001
     discount = 0.95
-    num_episodes = 2500
+    num_episodes = 250000
 
     agents = []
     agents.append(QAgent(env, init_alpha, alpha_min, init_epsilon, epsilon_min, discount))
