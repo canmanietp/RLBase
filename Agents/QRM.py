@@ -26,3 +26,15 @@ class QRMAgent(QAgent):
         self.current_state = next_state
         self.current_rm_state = self.get_rm_state(self.current_state)
         return next_state, reward, done
+
+
+class RewardMachine():
+    def __init__(self, state_space, state_transitions, initial_state):
+        self.state_space = state_space
+        self.state_transitions = state_transitions
+        self.current_state = initial_state
+
+    def step(self, state_vars):
+        transitions = self.state_transitions[self.current_state]
+
+

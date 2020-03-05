@@ -24,6 +24,14 @@ class QLiAAgent(QAgent):
         self.action_space = len(abstractions)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
+        self.state_decodings = self.sweep_state_decodings()
+
+    def sweep_state_decodings(self):
+        st_vars_lookup = []
+        for s in range(self.observation_space):
+            st_vars_lookup.append(list(self.env.decode(s)))
+        return st_vars_lookup
+
     def encode_abs_state(self, state, abstraction):
         abs_state = [state[k] for k in abstraction]
         var_size = copy.copy([self.size_state_vars[k] for k in abstraction])
@@ -42,20 +50,19 @@ class QLiAAgent(QAgent):
             self.ALPHA *= decay_rate
         if self.EPSILON > self.EPSILON_MIN:
             self.EPSILON *= decay_rate
-        if self.PHI > self.PHI_MIN:
-            self.PHI *= decay_rate
 
         for ab in self.abstraction_agents:
             ab.decay(decay_rate)
 
     def e_greedy_LIA_action(self, state):
         ab_index = self.e_greedy_action(state)
-        abs_state = self.encode_abs_state(list(self.env.decode(state)), self.abstractions[ab_index])
-        return ab_index, self.abstraction_agents[ab_index].e_greedy_action(abs_state)
+        abs_state = self.encode_abs_state(self.state_decodings[state], self.abstractions[ab_index])
+        action = self.abstraction_agents[ab_index].e_greedy_action(abs_state)
+        return ab_index, action
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):
-        state_vars = list(self.env.decode(state))
-        next_state_vars = list(self.env.decode(next_state)) if not done else state_vars
+        state_vars = self.state_decodings[state]
+        next_state_vars = self.state_decodings[next_state]
 
         for ia, ab in enumerate(self.abstraction_agents):
             abs_state = self.encode_abs_state(state_vars, self.abstractions[ia])

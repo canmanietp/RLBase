@@ -44,6 +44,7 @@ class QAgent(TabularAgent):
 class QMiniAgent(QAgent):
     def __init__(self, env, alpha, alpha_min, epsilon, epsilon_min, discount, mini_observation_space, mini_action_space):
         super().__init__(env, alpha, alpha_min, epsilon, epsilon_min, discount)
+        self.name = 'Mini'
         self.observation_space = mini_observation_space
         self.action_space = mini_action_space
         self.Q_table = np.zeros([self.observation_space, self.action_space])
