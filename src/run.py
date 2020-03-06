@@ -114,7 +114,7 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
             elif alg == 'QIiB':
                 agents.append(QIiBAgent(env, params))
             else:
-                print("Unknown algorithm {}".format(alg))
+                print("Unknown algorithm - {}".format(alg))
 
         episode_rewards = [[] for q in range(len(agents))]
         starting_states = []
@@ -123,7 +123,7 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
 
         t0 = time.time()
 
-        print("-- Starting Trial {} -- ".format(t))
+        print("-- Starting Trial {} -- ".format(t+1))
         for j, agent in enumerate(agents):
             print("Running trial for agent: {0}".format(agent.name))
             for i in range(params.num_episodes):
