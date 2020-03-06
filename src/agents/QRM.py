@@ -1,4 +1,4 @@
-from Agents.Q import QAgent
+from agents.Q import QAgent
 
 
 class QRMAgent(QAgent):
