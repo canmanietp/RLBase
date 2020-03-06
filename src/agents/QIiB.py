@@ -13,7 +13,7 @@ class QIiBAgent(QAgent):
         self.action_space = self.env.action_space.n
         meta_params = Parameters(self.params.ALPHA, self.params.ALPHA_MIN,
                                  self.params.PHI, self.params.PHI_MIN, self.params.DISCOUNT, self.params.num_episodes)
-        self.meta_agent = QMiniAgent(self.env, meta_params, self.observation_space, len(params.abstractions))
+        self.meta_agent = QMiniAgent(self.env, meta_params, self.observation_space, len(params.subspaces))
         self.Q_table = np.zeros([self.observation_space, self.action_space])
         self.saved_abs_lookup = {}
 
@@ -57,7 +57,7 @@ class QIiBAgent(QAgent):
             update_states = []
             merge_values = []
             merge_visits = []
-            abstraction = self.params.abstractions[ab_index]
+            abstraction = self.params.subspaces[ab_index]
 
             if state not in self.saved_abs_lookup:
                 self.saved_abs_lookup[state] = {}

@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import time, argparse
+import time, os, argparse, datetime, copy
 
 from envs.taxi import TaxiEnv
 from envs.taxifuel import TaxiFuelEnv
@@ -24,7 +24,7 @@ def get_params_coffee():
     discount = 0.99
     subspaces = [(0, 1, 2, 3), (0, 1, 2, 3, 4)]
     size_state_vars = [5, 5, 2, 2, 2]
-    num_episodes = 3000
+    num_episodes = 1000
     return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
@@ -84,7 +84,7 @@ def get_params_taxi():
     return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
-def run_experiment(num_trials, env_name, algs, verbose=False):
+def get_params(env_name):
     if env_name == 'taxi':
         env = TaxiEnv()
         params = get_params_taxi()
@@ -103,6 +103,14 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
     else:
         print("Error: Unknown environment")
         return
+    return env, params
+
+
+def run_experiment(num_trials, env_name, algs, verbose=False):
+    date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    exp_dir = "tmp/{}".format(date_string)
+    os.mkdir(exp_dir)
+    env, params = copy.copy(get_params(env_name))
 
     for t in range(num_trials):
         agents = []
@@ -118,14 +126,13 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
 
         episode_rewards = [[] for q in range(len(agents))]
         starting_states = []
-        average_every = int(params.num_episodes / 100)
-        plt.figure()
-
         t0 = time.time()
+        plt.figure()
+        average_every = int(params.num_episodes / 100)
 
         print("-- Starting Trial {} -- ".format(t+1))
         for j, agent in enumerate(agents):
-            print("Running trial for agent: {0}".format(agent.name))
+            print("Running agent: {0}".format(agent.name))
             for i in range(params.num_episodes):
                 agent.reset()
                 if j == 0:
@@ -153,22 +160,41 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
             ma = np.cumsum(episode_rewards[j], dtype=float)
             ma[average_every:] = ma[average_every:] - ma[:-average_every]
             ma = ma[average_every - 1:] / average_every
-
             plt.plot(ma, label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
-            plt.savefig('tmp/trial_{}'.format(t+1))
+            plt.savefig('{}/trial_{}'.format(exp_dir, t+1))
 
-        # episode_rewards = np.array(episode_rewards)
+        plt.close()
+
+    file1 = open('{}/params.txt'.format(exp_dir), "w")
+    file1.write("Environment: {}\n"
+                "Number of trials: {}\n"
+                "Number of episodes: {}\n"
+                "init_alpha={}\n"
+                "alpha_min={}\n"
+                "init_epsilon={}\n"
+                "epsilon_min={}\n"
+                "init_phi={}\n"
+                "phi_min{}\n"
+                "discount={}\n"
+                "subspaces={}\n"
+                "size_state_vars={}".format(env, num_trials, params.num_episodes, params.init_alpha, params.alpha_min, params.init_epsilon, params.epsilon_min, params.init_phi, params.phi_min, params.discount, params.subspaces, params.size_state_vars))
+    file1.close()
+
+    # Write to environment results directory the parameters
+    # pickle the results
+
+    # episode_rewards = np.array(episode_rewards)
     return
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="run_experiments",
                                      description='Runs a multi-task RL experiment over a particular environment.')
-    parser.add_argument('--algorithms', nargs='+', default='Q', type=str)
+    parser.add_argument('--algorithms', nargs='+', default=['Q','QLiA'], type=str)
     parser.add_argument('--env', default='taxi', type=str)
     parser.add_argument('--num_trials', default=1, type=int)
-    parser.add_argument("--verbose", default=False, type=bool)
+    parser.add_argument('--verbose', default=False, type=bool)
 
     args = parser.parse_args()
 
@@ -179,7 +205,5 @@ if __name__ == "__main__":
     env_name = args.env
     num_trials = args.num_trials
     verbose = args.verbose
-
-    print(alg_names, env_name, num_trials, verbose)
 
     run_experiment(num_trials, env_name, alg_names, verbose)
