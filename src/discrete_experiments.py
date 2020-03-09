@@ -61,7 +61,7 @@ def get_params_office():
     decay_rate = 0.99
     sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     size_state_vars = [9, 12, 2, 2, 2, 2]
-    num_episodes = 30000
+    num_episodes = 40000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)

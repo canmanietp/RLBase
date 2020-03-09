@@ -38,19 +38,21 @@ class DQNAgent(BaseAgent):
         return np.argmax(q_values[0])
 
     def replay(self):
+        if len(self.memory) < self.params.BATCH_SIZE:
+            return
         minibatch = random.sample(self.memory, self.params.BATCH_SIZE)
-        states, targets_f = [], []
+        states, values = [], []
         for state, action, reward, next_state, done in minibatch:
-            target = reward
+            q_update = reward
             if not done:
-                target = (reward + self.params.DISCOUNT *
+                q_update = (reward + self.params.DISCOUNT *
                           np.amax(self.b_model.predict(next_state)[0]))
-            target_f = self.model.predict(state)
-            target_f[0][action] = target
+            q_values = self.model.predict(state)
+            q_values[0][action] = q_update
             # Filtering out states and targets for training
             states.append(state[0])
-            targets_f.append(target_f[0])
-        self.model.fit(np.array(states), np.array(targets_f), epochs=1, verbose=0)
+            values.append(q_values[0])
+        self.model.fit(np.array(states), np.array(values), verbose=0)
 
         self.until_retrain += 1
         if self.until_retrain >= self.retrain_steps:
@@ -63,8 +65,7 @@ class DQNAgent(BaseAgent):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
-        if len(self.memory) > self.params.BATCH_SIZE:
-            self.replay()
+        self.replay()
         return reward, done
 
 
