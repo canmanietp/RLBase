@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import pickle
-import time, os, datetime, copy
+import time, os, datetime
 
 from envs.taxi import TaxiEnv
 from envs.taxifuel import TaxiFuelEnv
@@ -13,6 +13,7 @@ from agents.Q import QAgent
 from agents.QLiA import QLiAAgent
 from agents.QIiB import QIiBAgent
 from learning_parameters import DiscreteParameters
+from helpers import plotting
 
 
 def get_params_coffee():
@@ -127,30 +128,32 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name)
+    average_every = int(params.num_episodes / 100)
 
     trial_rewards = []
+    trial_times = []
 
     for t in range(num_trials):
         agents = []
         for alg in algs:
             if alg == 'Q':
-                agents.append(QAgent(env, copy.copy(params)))
+                agents.append(QAgent(env, params))
             elif alg == 'QLiA':
-                agents.append(QLiAAgent(env, copy.copy(params)))
+                agents.append(QLiAAgent(env, params))
             elif alg == 'QIiB':
-                agents.append(QIiBAgent(env, copy.copy(params)))
+                agents.append(QIiBAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
         episode_rewards = [[] for q in range(len(agents))]
         starting_states = []
-        t0 = time.time()
+        times_to_run = []
         plt.figure()
-        average_every = int(params.num_episodes / 100)
 
-        print("-- Starting Trial {} -- ".format(t + 1))
+        print("{} -- Starting Trial {} -- ".format(datetime.datetime.now().strftime("%H:%M:%S"), t + 1))
         for j, agent in enumerate(agents):
-            print("Running agent: {0}".format(agent.name))
+            t0 = time.time()
+            print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
             for i in range(params.num_episodes):
                 agent.reset()
                 if j == 0:
@@ -169,26 +172,31 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
 
                 episode_rewards[j].append(ep_reward)
                 if verbose:
-                    print("Episode {}, reward={}".format(i, ep_reward))
+                    print("{} Episode {}, reward={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward))
                 agent.decay(agent.params.DECAY_RATE)
-            t1 = time.time()
-            print("Finished running in {} seconds".format(t1 - t0))
-            t0 = t1
+            run_time = time.time() - t0
+            print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
+            times_to_run.append(run_time)
 
-            ma = np.cumsum(episode_rewards[j], dtype=float)
-            ma[average_every:] = ma[average_every:] - ma[:-average_every]
-            ma = ma[average_every - 1:] / average_every
-            plt.plot(ma, label=agent.name)
+            plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
         plt.close()
         trial_rewards.append(episode_rewards)
+        trial_times.append(times_to_run)
+
+    for trial in np.average(trial_rewards, axis=0):
+        plt.plot(plotting.moving_average(trial, average_every))
+    plt.legend([a for a in algs], loc='lower right')
+    plt.savefig('{}/final'.format(exp_dir))
 
     file1 = open('{}/params.txt'.format(exp_dir), "w")
     file1.write("Environment: {}\n"
                 "Number of trials: {}\n"
                 "Number of episodes: {}\n"
+                "Algorithms: {}\n"
+                "Running times: {}\n"
                 "init_alpha={}\n"
                 "alpha_min={}\n"
                 "init_epsilon={}\n"
@@ -198,7 +206,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 "discount={}\n"
                 "sub_spaces={}\n"
                 "size_state_vars={}".format(env, num_trials,
-                                            params.num_episodes, params.ALPHA, params.ALPHA_MIN,
+                                            params.num_episodes, algs, trial_times, params.ALPHA, params.ALPHA_MIN,
                                             params.EPSILON, params.EPSILON_MIN,
                                             params.PHI, params.PHI_MIN, params.DISCOUNT,
                                             params.sub_spaces, params.size_state_vars))

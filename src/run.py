@@ -1,16 +1,13 @@
 import argparse
 
-import discrete_experiments
-import continuous_experiments
-
-
 if __name__ == "__main__":
+    "example: python3 run.py --algorithms 'Q' 'QLiA' --env='office' --num_trials=2"
     parser = argparse.ArgumentParser(prog="run_experiments",
                                      description='Runs a multi-task RL experiment over a particular environment.')
-    parser.add_argument('--algorithms', nargs='+', default=['Q','QLiA'], type=str)
+    parser.add_argument('--algorithms', nargs='+', default=['Q', 'QLiA'], type=str)
     parser.add_argument('--env', default='taxi', type=str)
-    parser.add_argument('--num_trials', default=1, type=int)
-    parser.add_argument('--verbose', default=False, type=bool)
+    parser.add_argument('--num_trials', default=2, type=int)
+    parser.add_argument('--verbose', default=False, type=str)
 
     args = parser.parse_args()
 
@@ -20,11 +17,13 @@ if __name__ == "__main__":
         alg_names.append(alg)
     env_name = args.env
     num_trials = args.num_trials
-    verbose = args.verbose
+    verbose = bool(args.verbose)
 
     if 'Q' in alg_names:
+        import discrete_experiments
         discrete_experiments.run_discrete_experiment(num_trials, env_name, alg_names, verbose)
     elif 'DQN' in alg_names:
+        import continuous_experiments
         continuous_experiments.run_continuous_experiment(num_trials, env_name, alg_names, verbose)
     else:
         print("Error: Must include a baseline algorithm (such as Q or DQN).")

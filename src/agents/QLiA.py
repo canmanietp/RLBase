@@ -9,7 +9,6 @@ class QLiAAgent(QAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
         self.name = 'LiA'
-        self.params = params
         self.sub_agents = []
 
         for ab in params.sub_spaces:
@@ -17,9 +16,9 @@ class QLiAAgent(QAgent):
             for var in ab:
                 ss *= params.size_state_vars[var]
 
-            ab_params = copy.copy(params)
+            ab_params = copy.copy(self.params)
             ab_params.EPSILON = params.PHI
-            ab_params.EPSILONMIN = params.PHI_MIN
+            ab_params.EPSILON_MIN = params.PHI_MIN
             self.sub_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
 
         self.action_space = len(params.sub_spaces)
@@ -34,6 +33,8 @@ class QLiAAgent(QAgent):
         return st_vars_lookup
 
     def encode_abs_state(self, state, abstraction):
+        if len(state) == len(abstraction):
+            return self.state_decodings.index(state)
         abs_state = [state[k] for k in abstraction]
         var_size = copy.copy([self.params.size_state_vars[k] for k in abstraction])
         var_size.pop(0)
@@ -57,18 +58,22 @@ class QLiAAgent(QAgent):
 
     def e_greedy_LIA_action(self, state):
         ab_index = self.e_greedy_action(state)
+        if ab_index == len(self.sub_agents):
+            return self.sub_agents[ab_index].e_greedy_action(state)
         abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
-        action = self.sub_agents[ab_index].e_greedy_action(abs_state)
-        return ab_index, action
+        return ab_index, self.sub_agents[ab_index].e_greedy_action(abs_state)
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):
         state_vars = self.state_decodings[state]
         next_state_vars = self.state_decodings[next_state]
 
         for ia, ab in enumerate(self.sub_agents):
-            abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
-            abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-            ab.update(abs_state, action, reward, abs_next_state, done)
+            if ia == len(self.sub_agents) - 1:
+                ab.update(state, action, reward, next_state, done)
+            else:
+                abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
+                abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
+                ab.update(abs_state, action, reward, abs_next_state, done)
 
         self.update(state, ab_index, reward, next_state, done)
 

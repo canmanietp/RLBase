@@ -14,25 +14,10 @@ from envs.cartpole import CartPoleEnv
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
 from learning_parameters import ContinuousParameters
+from helpers import plotting
 
 
 def get_params_cartpole():
-    observation_space = 4
-    action_space = 2
-    learning_rate = 0.01
-    model = Sequential()
-    model.add(Dense(24, input_dim=observation_space, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(action_space, activation='linear'))
-    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_spaces = [[1, 3], [0, 1, 2, 3]]
-    sub_model1 = Sequential()
-    sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
-    sub_model1.add(Dense(24, activation='relu'))
-    sub_model1.add(Dense(action_space, activation='linear'))
-    sub_model1.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_model2 = model
-    sub_models = [sub_model1, sub_model2]
     memory_size = 100000
     batch_size = 32
     init_epsilon = 0.3
@@ -41,9 +26,34 @@ def get_params_cartpole():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    num_episodes = 70
-    retrain_steps = 10
-    return ContinuousParameters(init_model=model, sub_models=sub_models, memory_size=memory_size, batch_size=batch_size,
+    num_episodes = 40
+    retrain_steps = 5
+    observation_space = 4
+    action_space = 2
+    learning_rate = 0.01
+    sub_spaces = [[1, 3], [0, 1, 2, 3]]
+    # --- Regular DQN model (input: full state, output: action)
+    model = Sequential()
+    model.add(Dense(24, input_dim=observation_space, activation='relu'))
+    model.add(Dense(24, activation='relu'))
+    model.add(Dense(action_space, activation='linear'))
+    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    # -- Model for choosing sub_space agent (input: full state, output: sub_agent)
+    meta_model = Sequential()
+    meta_model.add(Dense(24, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(24, activation='relu'))
+    meta_model.add(Dense(len(sub_spaces), activation='linear'))
+    meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    # --- DQN model for sub_space1 (input: sub_space1, output: action)
+    sub_model1 = Sequential()
+    sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
+    sub_model1.add(Dense(24, activation='relu'))
+    sub_model1.add(Dense(action_space, activation='linear'))
+    sub_model1.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_model2 = model
+    sub_models = [sub_model1, sub_model2]
+    return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
+                                batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
                                 discount=discount, decay=decay_rate, observation_space=observation_space,
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
@@ -65,6 +75,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name)
+    average_every = int(params.num_episodes / 1)
 
     trial_rewards = []
     trial_times = []
@@ -83,7 +94,6 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         starting_states = []
         times_to_run = []
         plt.figure()
-        average_every = int(params.num_episodes / 10)
 
         print("{} -- Starting Trial {} -- ".format(datetime.datetime.now().strftime("%H:%M:%S"), t + 1))
         for j, agent in enumerate(agents):
@@ -112,16 +122,17 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
 
-            ma = np.cumsum(episode_rewards[j], dtype=float)
-            ma[average_every:] = ma[average_every:] - ma[:-average_every]
-            ma = ma[average_every - 1:] / average_every
-            plt.plot(ma, label=agent.name)
+            plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
         plt.close()
         trial_rewards.append(episode_rewards)
-        trial_times.append(times_to_run)
+
+    for trial in np.average(trial_rewards, axis=0):
+        plt.plot(plotting.moving_average(trial, average_every))
+    plt.legend([a for a in algs], loc='lower right')
+    plt.savefig('{}/final'.format(exp_dir))
 
     file1 = open('{}/params.txt'.format(exp_dir), "w")
     file1.write("Environment: {}\n"
@@ -139,12 +150,12 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 "phi_min={}\n"
                 "discount={}\n"
                 "sub_spaces={}".format(env, num_trials,
-                                      params.num_episodes, algs, trial_times, params.INIT_MODEL,
-                                      params.MEMORY_SIZE, params.BATCH_SIZE,
-                                      params.LEARNING_RATE,
-                                      params.EPSILON, params.EPSILON_MIN,
-                                      params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                      params.sub_spaces))
+                                       params.num_episodes, algs, trial_times, params.INIT_MODEL,
+                                       params.MEMORY_SIZE, params.BATCH_SIZE,
+                                       params.LEARNING_RATE,
+                                       params.EPSILON, params.EPSILON_MIN,
+                                       params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                       params.sub_spaces))
     file1.close()
     trial_rewards = np.array(trial_rewards)
     pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))

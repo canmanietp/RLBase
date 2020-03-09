@@ -27,6 +27,8 @@ class QIiBAgent(QAgent):
         return st_vars_lookup
 
     def encode_abs_state(self, state, abstraction):
+        if len(state) == len(abstraction):
+            return self.state_decodings.index(state)
         abs_state = [state[k] for k in abstraction]
         var_size = copy.copy([self.params.size_state_vars[k] for k in abstraction])
         var_size.pop(0)
@@ -55,6 +57,8 @@ class QIiBAgent(QAgent):
         if random.uniform(0, 1) < self.params.PHI:
             return ab_index, self.random_action()
         else:
+            if ab_index == len(self.params.sub_spaces):
+                return ab_index, np.argmax(self.Q_table[state])
             update_states = []
             merge_values = []
             merge_visits = []

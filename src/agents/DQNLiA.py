@@ -17,6 +17,9 @@ class DQNLiAAgent(DQNAgent):
             sub_params.EPSILON_MIN = params.PHI_MIN
             self.sub_agents.append(DQNAgent(env, sub_params))
 
+        self.action_space = len(params.sub_spaces)
+        self.model = params.META_MODEL
+
     def decay(self, decay_rate):
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate

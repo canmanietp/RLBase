@@ -1,13 +1,13 @@
 from agents.base import BaseAgent
 import numpy as np
-import random
+import random, copy
 
 
 class QAgent(BaseAgent):
     def __init__(self, env, params):
         super().__init__(env)
         self.name = 'Q'
-        self.params = params
+        self.params = copy.copy(params)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
     def e_greedy_action(self, state):
