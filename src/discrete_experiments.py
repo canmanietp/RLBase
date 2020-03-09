@@ -24,12 +24,12 @@ def get_params_coffee():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    subspaces = [(0, 1, 2, 3), (0, 1, 2, 3, 4)]
+    sub_spaces = [[0, 1, 2, 3], [0, 1, 2, 3, 4]]
     size_state_vars = [5, 5, 2, 2, 2]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, subspaces=subspaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params_coffeemail():
@@ -41,12 +41,12 @@ def get_params_coffeemail():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.999
-    subspaces = [(0, 1, 2, 4), (0, 1, 2, 3, 4, 5, 6, 7)]
+    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5, 6, 7]]
     size_state_vars = [5, 5, 2, 2, 2, 2, 2, 2]
     num_episodes = 10000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, subspaces=subspaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params_office():
@@ -58,12 +58,12 @@ def get_params_office():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.999
-    subspaces = [(0, 1, 2, 4), (0, 1, 2, 3, 4, 5)]
+    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     size_state_vars = [9, 12, 2, 2, 2, 2]
     num_episodes = 30000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, subspaces=subspaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params_taxifuel():
@@ -75,12 +75,12 @@ def get_params_taxifuel():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.999
-    subspaces = [(0, 1, 2, 4), (0, 1, 2, 3), (0, 1, 2, 3, 4)]
+    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     size_state_vars = [5, 5, 5, 4, 14]
     num_episodes = 200000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, subspaces=subspaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params_taxi():
@@ -92,12 +92,12 @@ def get_params_taxi():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    subspaces = [(0, 1, 2), (0, 1, 2, 3)]
+    sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     size_state_vars = [5, 5, 5, 4]
     num_episodes = 1000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, subspaces=subspaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params(env_name):
@@ -196,12 +196,12 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 "init_phi={}\n"
                 "phi_min={}\n"
                 "discount={}\n"
-                "subspaces={}\n"
+                "sub_spaces={}\n"
                 "size_state_vars={}".format(env, num_trials,
                                             params.num_episodes, params.ALPHA, params.ALPHA_MIN,
                                             params.EPSILON, params.EPSILON_MIN,
                                             params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                            params.subspaces, params.size_state_vars))
+                                            params.sub_spaces, params.size_state_vars))
     file1.close()
     trial_rewards = np.array(trial_rewards)
     pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))

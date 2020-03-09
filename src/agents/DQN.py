@@ -1,7 +1,7 @@
 from agents.base import BaseAgent
 import numpy as np
 from collections import deque
-import random
+import random, copy
 
 
 class DQNAgent(BaseAgent):
@@ -11,7 +11,7 @@ class DQNAgent(BaseAgent):
         self.action_space = env.action_space.n
         self.params = params
         self.model = params.INIT_MODEL
-        self.b_model = self.model
+        self.b_model = copy.copy(self.model)
         self.current_state = self.reset()
         self.memory = deque(maxlen=params.MEMORY_SIZE)
 
@@ -51,10 +51,12 @@ class DQNAgent(BaseAgent):
             states.append(state[0])
             targets_f.append(target_f[0])
         self.model.fit(np.array(states), np.array(targets_f), epochs=1, verbose=0)
+
         self.until_retrain += 1
         if self.until_retrain >= self.retrain_steps:
             self.until_retrain = 0
             self.b_model.set_weights(self.model.get_weights())
+
         self.decay(self.params.DECAY_RATE)
 
     def run_episode(self):

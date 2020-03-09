@@ -12,6 +12,7 @@ silence_tensorflow()
 from envs.cartpole import CartPoleEnv
 
 from agents.DQN import DQNAgent
+from agents.DQNLiA import DQNLiAAgent
 from learning_parameters import ContinuousParameters
 
 
@@ -23,8 +24,15 @@ def get_params_cartpole():
     model.add(Dense(24, input_dim=observation_space, activation='relu'))
     model.add(Dense(24, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
-    model.compile(loss='mse',
-                  optimizer=Adam(lr=learning_rate))
+    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_spaces = [[1, 3], [0, 1, 2, 3]]
+    sub_model1 = Sequential()
+    sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
+    sub_model1.add(Dense(24, activation='relu'))
+    sub_model1.add(Dense(action_space, activation='linear'))
+    sub_model1.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_model2 = model
+    sub_models = [sub_model1, sub_model2]
     memory_size = 100000
     batch_size = 32
     init_epsilon = 0.3
@@ -33,14 +41,13 @@ def get_params_cartpole():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    subspaces = [(0, 1, 2, 3)]
     num_episodes = 70
     retrain_steps = 10
-    return ContinuousParameters(init_model=model, memory_size=memory_size, batch_size=batch_size,
+    return ContinuousParameters(init_model=model, sub_models=sub_models, memory_size=memory_size, batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
                                 discount=discount, decay=decay_rate, observation_space=observation_space,
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
-                                subspaces=subspaces)
+                                sub_spaces=sub_spaces)
 
 
 def get_params(env_name):
@@ -67,6 +74,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         for alg in algs:
             if alg == 'DQN':
                 agents.append(DQNAgent(env, copy.copy(params)))
+            elif alg == 'DQNLiA':
+                agents.append(DQNLiAAgent(env, copy.copy(params)))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -129,13 +138,13 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 "init_phi={}\n"
                 "phi_min={}\n"
                 "discount={}\n"
-                "subspaces={}".format(env, num_trials,
+                "sub_spaces={}".format(env, num_trials,
                                       params.num_episodes, algs, trial_times, params.INIT_MODEL,
                                       params.MEMORY_SIZE, params.BATCH_SIZE,
                                       params.LEARNING_RATE,
                                       params.EPSILON, params.EPSILON_MIN,
                                       params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                      params.subspaces))
+                                      params.sub_spaces))
     file1.close()
     trial_rewards = np.array(trial_rewards)
     pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))

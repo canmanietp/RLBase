@@ -26,3 +26,5 @@ if __name__ == "__main__":
         discrete_experiments.run_discrete_experiment(num_trials, env_name, alg_names, verbose)
     elif 'DQN' in alg_names:
         continuous_experiments.run_continuous_experiment(num_trials, env_name, alg_names, verbose)
+    else:
+        print("Error: Must include a baseline algorithm (such as Q or DQN).")
