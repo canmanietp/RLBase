@@ -1,0 +1,142 @@
+import numpy as np
+from matplotlib import pyplot as plt
+import pickle
+import time, os, datetime, copy
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+from silence_tensorflow import silence_tensorflow
+
+silence_tensorflow()
+
+from envs.cartpole import CartPoleEnv
+
+from agents.DQN import DQNAgent
+from learning_parameters import ContinuousParameters
+
+
+def get_params_cartpole():
+    observation_space = 4
+    action_space = 2
+    learning_rate = 0.01
+    model = Sequential()
+    model.add(Dense(24, input_dim=observation_space, activation='relu'))
+    model.add(Dense(24, activation='relu'))
+    model.add(Dense(action_space, activation='linear'))
+    model.compile(loss='mse',
+                  optimizer=Adam(lr=learning_rate))
+    memory_size = 100000
+    batch_size = 32
+    init_epsilon = 0.3
+    epsilon_min = 0.001
+    init_phi = 0.5
+    phi_min = 0.001
+    discount = 0.99
+    decay_rate = 0.99
+    subspaces = [(0, 1, 2, 3)]
+    num_episodes = 70
+    retrain_steps = 10
+    return ContinuousParameters(init_model=model, memory_size=memory_size, batch_size=batch_size,
+                                learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                                discount=discount, decay=decay_rate, observation_space=observation_space,
+                                num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
+                                subspaces=subspaces)
+
+
+def get_params(env_name):
+    if env_name == 'cartpole':
+        env = CartPoleEnv()
+        params = get_params_cartpole()
+    else:
+        print("Error: Unknown environment")
+        return
+    return env, params
+
+
+def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
+    date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    exp_dir = "tmp/{}".format(date_string)
+    os.mkdir(exp_dir)
+    env, params = get_params(env_name)
+
+    trial_rewards = []
+    trial_times = []
+
+    for t in range(num_trials):
+        agents = []
+        for alg in algs:
+            if alg == 'DQN':
+                agents.append(DQNAgent(env, copy.copy(params)))
+            else:
+                print("Unknown algorithm - {}".format(alg))
+
+        episode_rewards = [[] for q in range(len(agents))]
+        starting_states = []
+        times_to_run = []
+        plt.figure()
+        average_every = int(params.num_episodes / 10)
+
+        print("{} -- Starting Trial {} -- ".format(datetime.datetime.now().strftime("%H:%M:%S"), t + 1))
+        for j, agent in enumerate(agents):
+            t0 = time.time()
+            print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
+            for i in range(params.num_episodes):
+                agent.reset()
+                if j == 0:
+                    state = agent.current_state
+                    starting_states.append(state)
+                else:
+                    state = starting_states[i]
+                    agent.set_state(state)
+
+                done = False
+                ep_reward = 0
+
+                while not done:
+                    reward, done = agent.run_episode()
+                    ep_reward += reward
+
+                episode_rewards[j].append(ep_reward)
+                if verbose:
+                    print("{} Episode {}, reward={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward))
+            run_time = time.time() - t0
+            print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
+            times_to_run.append(run_time)
+
+            ma = np.cumsum(episode_rewards[j], dtype=float)
+            ma[average_every:] = ma[average_every:] - ma[:-average_every]
+            ma = ma[average_every - 1:] / average_every
+            plt.plot(ma, label=agent.name)
+            plt.legend([a.name for a in agents], loc='lower right')
+            plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
+
+        plt.close()
+        trial_rewards.append(episode_rewards)
+        trial_times.append(times_to_run)
+
+    file1 = open('{}/params.txt'.format(exp_dir), "w")
+    file1.write("Environment: {}\n"
+                "Number of trials: {}\n"
+                "Number of episodes: {}\n"
+                "Algorithms: {}\n"
+                "Running times: {}\n"
+                "Model: {}\n"
+                "memory_size: {}\n"
+                "batch_size: {}\n"
+                "learning_rate={}\n"
+                "init_epsilon={}\n"
+                "epsilon_min={}\n"
+                "init_phi={}\n"
+                "phi_min={}\n"
+                "discount={}\n"
+                "subspaces={}".format(env, num_trials,
+                                      params.num_episodes, algs, trial_times, params.INIT_MODEL,
+                                      params.MEMORY_SIZE, params.BATCH_SIZE,
+                                      params.LEARNING_RATE,
+                                      params.EPSILON, params.EPSILON_MIN,
+                                      params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                      params.subspaces))
+    file1.close()
+    trial_rewards = np.array(trial_rewards)
+    pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
+    return

@@ -1,6 +1,6 @@
 from agents.Q import QAgent
 from agents.Q import QMiniAgent
-from learning_parameters import Parameters
+from learning_parameters import DiscreteParameters
 import numpy as np
 import random
 import copy
@@ -11,9 +11,9 @@ class QIiBAgent(QAgent):
         super().__init__(env, params)
         self.name = 'IiB'
         self.action_space = self.env.action_space.n
-        meta_params = Parameters(self.params.ALPHA, self.params.ALPHA_MIN,
-                                 self.params.PHI, self.params.PHI_MIN,
-                                 self.params.DISCOUNT, self.params.DECAY_RATE, self.params.num_episodes)
+        meta_params = DiscreteParameters(self.params.ALPHA, self.params.ALPHA_MIN,
+                                         self.params.PHI, self.params.PHI_MIN,
+                                         self.params.DISCOUNT, self.params.DECAY_RATE, self.params.num_episodes)
         self.meta_agent = QMiniAgent(self.env, meta_params, self.observation_space, len(params.subspaces))
         self.Q_table = np.zeros([self.observation_space, self.action_space])
         self.saved_abs_lookup = {}

@@ -1,4 +1,4 @@
-from agents.tabular import BaseAgent
+from agents.base import BaseAgent
 import numpy as np
 import random
 
@@ -13,7 +13,6 @@ class QAgent(BaseAgent):
     def e_greedy_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
             return self.random_action()
-
         return np.argmax(self.Q_table[state])
 
     def decay(self, decay_rate):
