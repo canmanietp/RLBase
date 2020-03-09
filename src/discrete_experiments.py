@@ -38,13 +38,13 @@ def get_params_coffeemail():
     alpha_min = 0.01
     init_epsilon = 0.3
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.001
     discount = 0.99
-    decay_rate = 0.999
-    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5, 6, 7]]
+    decay_rate = 0.99
+    sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
     size_state_vars = [5, 5, 2, 2, 2, 2, 2, 2]
-    num_episodes = 10000
+    num_episodes = 2000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -55,10 +55,10 @@ def get_params_office():
     alpha_min = 0.01
     init_epsilon = 0.3
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.001
     discount = 0.99
-    decay_rate = 0.999
+    decay_rate = 0.99
     sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     size_state_vars = [9, 12, 2, 2, 2, 2]
     num_episodes = 30000

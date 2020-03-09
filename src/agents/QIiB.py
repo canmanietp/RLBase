@@ -11,9 +11,9 @@ class QIiBAgent(QAgent):
         super().__init__(env, params)
         self.name = 'IiB'
         self.action_space = self.env.action_space.n
-        meta_params = DiscreteParameters(self.params.ALPHA, self.params.ALPHA_MIN,
-                                         self.params.PHI, self.params.PHI_MIN,
-                                         self.params.DISCOUNT, self.params.DECAY_RATE, self.params.num_episodes)
+        meta_params = copy.copy(self.params)
+        meta_params.EPSILON = meta_params.PHI
+        meta_params.EPSILON_MIN = meta_params.PHI_MIN
         self.meta_agent = QMiniAgent(self.env, meta_params, self.observation_space, len(params.sub_spaces))
         self.Q_table = np.zeros([self.observation_space, self.action_space])
         self.saved_abs_lookup = {}
@@ -27,8 +27,6 @@ class QIiBAgent(QAgent):
         return st_vars_lookup
 
     def encode_abs_state(self, state, abstraction):
-        if len(state) == len(abstraction):
-            return self.state_decodings.index(state)
         abs_state = [state[k] for k in abstraction]
         var_size = copy.copy([self.params.size_state_vars[k] for k in abstraction])
         var_size.pop(0)
@@ -57,8 +55,6 @@ class QIiBAgent(QAgent):
         if random.uniform(0, 1) < self.params.PHI:
             return ab_index, self.random_action()
         else:
-            if ab_index == len(self.params.sub_spaces):
-                return ab_index, np.argmax(self.Q_table[state])
             update_states = []
             merge_values = []
             merge_visits = []

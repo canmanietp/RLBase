@@ -33,8 +33,6 @@ class QLiAAgent(QAgent):
         return st_vars_lookup
 
     def encode_abs_state(self, state, abstraction):
-        if len(state) == len(abstraction):
-            return self.state_decodings.index(state)
         abs_state = [state[k] for k in abstraction]
         var_size = copy.copy([self.params.size_state_vars[k] for k in abstraction])
         var_size.pop(0)

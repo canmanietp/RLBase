@@ -75,7 +75,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name)
-    average_every = int(params.num_episodes / 1)
+    average_every = 1
 
     trial_rewards = []
     trial_times = []
@@ -84,9 +84,9 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         agents = []
         for alg in algs:
             if alg == 'DQN':
-                agents.append(DQNAgent(env, copy.copy(params)))
+                agents.append(DQNAgent(env, params))
             elif alg == 'DQNLiA':
-                agents.append(DQNLiAAgent(env, copy.copy(params)))
+                agents.append(DQNLiAAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
