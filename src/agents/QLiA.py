@@ -18,7 +18,8 @@ class QLiAAgent(QAgent):
                 ss *= params.size_state_vars[var]
 
             ab_params = Parameters(self.params.ALPHA, self.params.ALPHA_MIN,
-                                   self.params.PHI, self.params.PHI_MIN, self.params.DISCOUNT, self.params.num_episodes)
+                                   self.params.PHI, self.params.PHI_MIN, self.params.DISCOUNT,
+                                   self.params.DECAY_RATE, self.params.num_episodes)
             self.abstraction_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
 
         self.action_space = len(params.subspaces)

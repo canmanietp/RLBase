@@ -106,6 +106,8 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
                                 elif a == 6:  # fuel
                                     if taxiloc == (3, 2):
                                         new_fuel = 13
+                                    else:
+                                        reward = -10
 
                                 if new_fuel <= 0:
                                     reward = -20

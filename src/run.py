@@ -24,7 +24,7 @@ def get_params_coffee():
     discount = 0.99
     subspaces = [(0, 1, 2, 3), (0, 1, 2, 3, 4)]
     size_state_vars = [5, 5, 2, 2, 2]
-    num_episodes = 1000
+    num_episodes = 500
     return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
@@ -58,16 +58,17 @@ def get_params_office():
 
 def get_params_taxifuel():
     init_alpha = 0.5
-    alpha_min = 0.01
+    alpha_min = 0.1
     init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
+    decay = 0.999
     subspaces = [(0, 1, 2, 4), (0, 1, 2, 3, 4)]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 200000
-    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
+    num_episodes = 300000
+    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, decay, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
 def get_params_taxi():
@@ -110,17 +111,19 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
     date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
-    env, params = copy.copy(get_params(env_name))
+    env, params = get_params(env_name)
+
+    trial_rewards = []
 
     for t in range(num_trials):
         agents = []
         for alg in algs:
             if alg == 'Q':
-                agents.append(QAgent(env, params))
+                agents.append(QAgent(env, copy.copy(params)))
             elif alg == 'QLiA':
-                agents.append(QLiAAgent(env, params))
+                agents.append(QLiAAgent(env, copy.copy(params)))
             elif alg == 'QIiB':
-                agents.append(QIiBAgent(env, params))
+                agents.append(QIiBAgent(env, copy.copy(params)))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -152,7 +155,7 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
                 episode_rewards[j].append(ep_reward)
                 if verbose:
                     print("Episode {}, reward={}".format(i, ep_reward))
-                agent.decay(0.99)
+                agent.decay(agent.params.DECAY_RATE)
             t1 = time.time()
             print("Finished running in {} seconds".format(t1 - t0))
             t0 = t1
@@ -165,6 +168,7 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
             plt.savefig('{}/trial_{}'.format(exp_dir, t+1))
 
         plt.close()
+        trial_rewards.append(episode_rewards)
 
     file1 = open('{}/params.txt'.format(exp_dir), "w")
     file1.write("Environment: {}\n"
@@ -175,15 +179,18 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
                 "init_epsilon={}\n"
                 "epsilon_min={}\n"
                 "init_phi={}\n"
-                "phi_min{}\n"
+                "phi_min={}\n"
                 "discount={}\n"
                 "subspaces={}\n"
-                "size_state_vars={}".format(env, num_trials, params.num_episodes, params.init_alpha, params.alpha_min, params.init_epsilon, params.epsilon_min, params.init_phi, params.phi_min, params.discount, params.subspaces, params.size_state_vars))
+                "size_state_vars={}".format(env, num_trials,
+                                            params.num_episodes, params.ALPHA, params.ALPHA_MIN,
+                                            params.EPSILON, params.EPSILON_MIN,
+                                            params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                            params.subspaces, params.size_state_vars))
     file1.close()
+    trial_rewards = np.array(trial_rewards)
 
-    # Write to environment results directory the parameters
     # pickle the results
-
     # episode_rewards = np.array(episode_rewards)
     return
 

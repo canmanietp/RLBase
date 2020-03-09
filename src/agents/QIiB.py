@@ -12,7 +12,8 @@ class QIiBAgent(QAgent):
         self.name = 'IiB'
         self.action_space = self.env.action_space.n
         meta_params = Parameters(self.params.ALPHA, self.params.ALPHA_MIN,
-                                 self.params.PHI, self.params.PHI_MIN, self.params.DISCOUNT, self.params.num_episodes)
+                                 self.params.PHI, self.params.PHI_MIN,
+                                 self.params.DISCOUNT, self.params.DECAY_RATE, self.params.num_episodes)
         self.meta_agent = QMiniAgent(self.env, meta_params, self.observation_space, len(params.subspaces))
         self.Q_table = np.zeros([self.observation_space, self.action_space])
         self.saved_abs_lookup = {}
