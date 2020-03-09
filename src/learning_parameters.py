@@ -8,6 +8,6 @@ class Parameters():
         self.DECAY_RATE = decay
         self.PHI = phi
         self.PHI_MIN = phi_min
+        self.num_episodes = num_episodes
         self.subspaces = subspaces
         self.size_state_vars = size_state_vars
-        self.num_episodes = num_episodes

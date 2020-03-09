@@ -1,9 +1,9 @@
 import numpy as np
 
 
-class TabularAgent:
+class BaseAgent:
     def __init__(self, env):
-        self.name = 'Tabular'
+        self.name = 'Base'
         self.env = env
         self.observation_space = env.observation_space.n
         self.action_space = env.action_space.n

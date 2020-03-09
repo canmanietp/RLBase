@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import pickle
 import time, os, argparse, datetime, copy
 
 from envs.taxi import TaxiEnv
@@ -22,10 +23,11 @@ def get_params_coffee():
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
+    decay_rate = 0.99
     subspaces = [(0, 1, 2, 3), (0, 1, 2, 3, 4)]
     size_state_vars = [5, 5, 2, 2, 2]
     num_episodes = 500
-    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
+    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, decay_rate, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
 def get_params_coffeemail():
@@ -36,10 +38,11 @@ def get_params_coffeemail():
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
+    decay_rate = 0.999
     subspaces = [(0, 1, 2, 4), (0, 1, 2, 3, 4, 5, 6, 7)]
     size_state_vars = [5, 5, 2, 2, 2, 2, 2, 2]
     num_episodes = 10000
-    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
+    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, decay_rate, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
 def get_params_office():
@@ -50,24 +53,25 @@ def get_params_office():
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
+    decay_rate = 0.999
     subspaces = [(0, 1, 2, 4), (0, 1, 2, 3, 4, 5)]
     size_state_vars = [9, 12, 2, 2, 2, 2]
     num_episodes = 30000
-    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
+    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, decay_rate, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
 def get_params_taxifuel():
     init_alpha = 0.5
     alpha_min = 0.1
-    init_epsilon = 0.3
+    init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
     decay = 0.999
-    subspaces = [(0, 1, 2, 4), (0, 1, 2, 3, 4)]
+    subspaces = [(0, 1, 2, 4), (0, 1, 2, 3), (0, 1, 2, 3, 4)]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 300000
+    num_episodes = 200000
     return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, decay, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
@@ -79,10 +83,11 @@ def get_params_taxi():
     init_phi = 0.3
     phi_min = 0.001
     discount = 0.99
+    decay_rate = 0.99
     subspaces = [(0, 1, 2), (0, 1, 2, 3)]
     size_state_vars = [5, 5, 5, 4]
     num_episodes = 2000
-    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
+    return Parameters(init_alpha, alpha_min, init_epsilon, epsilon_min, discount, decay_rate, num_episodes, init_phi, phi_min, subspaces, size_state_vars)
 
 
 def get_params(env_name):
@@ -189,9 +194,7 @@ def run_experiment(num_trials, env_name, algs, verbose=False):
                                             params.subspaces, params.size_state_vars))
     file1.close()
     trial_rewards = np.array(trial_rewards)
-
-    # pickle the results
-    # episode_rewards = np.array(episode_rewards)
+    pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
     return
 
 

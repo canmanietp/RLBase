@@ -1,9 +1,9 @@
-from agents.tabular import TabularAgent
+from agents.tabular import BaseAgent
 import numpy as np
 import random
 
 
-class QAgent(TabularAgent):
+class QAgent(BaseAgent):
     def __init__(self, env, params):
         super().__init__(env)
         self.name = 'Q'
