@@ -85,6 +85,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
 
     for t in range(num_trials):
         env, params = get_params(env_name)
+        env._maximum_episode_steps = 200
         agents = []
         for alg in algs:
             if alg == 'DQN':
