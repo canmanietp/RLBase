@@ -102,12 +102,12 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
             print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
             for i in range(params.num_episodes):
                 agent.reset()
-                if j == 0:
-                    state = agent.current_state
-                    starting_states.append(state)
-                else:
-                    state = starting_states[i]
-                    agent.set_state(state)
+                # if j == 0:
+                #     state = agent.current_state
+                #     starting_states.append(state)
+                # else:
+                #     state = starting_states[i]
+                #     agent.set_state(state)
 
                 done = False
                 ep_reward = 0
