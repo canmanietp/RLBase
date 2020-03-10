@@ -1,11 +1,12 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import pickle
 import time, os, datetime, copy
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 from silence_tensorflow import silence_tensorflow
+from matplotlib import pyplot as plt
+
 
 silence_tensorflow()
 
