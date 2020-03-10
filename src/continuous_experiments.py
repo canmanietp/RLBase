@@ -28,7 +28,7 @@ def get_params_cartpole():
     discount = 0.95
     decay_rate = 0.99
     num_episodes = 30
-    retrain_steps = 5
+    retrain_steps = 25
     observation_space = 4
     action_space = 2
     learning_rate = 0.01
