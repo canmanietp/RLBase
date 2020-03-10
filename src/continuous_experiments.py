@@ -114,14 +114,18 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
 
                 done = False
                 ep_reward = 0
+                steps = 0
 
                 while not done:
                     reward, done = agent.run_episode()
                     ep_reward += reward
+                    steps += 1
+                    print(steps)
 
                 episode_rewards[j].append(ep_reward)
                 if verbose:
                     print("{} Episode {}, reward={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward))
+
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
