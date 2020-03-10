@@ -31,7 +31,7 @@ def get_params_cartpole():
     observation_space = 4
     action_space = 2
     learning_rate = 0.01
-    sub_spaces = [[1, 3], [0, 1, 2, 3]]
+    sub_spaces = [[1, 2, 3]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(24, input_dim=observation_space, activation='relu'))
