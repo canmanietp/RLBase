@@ -16,7 +16,7 @@ class DQNAgent(BaseAgent):
         self.memory = deque(maxlen=params.MEMORY_SIZE)
 
         self.until_retrain = 0
-        self.retrain_steps = 25
+        self.retrain_steps = params.retrain_steps
 
     def step(self, action):
         next_state, reward, done, _ = self.env.step(action)

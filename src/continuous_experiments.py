@@ -19,7 +19,7 @@ from helpers import plotting
 
 
 def get_params_cartpole():
-    memory_size = 100000
+    memory_size = 10000
     batch_size = 32
     init_epsilon = 0.3
     epsilon_min = 0.001
@@ -27,7 +27,7 @@ def get_params_cartpole():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    num_episodes = 40
+    num_episodes = 30
     retrain_steps = 5
     observation_space = 4
     action_space = 2
