@@ -23,9 +23,9 @@ def get_params_cartpole():
     batch_size = 32
     init_epsilon = 0.3
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.001
-    discount = 0.99
+    discount = 0.95
     decay_rate = 0.99
     num_episodes = 30
     retrain_steps = 5
