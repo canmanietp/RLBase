@@ -64,7 +64,7 @@ def get_params_cartpole():
 def get_params(env_name):
     if env_name == 'cartpole':
         env = CartPoleEnv()
-        env.max_episode_steps = 200
+        env._max_episode_steps = 200
         params = get_params_cartpole()
     else:
         print("Error: Unknown environment")
