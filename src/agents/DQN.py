@@ -20,7 +20,6 @@ class DQNAgent(BaseAgent):
 
     def step(self, action):
         next_state, reward, done, _ = self.env.step(action)
-        print(done)
         self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         self.current_state = next_state
         return next_state, reward, done
