@@ -4,11 +4,11 @@ import time, os, datetime, copy
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
-from silence_tensorflow import silence_tensorflow
+# from silence_tensorflow import silence_tensorflow
 from matplotlib import pyplot as plt
 
 
-silence_tensorflow()
+# silence_tensorflow()
 
 from envs.cartpole import CartPoleEnv
 
@@ -32,7 +32,7 @@ def get_params_cartpole():
     observation_space = 4
     action_space = 2
     learning_rate = 0.01
-    sub_spaces = [[0], [1, 3]]
+    sub_spaces = [[8], [1, 3]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(24, input_dim=observation_space, activation='relu'))
@@ -85,7 +85,6 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
 
     for t in range(num_trials):
         env, params = get_params(env_name)
-        env._maximum_episode_steps = 200
         agents = []
         for alg in algs:
             if alg == 'DQN':
@@ -147,8 +146,9 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 "Algorithms: {}\n"
                 "Running times: {}\n"
                 "Model: {}\n"
-                "memory_size: {}\n"
-                "batch_size: {}\n"
+                "memory_size={}\n"
+                "batch_size={}\n"
+                "retrain_steps={}"
                 "learning_rate={}\n"
                 "init_epsilon={}\n"
                 "epsilon_min={}\n"
@@ -157,7 +157,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 "discount={}\n"
                 "sub_spaces={}".format(env, num_trials,
                                        params.num_episodes, algs, trial_times, params.INIT_MODEL,
-                                       params.MEMORY_SIZE, params.BATCH_SIZE,
+                                       params.MEMORY_SIZE, params.BATCH_SIZE, params.retrain_steps,
                                        params.LEARNING_RATE,
                                        params.EPSILON, params.EPSILON_MIN,
                                        params.PHI, params.PHI_MIN, params.DISCOUNT,
