@@ -17,9 +17,12 @@ class DQNAgent(BaseAgent):
 
         self.until_retrain = 0
         self.retrain_steps = params.retrain_steps
+        self.steps = 0
 
     def step(self, action):
+        self.steps += 1
         next_state, reward, done, _ = self.env.step(action)
+        print(self.steps, done)
         self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         self.current_state = next_state
         return next_state, reward, done
