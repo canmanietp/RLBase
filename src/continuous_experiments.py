@@ -115,7 +115,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 while not done:
                     reward, done = agent.run_episode()
                     ep_reward += reward
-                    print(i, reward)
+                    print(i, ep_reward)
 
                 episode_rewards[j].append(ep_reward)
                 if verbose:
