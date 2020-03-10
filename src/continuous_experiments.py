@@ -64,7 +64,6 @@ def get_params_cartpole():
 def get_params(env_name):
     if env_name == 'cartpole':
         env = CartPoleEnv()
-        env._max_episode_steps = 200
         params = get_params_cartpole()
     else:
         print("Error: Unknown environment")
@@ -76,7 +75,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
     date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
-    env, params = get_params(env_name)
+    # env, params = get_params(env_name)
     average_every = 1
 
     trial_rewards = []
@@ -86,9 +85,9 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         agents = []
         for alg in algs:
             if alg == 'DQN':
-                agents.append(DQNAgent(env, params))
+                agents.append(DQNAgent(get_params(env_name)))
             elif alg == 'DQNLiA':
-                agents.append(DQNLiAAgent(env, params))
+                agents.append(DQNLiAAgent(get_params(env_name)))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
