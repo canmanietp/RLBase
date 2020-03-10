@@ -32,7 +32,7 @@ def get_params_cartpole():
     observation_space = 4
     action_space = 2
     learning_rate = 0.01
-    sub_spaces = [[1, 3], [0, 1, 2, 3]]
+    sub_spaces = [[8], [1, 3]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(24, input_dim=observation_space, activation='relu'))
@@ -48,10 +48,14 @@ def get_params_cartpole():
     # --- DQN model for sub_space1 (input: sub_space1, output: action)
     sub_model1 = Sequential()
     sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
-    sub_model1.add(Dense(24, activation='relu'))
     sub_model1.add(Dense(action_space, activation='linear'))
     sub_model1.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_models = [sub_model1, copy.copy(model)]
+    # --- DQN model for sub_space2 (input: sub_space2, output: action)
+    sub_model2 = Sequential()
+    sub_model2.add(Dense(24, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(action_space, activation='linear'))
+    sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_models = [sub_model1, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
