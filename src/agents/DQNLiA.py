@@ -40,8 +40,10 @@ class DQNLiAAgent(DQNAgent):
 
     def e_greedy_LIA_action(self, state):
         ab_index = self.e_greedy_action(state)
+        print("ab {}".format(ab_index))
         abs_state = state[self.params.sub_spaces[ab_index]]
         action = self.sub_agents[ab_index].e_greedy_action(abs_state)
+        print("action {}".format(action))
         return ab_index, action
 
     def replay_DQNLIA(self):
