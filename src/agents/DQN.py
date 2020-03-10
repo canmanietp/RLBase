@@ -11,12 +11,12 @@ class DQNAgent(BaseAgent):
         self.action_space = env.action_space.n
         self.params = copy.copy(params)
         self.model = params.INIT_MODEL
-        self.b_model = copy.copy(self.model)
+        self.target_model = copy.copy(self.model)
         self.current_state = self.reset()
         self.memory = deque(maxlen=params.MEMORY_SIZE)
 
         self.until_retrain = 0
-        self.retrain_steps = 4
+        self.retrain_steps = 25
 
     def step(self, action):
         next_state, reward, done, _ = self.env.step(action)
@@ -46,7 +46,7 @@ class DQNAgent(BaseAgent):
             q_update = reward
             if not done:
                 q_update = (reward + self.params.DISCOUNT *
-                          np.amax(self.b_model.predict(next_state)[0]))
+                            np.amax(self.target_model.predict(next_state)[0]))
             q_values = self.model.predict(state)
             q_values[0][action] = q_update
             # Filtering out states and targets for training
@@ -57,7 +57,7 @@ class DQNAgent(BaseAgent):
         self.until_retrain += 1
         if self.until_retrain >= self.retrain_steps:
             self.until_retrain = 0
-            self.b_model.set_weights(self.model.get_weights())
+            self.target_model.set_weights(self.model.get_weights())
 
         self.decay(self.params.DECAY_RATE)
 
