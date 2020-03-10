@@ -109,7 +109,7 @@ class CartPoleEnv(gym.Env):
             theta_dot = theta_dot + self.tau * thetaacc
             theta = theta + self.tau * theta_dot
         self.state = (x,x_dot,theta,theta_dot)
-        done =  x < -self.x_threshold \
+        done = x < -self.x_threshold \
                 or x > self.x_threshold \
                 or theta < -self.theta_threshold_radians \
                 or theta > self.theta_threshold_radians
