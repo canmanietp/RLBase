@@ -66,12 +66,9 @@ class QLiAAgent(QAgent):
         next_state_vars = self.state_decodings[next_state]
 
         for ia, ab in enumerate(self.sub_agents):
-            if ia == len(self.sub_agents) - 1:
-                ab.update(state, action, reward, next_state, done)
-            else:
-                abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
-                abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-                ab.update(abs_state, action, reward, abs_next_state, done)
+            abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
+            abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
+            ab.update(abs_state, action, reward, abs_next_state, done)
 
         self.update(state, ab_index, reward, next_state, done)
 

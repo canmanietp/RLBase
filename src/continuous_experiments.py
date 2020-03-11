@@ -64,7 +64,7 @@ def get_params_mspacman():
     observation_space = 17
     action_space = 9
     learning_rate = 0.0001
-    sub_spaces = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]]
+    sub_spaces = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], []]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(64, input_dim=observation_space, activation='relu'))
