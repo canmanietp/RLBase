@@ -11,7 +11,12 @@ class BaseAgent:
         self.current_state = self.reset()
 
     def reset(self):
-        self.current_state = self.env.reset()
+        if 'AtariARIWrapper' in str(self.env):
+            self.env.reset()
+            _, _, _, info = self.env.step(self.random_action())
+            self.current_state = self.info_into_state(info, None)
+        else:
+            self.current_state = self.env.reset()
         return self.current_state
 
     def random_action(self):
@@ -34,4 +39,15 @@ class BaseAgent:
         self.current_state = next_state
 
         return next_state, reward, done
+
+    def info_into_state(self, info, abstraction):
+        state = []
+        if abstraction is None:
+            for i, lab in enumerate(info['labels']):
+                state.append(info['labels'][lab])
+        else:
+            for i, lab in enumerate(info['labels']):
+                if i in abstraction:
+                    state.append(info['labels'][lab])
+        return np.array(state)
 

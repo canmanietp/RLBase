@@ -19,7 +19,9 @@ class DQNAgent(BaseAgent):
         self.retrain_steps = params.retrain_steps
 
     def step(self, action):
-        next_state, reward, done, _ = self.env.step(action)
+        next_state_raw, reward, done, next_info = self.env.step(action)
+        if 'AtariARIWrapper' in str(self.env):
+            next_state = self.info_into_state(next_info, None)
         self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         self.current_state = next_state
         return next_state, reward, done
@@ -67,6 +69,7 @@ class DQNAgent(BaseAgent):
         next_state, reward, done = self.step(action)
         self.replay()
         return reward, done
+
 
 
 
