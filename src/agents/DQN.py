@@ -60,8 +60,7 @@ class DQNAgent(BaseAgent):
         if self.until_retrain >= self.retrain_steps:
             self.until_retrain = 0
             self.target_model.set_weights(self.model.get_weights())
-
-        self.decay(self.params.DECAY_RATE)
+            self.decay(self.params.DECAY_RATE)
 
     def run_episode(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])

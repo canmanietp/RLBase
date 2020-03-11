@@ -10,6 +10,7 @@ class QLiAAgent(QAgent):
         super().__init__(env, params)
         self.name = 'LiA'
         self.sub_agents = []
+        self.params = copy.copy(params)
 
         for ab in params.sub_spaces:
             ss = 1

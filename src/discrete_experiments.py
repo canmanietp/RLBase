@@ -18,14 +18,14 @@ from helpers import plotting
 
 def get_params_coffee():
     init_alpha = 0.5
-    alpha_min = 0.01
+    alpha_min = 0.1
     init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    sub_spaces = [[0, 1, 2, 3], [0, 1, 2, 3, 4]]
+    sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
     size_state_vars = [5, 5, 2, 2, 2]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -33,35 +33,47 @@ def get_params_coffee():
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
-def get_params_coffeemail():
+def get_params_coffeemail(alg):
     init_alpha = 0.5
-    alpha_min = 0.01
-    init_epsilon = 0.3
+    alpha_min = 0.1
+    init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.3
+    init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
+    if alg == 'QLiA':
+        alpha_min = 0.05
+        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
+    elif alg == 'QIiB':
+        sub_spaces = [[0, 1, 2, 4],  [0, 1, 2, 3, 4, 5, 6, 7]]
+    else:
+        sub_spaces = []
     size_state_vars = [5, 5, 2, 2, 2, 2, 2, 2]
-    num_episodes = 2000
+    num_episodes = 3000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
-def get_params_office():
+def get_params_office(alg):
     init_alpha = 0.5
-    alpha_min = 0.01
-    init_epsilon = 0.3
+    alpha_min = 0.1
+    init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.3
+    init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
+    if alg == 'QLiA':
+        alpha_min = 0.05
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 5]]
+    elif alg == 'QIiB':
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
+    else:
+        sub_spaces = []
     size_state_vars = [9, 12, 2, 2, 2, 2]
-    num_episodes = 40000
+    num_episodes = 10000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -101,7 +113,7 @@ def get_params_taxi():
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
-def get_params(env_name):
+def get_params(env_name, alg=None):
     if env_name == 'taxi':
         env = TaxiEnv()
         params = get_params_taxi()
@@ -110,10 +122,10 @@ def get_params(env_name):
         params = get_params_taxifuel()
     elif env_name == 'office':
         env = OfficeEnv()
-        params = get_params_office()
+        params = get_params_office(alg)
     elif env_name == 'coffeemail':
         env = CoffeeMailEnv()
-        params = get_params_coffeemail()
+        params = get_params_coffeemail(alg)
     elif env_name == 'coffee':
         env = CoffeeEnv()
         params = get_params_coffee()
@@ -136,6 +148,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
     for t in range(num_trials):
         agents = []
         for alg in algs:
+            env, params = get_params(env_name, alg)
+            average_every = int(params.num_episodes / 100)
             if alg == 'Q':
                 agents.append(QAgent(env, params))
             elif alg == 'QLiA':

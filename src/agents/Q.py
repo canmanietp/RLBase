@@ -40,6 +40,7 @@ class QMiniAgent(QAgent):
     def __init__(self, env, params, mini_observation_space, mini_action_space):
         super().__init__(env, params)
         self.name = 'Mini'
+        self.params = copy.copy(params)
         self.observation_space = mini_observation_space
         self.action_space = mini_action_space
         self.Q_table = np.zeros([self.observation_space, self.action_space])
