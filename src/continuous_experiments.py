@@ -21,9 +21,9 @@ from helpers import plotting
 def get_params_pong():
     memory_size = 1000000
     batch_size = 32
-    init_epsilon = 0.6
+    init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.6
+    init_phi = 0.5
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999
@@ -53,9 +53,9 @@ def get_params_pong():
 def get_params_mspacman():
     memory_size = 1000000
     batch_size = 32
-    init_epsilon = 1.0
+    init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 1.0
+    init_phi = 0.5
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999

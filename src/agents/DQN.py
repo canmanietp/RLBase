@@ -9,7 +9,7 @@ class DQNAgent(BaseAgent):
         self.name = 'DQN'
         self.env = env
         self.action_space = env.action_space.n
-        self.params = copy.copy(params)
+        self.params = params
         self.model = params.INIT_MODEL
         self.target_model = copy.copy(self.model)
         self.current_state = self.reset()

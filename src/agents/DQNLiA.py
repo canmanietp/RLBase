@@ -19,7 +19,7 @@ class DQNLiAAgent(DQNAgent):
 
         self.action_space = len(params.sub_spaces)
         self.model = params.META_MODEL
-        self.target_model = copy.copy(params.META_MODEL)
+        self.target_model = params.META_MODEL
 
     def decay(self, decay_rate):
         if self.params.EPSILON > self.params.EPSILON_MIN:

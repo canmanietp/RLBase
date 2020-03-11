@@ -11,7 +11,7 @@ class QIiBAgent(QAgent):
         super().__init__(env, params)
         self.name = 'IiB'
         self.action_space = self.env.action_space.n
-        meta_params = copy.copy(self.params)
+        meta_params = self.params
         meta_params.EPSILON = meta_params.PHI
         meta_params.EPSILON_MIN = meta_params.PHI_MIN
         self.meta_agent = QMiniAgent(self.env, meta_params, self.observation_space, len(params.sub_spaces))
