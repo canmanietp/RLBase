@@ -26,7 +26,7 @@ def get_params_pong():
     init_phi = 0.6
     phi_min = 0.001
     discount = 0.95
-    decay_rate = 0.9999
+    decay_rate = 0.999
     num_episodes = 1000
     retrain_steps = 100
     observation_space = 8
@@ -58,7 +58,7 @@ def get_params_mspacman():
     init_phi = 1.0
     phi_min = 0.001
     discount = 0.95
-    decay_rate = 0.9999
+    decay_rate = 0.999
     num_episodes = 1000
     retrain_steps = 100
     observation_space = 17
@@ -125,7 +125,7 @@ def get_params_cartpole():
                                 sub_spaces=sub_spaces)
 
 
-def get_params(env_name):
+def get_params(env_name, alg=None):
     if env_name == 'cartpole':
         env = CartPoleEnv()
         params = get_params_cartpole()
@@ -210,30 +210,27 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
 
-    file1 = open('{}/params.txt'.format(exp_dir), "w")
-    file1.write("Environment: {}\n"
-                "Number of trials: {}\n"
-                "Number of episodes: {}\n"
-                "Algorithms: {}\n"
-                "Running times: {}\n"
-                "Model: {}\n"
-                "memory_size={}\n"
-                "batch_size={}\n"
-                "retrain_steps={}"
-                "learning_rate={}\n"
-                "init_epsilon={}\n"
-                "epsilon_min={}\n"
-                "init_phi={}\n"
-                "phi_min={}\n"
-                "discount={}\n"
-                "sub_spaces={}".format(env, num_trials,
-                                       params.num_episodes, algs, trial_times, params.INIT_MODEL,
-                                       params.MEMORY_SIZE, params.BATCH_SIZE, params.retrain_steps,
-                                       params.LEARNING_RATE,
-                                       params.EPSILON, params.EPSILON_MIN,
-                                       params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                       params.sub_spaces))
-    file1.close()
+    for alg in algs:
+        env, params = get_params(env_name, alg)
+        file1 = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
+        file1.write("Environment: {}\n"
+                    "Number of trials: {}\n"
+                    "Number of episodes: {}\n"
+                    "Algorithms: {}\n"
+                    "Running times: {}\n"
+                    "init_alpha={}\n"
+                    "alpha_min={}\n"
+                    "init_epsilon={}\n"
+                    "epsilon_min={}\n"
+                    "init_phi={}\n"
+                    "phi_min={}\n"
+                    "discount={}\n"
+                    "sub_spaces={}\n"
+                    "size_state_vars={}".format(env, num_trials,
+                                                params.num_episodes, algs, trial_times, params.ALPHA, params.ALPHA_MIN,
+                                                params.EPSILON, params.EPSILON_MIN,
+                                                params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                                params.sub_spaces, params.size_state_vars))
     trial_rewards = np.array(trial_rewards)
     pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
     return

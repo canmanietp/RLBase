@@ -43,10 +43,10 @@ def get_params_coffeemail(alg):
     discount = 0.99
     decay_rate = 0.99
     if alg == 'QLiA':
-        alpha_min = 0.05
+        alpha_min = 0.01
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QIiB':
-        sub_spaces = [[0, 1, 2, 4],  [0, 1, 2, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5, 6, 7]]
     else:
         sub_spaces = []
     size_state_vars = [5, 5, 2, 2, 2, 2, 2, 2]
@@ -205,26 +205,28 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
 
-    file1 = open('{}/params.txt'.format(exp_dir), "w")
-    file1.write("Environment: {}\n"
-                "Number of trials: {}\n"
-                "Number of episodes: {}\n"
-                "Algorithms: {}\n"
-                "Running times: {}\n"
-                "init_alpha={}\n"
-                "alpha_min={}\n"
-                "init_epsilon={}\n"
-                "epsilon_min={}\n"
-                "init_phi={}\n"
-                "phi_min={}\n"
-                "discount={}\n"
-                "sub_spaces={}\n"
-                "size_state_vars={}".format(env, num_trials,
-                                            params.num_episodes, algs, trial_times, params.ALPHA, params.ALPHA_MIN,
-                                            params.EPSILON, params.EPSILON_MIN,
-                                            params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                            params.sub_spaces, params.size_state_vars))
-    file1.close()
+    for alg in algs:
+        env, params = get_params(env_name, alg)
+        file1 = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
+        file1.write("Environment: {}\n"
+                    "Number of trials: {}\n"
+                    "Number of episodes: {}\n"
+                    "Algorithms: {}\n"
+                    "Running times: {}\n"
+                    "init_alpha={}\n"
+                    "alpha_min={}\n"
+                    "init_epsilon={}\n"
+                    "epsilon_min={}\n"
+                    "init_phi={}\n"
+                    "phi_min={}\n"
+                    "discount={}\n"
+                    "sub_spaces={}\n"
+                    "size_state_vars={}".format(env, num_trials,
+                                                params.num_episodes, algs, trial_times, params.ALPHA, params.ALPHA_MIN,
+                                                params.EPSILON, params.EPSILON_MIN,
+                                                params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                                params.sub_spaces, params.size_state_vars))
+        file1.close()
     trial_rewards = np.array(trial_rewards)
     pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
     return
