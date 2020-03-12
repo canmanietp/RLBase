@@ -31,13 +31,12 @@ def get_params_pong():
     retrain_steps = 100
     observation_space = 8
     action_space = 6
-    learning_rate = 0.001
+    learning_rate = 0.0002
     sub_spaces = [[]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    model.add(Dense(128, input_dim=observation_space, activation='relu'))
     model.add(Dense(64, activation='relu'))
-    model.add(Dense(24, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     meta_model = None
@@ -218,8 +217,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                     "Number of episodes: {}\n"
                     "Algorithms: {}\n"
                     "Running times: {}\n"
-                    "init_alpha={}\n"
-                    "alpha_min={}\n"
+                    "init_learning_rate={}\n"
                     "init_epsilon={}\n"
                     "epsilon_min={}\n"
                     "init_phi={}\n"
@@ -227,7 +225,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                     "discount={}\n"
                     "sub_spaces={}\n"
                     "size_state_vars={}".format(env, num_trials,
-                                                params.num_episodes, algs, trial_times, params.ALPHA, params.ALPHA_MIN,
+                                                params.num_episodes, algs, trial_times, params.LEARNING_RATE,
                                                 params.EPSILON, params.EPSILON_MIN,
                                                 params.PHI, params.PHI_MIN, params.DISCOUNT,
                                                 params.sub_spaces, params.size_state_vars))
