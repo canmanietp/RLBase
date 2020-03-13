@@ -58,7 +58,7 @@ def get_params_mspacman():
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999
-    num_episodes = 1000
+    num_episodes = 10000
     retrain_steps = 100
     observation_space = 17
     action_space = 9
