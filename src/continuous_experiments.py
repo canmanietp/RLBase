@@ -457,12 +457,11 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                     "init_phi={}\n"
                     "phi_min={}\n"
                     "discount={}\n"
-                    "sub_spaces={}\n"
-                    "size_state_vars={}".format(env, num_trials,
+                    "sub_spaces={}\n".format(env, num_trials,
                                                 params.num_episodes, algs, trial_times, params.LEARNING_RATE,
                                                 params.EPSILON, params.EPSILON_MIN,
                                                 params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                                params.sub_spaces, params.size_state_vars))
+                                                params.sub_spaces))
     trial_rewards = np.array(trial_rewards)
     pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
     return
