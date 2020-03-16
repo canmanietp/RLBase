@@ -19,11 +19,11 @@ if __name__ == "__main__":
     num_trials = args.num_trials
     verbose = bool(args.verbose)
 
-    if 'Q' in alg_names:
-        import discrete_experiments
-        discrete_experiments.run_discrete_experiment(num_trials, env_name, alg_names, verbose)
-    elif 'DQN' in alg_names:
+    alg_strings = '\t'.join(alg_names)
+
+    if 'DQN' in alg_strings:
         import continuous_experiments
         continuous_experiments.run_continuous_experiment(num_trials, env_name, alg_names, verbose)
     else:
-        print("Error: Must include a baseline algorithm (such as Q or DQN).")
+        import discrete_experiments
+        discrete_experiments.run_discrete_experiment(num_trials, env_name, alg_names, verbose)
