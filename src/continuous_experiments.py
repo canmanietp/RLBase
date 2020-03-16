@@ -52,7 +52,7 @@ def get_params_pong():
     sub_model.add(Dense(action_space, activation='linear'))
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     meta_model = meta_model
-    sub_models = [sub_model, model]
+    sub_models = [sub_model, copy.copy(model)]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,

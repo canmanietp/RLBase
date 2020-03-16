@@ -29,7 +29,9 @@ class DQNLiAAgent(DQNAgent):
             ab.decay(decay_rate)
 
     def step(self, action):
-        next_state, reward, done, _ = self.env.step(action)
+        next_state, reward, done, next_state_info = self.env.step(action)
+        if 'AtariARIWrapper' in str(self.env):
+            next_state = self.info_into_state(next_state_info, None)
         self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         for sax, sa in enumerate(self.sub_agents):
             abs_state = self.current_state[self.params.sub_spaces[sax]]

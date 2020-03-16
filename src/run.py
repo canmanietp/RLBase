@@ -4,8 +4,8 @@ if __name__ == "__main__":
     "example: python3 run.py --algorithms 'Q' 'QLiA' --env='office' --num_trials=2"
     parser = argparse.ArgumentParser(prog="run_experiments",
                                      description='Runs a multi-task RL experiment over a particular environment.')
-    parser.add_argument('--algorithms', nargs='+', default=['Q', 'QIiB'], type=str)
-    parser.add_argument('--env', default='office', type=str)
+    parser.add_argument('--algorithms', nargs='+', default=['DQNLiA'], type=str)
+    parser.add_argument('--env', default='pong', type=str)
     parser.add_argument('--num_trials', default=2, type=int)
     parser.add_argument('--verbose', default=False, type=str)
 
