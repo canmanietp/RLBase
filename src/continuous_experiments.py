@@ -32,15 +32,27 @@ def get_params_pong():
     observation_space = 8
     action_space = 6
     learning_rate = 0.0001
-    sub_spaces = [[]]
+    sub_spaces = [[0, 1, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
     model.add(Dense(64, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    meta_model = None
-    sub_models = None
+    # --- Meta DQN model (input: full state, output: abstraction)
+    meta_model = Sequential()
+    meta_model.add(Dense(128, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(64, activation='relu'))
+    meta_model.add(Dense(len(sub_spaces), activation='linear'))
+    meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    # --- Submodel 1 (input: subspace1, output: action)
+    sub_model = Sequential()
+    sub_model.add(Dense(128, input_dim=len(sub_spaces[0]), activation='relu'))
+    sub_model.add(Dense(64, activation='relu'))
+    sub_model.add(Dense(action_space, activation='linear'))
+    sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    meta_model = meta_model
+    sub_models = [sub_model, model]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
