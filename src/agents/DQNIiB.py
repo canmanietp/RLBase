@@ -39,11 +39,10 @@ class DQNIiBAgent(DQNAgent):
     def e_greedy_IiB_action(self, state):
         ab_index = self.meta_agent.e_greedy_action(state)
 
-        if random.uniform(0, 1) < self.params.PHI:
+        if random.uniform(0, 1) < self.params.PHI or len(self.memory) < self.num_samples:
             return ab_index, self.random_action()
         else:
-            abs_vars = state[self.params.sub_spaces[ab_index]]
-            states = self.sample_states(state, abs_vars)
+            states = self.sample_states(state, self.params.sub_spaces[ab_index])
             q_values = []
             visits = []
             for s in states:
@@ -70,23 +69,23 @@ class DQNIiBAgent(DQNAgent):
         return reward, done
 
     def sample_states(self, state, abs_vars):
-        vars = [v for v in list(range(self.observation_space))]
+        vars = [v for v in list(range(self.params.observation_space))]
         ranges = self.get_ranges()
         states = []
         for n in range(self.num_samples):
             add_state = []
             for iv, var in enumerate(vars):
                 if iv in abs_vars:
-                    add_state.append(state[iv])
+                    add_state.append(state[0][iv])
                 else:
                     add_state.append(random.random() * (ranges[iv][1] - ranges[iv][0]) + ranges[iv][0])
-            states.append(add_state)
+            states.append(np.reshape(add_state, [1, self.params.observation_space]))
         return states
 
     def get_ranges(self):
-        min_max = [[float("inf"), float("-inf")] for v in list(range(self.observation_space))]
+        min_max = [[float("inf"), float("-inf")] for v in list(range(self.params.observation_space))]
         for s, _, _, _, _ in self.memory:
-            for iv, var in enumerate(s):
+            for iv, var in enumerate(s[0]):
                 if var < min_max[iv][0]:
                     min_max[iv][0] = var
                 if var > min_max[iv][1]:
