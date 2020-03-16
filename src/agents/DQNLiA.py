@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from agents.DQN import DQNAgent
+from agents.DQN import DQNAgent, DQNMiniAgent
 
 
 class DQNLiAAgent(DQNAgent):
@@ -11,11 +11,12 @@ class DQNLiAAgent(DQNAgent):
 
         for isx, ss in enumerate(params.sub_spaces):
             sub_params = copy.copy(params)
-            sub_params.observation_space = len(ss)
             sub_params.INIT_MODEL = params.sub_models[isx]
             sub_params.EPSILON = params.PHI
             sub_params.EPSILON_MIN = params.PHI_MIN
-            self.sub_agents.append(DQNAgent(env, sub_params))
+            sub_params.observation_space = len(ss)
+            sub_params.action_space = sub_params.action_space
+            self.sub_agents.append(DQNMiniAgent(env, sub_params))
 
         self.action_space = len(params.sub_spaces)
         self.model = params.META_MODEL
@@ -28,11 +29,11 @@ class DQNLiAAgent(DQNAgent):
         for ab in self.sub_agents:
             ab.decay(decay_rate)
 
-    def step(self, action):
+    def step_LiA(self, abstraction, action):
         next_state, reward, done, next_state_info = self.env.step(action)
         if 'AtariARIWrapper' in str(self.env):
             next_state = self.info_into_state(next_state_info, None)
-        self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
+        self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), abstraction, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         for sax, sa in enumerate(self.sub_agents):
             abs_state = self.current_state[self.params.sub_spaces[sax]]
             abs_next_state = next_state[self.params.sub_spaces[sax]]
@@ -40,12 +41,11 @@ class DQNLiAAgent(DQNAgent):
         self.current_state = next_state
         return next_state, reward, done
 
-    def e_greedy_LIA_action(self, state):
+    def e_greedy_LiA_action(self, state):
         ab_index = self.e_greedy_action(state)
-        print("ab {}".format(ab_index))
-        abs_state = state[self.params.sub_spaces[ab_index]]
+        abs_state = list(state[0][self.params.sub_spaces[ab_index]])
+        abs_state = np.reshape(abs_state, [1, len(self.params.sub_spaces[ab_index])])
         action = self.sub_agents[ab_index].e_greedy_action(abs_state)
-        print("action {}".format(action))
         return ab_index, action
 
     def replay_DQNLIA(self):
@@ -55,8 +55,8 @@ class DQNLiAAgent(DQNAgent):
 
     def run_episode(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
-        action = self.e_greedy_action(state)
-        next_state, reward, done = self.step(action)
+        abstraction, action = self.e_greedy_LiA_action(state)
+        next_state, reward, done = self.step_LiA(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
             self.replay_DQNLIA()
         return reward, done

@@ -14,6 +14,7 @@ from envs.cartpole import CartPoleEnv
 
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
+from agents.DQNIiB import DQNIiBAgent
 from learning_parameters import ContinuousParameters
 from helpers import plotting
 
@@ -56,7 +57,7 @@ def get_params_pong():
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
-                                discount=discount, decay=decay_rate, observation_space=observation_space,
+                                discount=discount, decay=decay_rate, observation_space=observation_space, action_space=action_space,
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
                                 sub_spaces=sub_spaces)
 
@@ -171,6 +172,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 agents.append(DQNAgent(env, params))
             elif alg == 'DQNLiA':
                 agents.append(DQNLiAAgent(env, params))
+            elif alg == 'DQNIiB':
+                agents.append(DQNIiBAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 

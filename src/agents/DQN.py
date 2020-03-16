@@ -8,7 +8,7 @@ class DQNAgent(BaseAgent):
     def __init__(self, env, params):
         self.name = 'DQN'
         self.env = env
-        self.action_space = env.action_space.n
+        self.action_space = params.action_space
         self.params = params
         self.model = params.INIT_MODEL
         self.target_model = copy.copy(self.model)
@@ -19,9 +19,9 @@ class DQNAgent(BaseAgent):
         self.retrain_steps = params.retrain_steps
 
     def step(self, action):
-        next_state_raw, reward, done, next_info = self.env.step(action)
+        next_state, reward, done, next_state_info = self.env.step(action)
         if 'AtariARIWrapper' in str(self.env):
-            next_state = self.info_into_state(next_info, None)
+            next_state = self.info_into_state(next_state_info, None)
         self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         self.current_state = next_state
         return next_state, reward, done
@@ -68,6 +68,21 @@ class DQNAgent(BaseAgent):
         next_state, reward, done = self.step(action)
         self.replay()
         return reward, done
+
+
+class DQNMiniAgent(DQNAgent):
+    def __init__(self, env, params):
+        super().__init__(env, params)
+        self.name = 'DQNMini'
+        self.env = env
+        self.params = copy.copy(params)
+        self.model = params.INIT_MODEL
+        self.target_model = copy.copy(self.model)
+        self.current_state = self.reset()
+        self.memory = deque(maxlen=params.MEMORY_SIZE)
+
+        self.until_retrain = 0
+        self.retrain_steps = params.retrain_steps
 
 
 
