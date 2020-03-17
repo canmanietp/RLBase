@@ -23,17 +23,17 @@ def get_params_pong():
     memory_size = 1000000
     batch_size = 32
     init_epsilon = 0.5
-    epsilon_min = 0.001
+    epsilon_min = 0.01
     init_phi = 0.5
-    phi_min = 0.001
+    phi_min = 0.01
     discount = 0.95
     decay_rate = 0.999
     num_episodes = 10000
-    retrain_steps = 100
+    retrain_steps = 1000
     observation_space = 8
     action_space = 6
     learning_rate = 0.0001
-    sub_spaces = [[0, 1, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
+    sub_spaces = [[0, 1, 4, 5], [0, 1, 2, 3, 4, 5]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
@@ -52,8 +52,14 @@ def get_params_pong():
     sub_model.add(Dense(64, activation='relu'))
     sub_model.add(Dense(action_space, activation='linear'))
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    meta_model = meta_model
-    sub_models = [sub_model, copy.copy(model)]
+    sub_model = Sequential()
+    # --- Submodel 2 (input: subspace2, output:action)
+    sub_model2 = Sequential()
+    sub_model2.add(Dense(128, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(64, activation='relu'))
+    sub_model2.add(Dense(action_space, activation='linear'))
+    sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_models = [sub_model, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -89,7 +95,7 @@ def get_params_mspacman():
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
-                                discount=discount, decay=decay_rate, observation_space=observation_space,
+                                discount=discount, decay=decay_rate, observation_space=observation_space, action_space=action_space,
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
                                 sub_spaces=sub_spaces)
 
@@ -132,7 +138,7 @@ def get_params_cartpole():
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
-                                discount=discount, decay=decay_rate, observation_space=observation_space,
+                                discount=discount, decay=decay_rate, observation_space=observation_space, action_space=action_space,
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
                                 sub_spaces=sub_spaces)
 
