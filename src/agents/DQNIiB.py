@@ -46,14 +46,15 @@ class DQNIiBAgent(DQNAgent):
             q_values = []
             visits = []
             for s in states:
-                q_values = self.model.predict(s)
-                visits = self.pseudo_count(s)
+                q_values.append(self.model.predict(s)[0])
+                visits.append(self.pseudo_count(s))
 
             qs = np.zeros(self.action_space)
 
             for a in range(self.action_space):
                 most_visited = int(np.argmax([item[a] for item in visits]))
                 qs[a] = q_values[most_visited][a]
+
             return ab_index, np.argmax(qs)
 
     def replay_DQNIiB(self):
