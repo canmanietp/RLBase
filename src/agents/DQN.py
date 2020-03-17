@@ -76,10 +76,11 @@ class DQNMiniAgent(DQNAgent):
         self.name = 'DQNMini'
         self.env = env
         self.params = copy.copy(params)
-        self.model = params.INIT_MODEL
+        self.action_space = self.params.action_space
+        self.model = self.params.INIT_MODEL
         self.target_model = copy.copy(self.model)
         self.current_state = self.reset()
-        self.memory = deque(maxlen=params.MEMORY_SIZE)
+        self.memory = deque(maxlen=self.params.MEMORY_SIZE)
 
         self.until_retrain = 0
         self.retrain_steps = params.retrain_steps

@@ -11,16 +11,17 @@ class DQNLiAAgent(DQNAgent):
 
         for isx, ss in enumerate(params.sub_spaces):
             sub_params = copy.copy(params)
-            sub_params.INIT_MODEL = params.sub_models[isx]
-            sub_params.EPSILON = params.PHI
-            sub_params.EPSILON_MIN = params.PHI_MIN
+            sub_params.INIT_MODEL = sub_params.sub_models[isx]
+            sub_params.EPSILON = sub_params.PHI
+            sub_params.EPSILON_MIN = sub_params.PHI_MIN
             sub_params.observation_space = len(ss)
             sub_params.action_space = sub_params.action_space
             self.sub_agents.append(DQNMiniAgent(env, sub_params))
 
-        self.action_space = len(params.sub_spaces)
-        self.model = params.META_MODEL
-        self.target_model = params.META_MODEL
+        self.params.action_space = len(params.sub_spaces)
+        self.action_space = self.params.action_space
+        self.model = self.params.META_MODEL
+        self.target_model = copy.copy(self.params.META_MODEL)
 
     def decay(self, decay_rate):
         if self.params.EPSILON > self.params.EPSILON_MIN:

@@ -52,7 +52,6 @@ def get_params_pong():
     sub_model.add(Dense(64, activation='relu'))
     sub_model.add(Dense(action_space, activation='linear'))
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_model = Sequential()
     # --- Submodel 2 (input: subspace2, output:action)
     sub_model2 = Sequential()
     sub_model2.add(Dense(128, input_dim=len(sub_spaces[1]), activation='relu'))
@@ -61,8 +60,7 @@ def get_params_pong():
     sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     sub_models = [sub_model, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
-                                batch_size=batch_size,
-                                learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                                batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
                                 discount=discount, decay=decay_rate, observation_space=observation_space, action_space=action_space,
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
                                 sub_spaces=sub_spaces)
