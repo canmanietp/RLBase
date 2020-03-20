@@ -185,7 +185,7 @@ def get_params(env_name, alg=None):
         env = AtariARIWrapper(gym.make('Pong-v0'))
         params = get_params_pong()
     elif env_name == 'waterworld':
-        sys.path.append('envs/PyGame-Learning-Environment/')
+        # sys.path.append('envs/PyGame-Learning-Environment/')
         from ple.games.waterworld import WaterWorld
         from ple.ple import PLE
         _pygame = WaterWorld()
