@@ -91,11 +91,14 @@ class QIiBAgent(QAgent):
                     merge_values.append(self.Q_table[us])
                     merge_visits.append(self.sa_visits[us])
 
-            qs = np.zeros(self.action_space)
-
-            for a in range(self.action_space):
-                most_visited = int(np.argmax([item[a] for item in merge_visits]))
-                qs[a] = merge_values[most_visited][a]
+            if len(update_states) == 1:
+                qs = merge_values[0]
+            else:
+                qs = np.zeros(self.action_space)
+                for a in range(self.action_space):
+                    b = np.array([item[a] for item in merge_visits])
+                    most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
+                    qs[a] = merge_values[most_visited][a]
 
             return ab_index, np.argmax(qs)
 

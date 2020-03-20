@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import pickle
+import pandas as pd
 import time, os, datetime
 
 from envs.taxi import TaxiEnv
@@ -21,7 +21,7 @@ def get_params_coffee():
     alpha_min = 0.1
     init_epsilon = 0.3
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
@@ -35,7 +35,7 @@ def get_params_coffee():
 
 def get_params_coffeemail(alg):
     init_alpha = 0.5
-    alpha_min = 0.1
+    alpha_min = 0.05
     init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
@@ -43,14 +43,13 @@ def get_params_coffeemail(alg):
     discount = 0.99
     decay_rate = 0.99
     if alg == 'QLiA':
-        alpha_min = 0.01
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QIiB':
-        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
     else:
         sub_spaces = []
-    size_state_vars = [5, 5, 2, 2, 2, 2, 2, 2]
-    num_episodes = 3000
+    size_state_vars = [7, 7, 2, 2, 2, 2, 2, 2]
+    num_episodes = 7000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -59,55 +58,64 @@ def get_params_coffeemail(alg):
 def get_params_office(alg):
     init_alpha = 0.5
     alpha_min = 0.1
-    init_epsilon = 0.5
+    init_epsilon = 0.3
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.001
-    discount = 0.99
+    discount = 0.95
     decay_rate = 0.99
     if alg == 'QLiA':
-        alpha_min = 0.05
         sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 5]]
     elif alg == 'QIiB':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     else:
         sub_spaces = []
     size_state_vars = [9, 12, 2, 2, 2, 2]
-    num_episodes = 10000
+    num_episodes = 6000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
-def get_params_taxifuel():
+def get_params_taxifuel(alg):
     init_alpha = 0.5
     alpha_min = 0.1
     init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.7
     phi_min = 0.001
-    discount = 0.99
+    discount = 0.95
     decay_rate = 0.999
-    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
+    if alg == 'QLiA':
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
+    elif alg == 'QIiB':
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
+    else:
+        sub_spaces = []
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 200000
+    num_episodes = 350000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
-def get_params_taxi():
+def get_params_taxi(alg):
     init_alpha = 0.5
     alpha_min = 0.05
     init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.3
     phi_min = 0.001
-    discount = 0.99
-    decay_rate = 0.99
-    sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    discount = 0.95
+    decay_rate = 0.999
+    if alg == 'QLiA':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'QIiB':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    else:
+        sub_spaces = []
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 1000
+    num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -116,10 +124,10 @@ def get_params_taxi():
 def get_params(env_name, alg=None):
     if env_name == 'taxi':
         env = TaxiEnv()
-        params = get_params_taxi()
+        params = get_params_taxi(alg)
     elif env_name == 'taxifuel':
         env = TaxiFuelEnv()
-        params = get_params_taxifuel()
+        params = get_params_taxifuel(alg)
     elif env_name == 'office':
         env = OfficeEnv()
         params = get_params_office(alg)
@@ -161,6 +169,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
 
         episode_rewards = [[] for q in range(len(agents))]
         starting_states = []
+        decoded_ss = []
         times_to_run = []
         plt.figure()
 
@@ -173,6 +182,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 if j == 0:
                     state = agent.current_state
                     starting_states.append(state)
+                    decoded_ss.append(list(env.decode(state)))
                 else:
                     state = starting_states[i]
                     agent.set_state(state)
@@ -200,6 +210,10 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
         trial_rewards.append(episode_rewards)
         trial_times.append(times_to_run)
 
+        df = pd.DataFrame(np.transpose(episode_rewards))
+        df['Starting states'] = decoded_ss
+        df.to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
+
     for trial in np.average(trial_rewards, axis=0):
         plt.plot(plotting.moving_average(trial, average_every))
     plt.legend([a for a in algs], loc='lower right')
@@ -207,26 +221,24 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
 
     for alg in algs:
         env, params = get_params(env_name, alg)
-        file1 = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
-        file1.write("Environment: {}\n"
-                    "Number of trials: {}\n"
-                    "Number of episodes: {}\n"
-                    "Algorithms: {}\n"
-                    "Running times: {}\n"
-                    "init_alpha={}\n"
-                    "alpha_min={}\n"
-                    "init_epsilon={}\n"
-                    "epsilon_min={}\n"
-                    "init_phi={}\n"
-                    "phi_min={}\n"
-                    "discount={}\n"
-                    "sub_spaces={}\n"
-                    "size_state_vars={}".format(env, num_trials,
-                                                params.num_episodes, algs, trial_times, params.ALPHA, params.ALPHA_MIN,
-                                                params.EPSILON, params.EPSILON_MIN,
-                                                params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                                params.sub_spaces, params.size_state_vars))
-        file1.close()
-    trial_rewards = np.array(trial_rewards)
-    pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
+        file = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
+        file.write("Environment: {}\n"
+                   "Number of trials: {}\n"
+                   "Number of episodes: {}\n"
+                   "Running times: {}\n"
+                   "init_alpha={}\n"
+                   "alpha_min={}\n"
+                   "init_epsilon={}\n"
+                   "epsilon_min={}\n"
+                   "init_phi={}\n"
+                   "phi_min={}\n"
+                   "discount={}\n"
+                   "sub_spaces={}\n"
+                   "size_state_vars={}".format(env, num_trials,
+                                               params.num_episodes, trial_times, params.ALPHA, params.ALPHA_MIN,
+                                               params.EPSILON, params.EPSILON_MIN,
+                                               params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                               params.sub_spaces, params.size_state_vars))
+        file.close()
+
     return

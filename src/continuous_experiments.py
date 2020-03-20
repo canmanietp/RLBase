@@ -1,7 +1,7 @@
 import gym
 import numpy as np
-import pickle
-import time, os, datetime, copy
+import pandas as pd
+import time, sys, os, datetime, copy
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
@@ -18,6 +18,37 @@ from agents.DQNIiB import DQNIiBAgent
 from learning_parameters import ContinuousParameters
 from helpers import plotting
 
+os.putenv('SDL_VIDEODRIVER', 'fbcon')
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
+
+def get_params_waterworld():
+    memory_size = 100000
+    batch_size = 32
+    init_epsilon = 0.5
+    epsilon_min = 0.01
+    init_phi = 0.5
+    phi_min = 0.01
+    discount = 0.95
+    decay_rate = 0.999
+    num_episodes = 100
+    retrain_steps = 100
+    observation_space = 13
+    action_space = 4
+    learning_rate = 0.01
+    sub_spaces = []
+    sub_models = []
+    meta_model = []
+    model = Sequential()
+    model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    model.add(Dense(action_space, activation='linear'))
+    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
+                                batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                                discount=discount, decay=decay_rate, observation_space=observation_space, action_space=action_space,
+                                num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
+                                sub_spaces=sub_spaces)
 
 def get_params_pong():
     memory_size = 1000000
@@ -153,6 +184,14 @@ def get_params(env_name, alg=None):
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
         env = AtariARIWrapper(gym.make('Pong-v0'))
         params = get_params_pong()
+    elif env_name == 'waterworld':
+        sys.path.append('envs/PyGame-Learning-Environment/')
+        from ple.games.waterworld import WaterWorld
+        from ple.ple import PLE
+        _pygame = WaterWorld()
+        env = PLE(_pygame, fps=30, display_screen=True, force_fps=False)
+        params = get_params_waterworld()
+        return env, params
     else:
         print("Error: Unknown environment")
         return
@@ -184,7 +223,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         episode_rewards = [[] for q in range(len(agents))]
         starting_states = []
         times_to_run = []
-        plt.figure()
+
+        # plt.figure()
 
         print("{} -- Starting Trial {} -- ".format(datetime.datetime.now().strftime("%H:%M:%S"), t + 1))
         for j, agent in enumerate(agents):
@@ -222,19 +262,20 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
 
         plt.close()
         trial_rewards.append(episode_rewards)
+        pd.DataFrame(np.transpose(episode_rewards)).to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
 
     for trial in np.average(trial_rewards, axis=0):
         plt.plot(plotting.moving_average(trial, average_every))
+
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
 
-    for alg in algs:
+    for ia, alg in enumerate(algs):
         env, params = get_params(env_name, alg)
-        file1 = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
-        file1.write("Environment: {}\n"
+        file = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
+        file.write("Environment: {}\n"
                     "Number of trials: {}\n"
                     "Number of episodes: {}\n"
-                    "Algorithms: {}\n"
                     "Running times: {}\n"
                     "init_learning_rate={}\n"
                     "init_epsilon={}\n"
@@ -244,10 +285,11 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                     "discount={}\n"
                     "sub_spaces={}\n"
                     "size_state_vars={}".format(env, num_trials,
-                                                params.num_episodes, algs, trial_times, params.LEARNING_RATE,
+                                                params.num_episodes, trial_times, params.LEARNING_RATE,
                                                 params.EPSILON, params.EPSILON_MIN,
                                                 params.PHI, params.PHI_MIN, params.DISCOUNT,
                                                 params.sub_spaces, params.size_state_vars))
-    trial_rewards = np.array(trial_rewards)
-    pickle.dump(trial_rewards, open('{}/save.p'.format(exp_dir), "wb"))
+
+        file.close()
+
     return

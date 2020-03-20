@@ -12,16 +12,25 @@ class DQNAgent(BaseAgent):
         self.params = params
         self.model = params.INIT_MODEL
         self.target_model = copy.copy(self.model)
-        self.current_state = self.reset()
+        self.current_state = None
         self.memory = deque(maxlen=params.MEMORY_SIZE)
 
         self.until_retrain = 0
         self.retrain_steps = params.retrain_steps
 
     def step(self, action):
-        next_state, reward, done, next_state_info = self.env.step(action)
         if 'AtariARIWrapper' in str(self.env):
+            next_state, reward, done, next_state_info = self.env.step(action)
             next_state = self.info_into_state(next_state_info, None)
+        elif 'PLE' in str(self.env):
+            act = self.env.getActionSet()[action]
+            reward = self.env.act(act)
+            next_state_obs = self.env.getGameState()
+            next_state = self.pygame_obs_into_state(next_state_obs, None)
+            done = self.env.game_over()
+        else:
+            next_state, reward, done, next_state_info = self.env.step(action)
+
         self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
         self.current_state = next_state
         return next_state, reward, done

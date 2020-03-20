@@ -71,11 +71,11 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         self.num_columns = 5
 
         # ---IF BIG
-        # self.desc = np.asarray(BIGMAP, dtype='c')
-        # self.c_loc = (6, 1)
-        # self.A_loc = (6, 6)
-        # self.num_rows = 7
-        # self.num_columns = 7
+        self.desc = np.asarray(BIGMAP, dtype='c')
+        self.c_loc = (6, 1)
+        self.A_loc = (6, 6)
+        self.num_rows = 7
+        self.num_columns = 7
 
         self.state_desc = ['x', 'y', 'rc', 'rm', 'ac', 'bc', 'am', 'bm']
 

@@ -58,7 +58,7 @@ class OfficeEnv(discrete.DiscreteEnv):
     def __init__(self):
         self.desc = np.asarray(RM_MAP, dtype='c')
         self.c_locs = [(2, 3), (6, 8)]
-        self.m_loc = (4, 7)
+        self.m_locs = [(4, 7)]
         self.o_loc = (4, 4)
         self.num_rows = 9
         self.num_columns = 12
@@ -83,13 +83,13 @@ class OfficeEnv(discrete.DiscreteEnv):
                                     for action in range(num_actions):
                                         # defaults
                                         new_x, new_y, new_rc, new_rm, new_oc, new_om = x, y, rc, rm, oc, om
-                                        reward = -1  # default reward when there is no pickup/dropoff
+                                        reward = -1  # default reward
                                         done = False
                                         r_loc = (x, y)
 
                                         if r_loc in self.c_locs:
                                             new_rc = 1
-                                        elif r_loc == self.m_loc:
+                                        elif r_loc in self.m_locs:
                                             new_rm = 1
 
                                         if r_loc == self.o_loc:
@@ -109,8 +109,8 @@ class OfficeEnv(discrete.DiscreteEnv):
                                         elif action == 3 and self.desc[1 + x, 2 * y] == b":":  # left
                                             new_y = max(y - 1, 0)
 
-                                        if self.desc[new_x, new_y] == b"*": # hit an ornament
-                                            reward = -5
+                                        if self.desc[new_x, new_y] == b"*":  # hit an ornament
+                                            reward = -10
                                             done = True
 
                                         if new_oc == new_om == 0:
@@ -129,8 +129,8 @@ class OfficeEnv(discrete.DiscreteEnv):
         y = np.random.randint(0, self.num_columns)
         rc = 0
         rm = 0
-        oc = 1 # np.random.randint(0, 2)
-        om = 1 # np.random.randint(0, 2)
+        oc = 1  # np.random.randint(0, 2)
+        om = 1  # np.random.randint(0, 2)
         self.s = self.encode(x, y, rc, rm, oc, om)
         self.lastaction = None
         return self.s
