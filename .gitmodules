@@ -1,0 +1,3 @@
+[submodule "src/envs/PyGame-Learning-Environment"]
+	path = src/envs/PyGame-Learning-Environment
+	url = https://github.com/ntasfi/PyGame-Learning-Environment.git
