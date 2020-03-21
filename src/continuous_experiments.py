@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt
 
 # silence_tensorflow()
 
-from envs.cartpole import CartPoleEnv
-
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
 from agents.DQNIiB import DQNIiBAgent
@@ -30,9 +28,9 @@ def get_params_waterworld():
     init_phi = 0.5
     phi_min = 0.01
     discount = 0.9
-    decay_rate = 0.999
-    num_episodes = 3
-    retrain_steps = 100
+    decay_rate = 0.99
+    num_episodes = 500
+    retrain_steps = 150
     observation_space = 13
     action_space = 4
     learning_rate = 0.00001
@@ -178,6 +176,7 @@ def get_params_cartpole():
 
 def get_params(env_name, alg=None):
     if env_name == 'cartpole':
+        from envs.cartpole import CartPoleEnv
         env = CartPoleEnv()
         params = get_params_cartpole()
     elif env_name == 'mspacman':
