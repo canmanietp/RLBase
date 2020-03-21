@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 import pandas as pd
-import time, sys, os, datetime, copy
+import time, sys, os, datetime, copy, csv
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
@@ -23,23 +23,27 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
 def get_params_waterworld():
-    memory_size = 100000
+    memory_size = 50000
     batch_size = 32
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
     phi_min = 0.01
-    discount = 0.95
+    discount = 0.9
     decay_rate = 0.999
-    num_episodes = 100
+    num_episodes = 3
     retrain_steps = 100
     observation_space = 13
     action_space = 4
-    learning_rate = 0.01
+    learning_rate = 0.00001
     sub_spaces = []
     sub_models = []
     meta_model = []
     model = Sequential()
+    model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    model.add(Dense(64, input_dim=observation_space, activation='relu'))
     model.add(Dense(64, input_dim=observation_space, activation='relu'))
     model.add(Dense(64, input_dim=observation_space, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
@@ -230,6 +234,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         for j, agent in enumerate(agents):
             t0 = time.time()
             print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
+            csvfile = open('{}/trial_{}_agent_{}.csv'.format(exp_dir, t + 1, agent.name), 'w', newline='')
+            writer = csv.writer(csvfile)
             for i in range(params.num_episodes):
                 agent.reset()
                 if j == 0:
@@ -247,28 +253,29 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                     ep_reward += reward
 
                 episode_rewards[j].append(ep_reward)
+                writer.writerow([i, ep_reward])
                 if verbose:
                     print(
                         "{} Episode {}, reward={}, exploration={}".format(datetime.datetime.now().strftime("%H:%M:%S"),
                                                                           i, ep_reward, agent.params.EPSILON))
-
+            csvfile.close()
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
 
-            plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
-            plt.legend([a.name for a in agents], loc='lower right')
-            plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
+            # plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
+            # plt.legend([a.name for a in agents], loc='lower right')
+            # plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
-        plt.close()
+        # plt.close()
         trial_rewards.append(episode_rewards)
         pd.DataFrame(np.transpose(episode_rewards)).to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
 
-    for trial in np.average(trial_rewards, axis=0):
-        plt.plot(plotting.moving_average(trial, average_every))
-
-    plt.legend([a for a in algs], loc='lower right')
-    plt.savefig('{}/final'.format(exp_dir))
+    # for trial in np.average(trial_rewards, axis=0):
+    #     plt.plot(plotting.moving_average(trial, average_every))
+    #
+    # plt.legend([a for a in algs], loc='lower right')
+    # plt.savefig('{}/final'.format(exp_dir))
 
     for ia, alg in enumerate(algs):
         env, params = get_params(env_name, alg)
@@ -283,12 +290,11 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                     "init_phi={}\n"
                     "phi_min={}\n"
                     "discount={}\n"
-                    "sub_spaces={}\n"
-                    "size_state_vars={}".format(env, num_trials,
+                    "sub_spaces={}".format(env, num_trials,
                                                 params.num_episodes, trial_times, params.LEARNING_RATE,
                                                 params.EPSILON, params.EPSILON_MIN,
                                                 params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                                params.sub_spaces, params.size_state_vars))
+                                                params.sub_spaces))
 
         file.close()
 
