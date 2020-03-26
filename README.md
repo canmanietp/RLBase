@@ -1,5 +1,13 @@
 # RLBase
-Basic RL Project base
+Requirements:\
+- gym
+- numpy
+- matplotlib
+- pandas
 
-Example of running algorithms on Taxi:
+For Deep RL:\
+- keras
+- tensorflow
+
+Example of running algorithms on Taxi:\
 RLBase/src $ `python3 run.py --algorithms 'Q' 'QLiA' 'QIiB' --env='taxi' --num_trials=10`
