@@ -10,8 +10,8 @@ class MaxQAgent(BaseAgent):
         self.name = 'MaxQ'
         self.params = copy.copy(params)
         self.options = self.params.options
-        self.root = len(self.options) - 1
         num_options = len(self.options)
+        self.root = num_options - 1
         self.V = np.zeros((num_options, self.observation_space))
         self.C = np.zeros((num_options, self.observation_space, num_options))
         self.C_2 = np.zeros((num_options, self.observation_space, num_options))
@@ -46,20 +46,36 @@ class MaxQAgent(BaseAgent):
         if a == self.root:
             return done
 
+        if state is None:
+            state = self.current_state
+
+        decoded = list(self.env.decode(state))
+
         if 'TaxiEnv' in str(self.env):
-            if state is None:
-                state = self.current_state
-
-            taxirow, taxicol, passidx, destidx = list(self.env.decode(state))
-
             if a == 9:
-                return passidx < 4
+                return decoded[2] < 4
             elif a == 8:
-                return passidx >= 4
+                return decoded[2] >= 4
             elif a == 7:
-                return passidx >= 4 and (taxirow, taxicol) == self.env.locs[destidx]
+                return decoded[2] >= 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[3]]
             elif a == 6:
-                return passidx < 4 and (taxirow, taxicol) == self.env.locs[passidx]
+                return decoded[2] < 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[2]]
+        elif 'TaxiFuelEnv' in str(self.env):
+            if a == 12:
+                return decoded[4] >= 13
+            elif a == 11:
+                return decoded[2] < 4
+            elif a == 10:
+                return decoded[2] >= 4
+            elif a == 9:
+                return (decoded[0], decoded[1]) == (3, 2)
+            elif a == 8:
+                return decoded[2] >= 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[3]]
+            elif a == 7:
+                return decoded[2] < 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[2]]
+        else:
+            print("Error: Must write MaxQ termination function for new environment")
+            quit()
 
     def decay(self, decay_rate):
         if self.params.ALPHA > self.params.ALPHA_MIN:
@@ -84,7 +100,7 @@ class MaxQAgent(BaseAgent):
         if 'TaxiFuelEnv' in str(self.env):
             taxirow, taxicol, passidx, destidx, fuel = list(self.env.decode(state))
             if fuel == 0:
-                return -1 if i == self.root else 0
+                return -10 if i == self.root else 0
         return self.is_terminal(i, self.done, state)
 
     def MAXQQ(self, i, s):
@@ -101,7 +117,7 @@ class MaxQAgent(BaseAgent):
             while not self.is_terminal(i, self.done):  # a is new action num
                 a = self.e_greedy_action(s, i)
                 child_seq = self.MAXQQ(a, s)
-                child_seq = list(helpers.unnest.NestedListValues(child_seq))
+                child_seq = list(helpers.unnest.flatten(child_seq))
                 q2 = []
                 for k in self.options[i]:
                     q2.append((self.V[k, self.new_s] + self.C_2[i][self.new_s][k]))
@@ -118,6 +134,6 @@ class MaxQAgent(BaseAgent):
         return seq
 
     def do_episode(self):
-        self.MAXQQ(self.root, self.current_state)  # start in root
-        return self.r_sum, self.done
+        self.MAXQQ(self.root, self.current_state)
+        return self.r_sum
 

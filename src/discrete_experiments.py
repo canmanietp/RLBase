@@ -83,21 +83,26 @@ def get_params_taxifuel(alg):
     alpha_min = 0.1
     init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.7
+    init_phi = 0.5
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999
+    sub_spaces = None
+    options = None
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QIiB':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
-    else:
-        sub_spaces = []
+    elif alg == 'MaxQ':
+        # south, north, east, west, pickup, dropoff, fillup, gotoSource, gotoDestination, gotoFuel,
+        # get, put, refuel, root
+        options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
+                   {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 350000
+    num_episodes = 50000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_taxi(alg):
@@ -117,7 +122,7 @@ def get_params_taxi(alg):
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
-        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
+        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {9, 8}, ]
     size_state_vars = [5, 5, 5, 4]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -193,15 +198,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                     state = starting_states[i]
                     agent.set_state(state)
 
-                done = False
-                ep_reward = 0
-
-                if agent.name == 'MaxQ':
-                    ep_reward, done = agent.do_episode()
-                else:
-                    while not done:
-                        reward, done = agent.do_step()
-                        ep_reward += reward
+                ep_reward = agent.do_episode()
 
                 episode_rewards[j].append(ep_reward)
                 if verbose:

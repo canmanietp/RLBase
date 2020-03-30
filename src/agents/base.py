@@ -63,3 +63,16 @@ class BaseAgent:
         else:
             return list(np.array(state)[abstraction])
 
+    def do_step(self):
+        action = self.random_action
+        next_state, reward, done = self.step(action)
+        return reward, done
+
+    def do_episode(self):
+        done = False
+        ep_reward = 0
+        while not done:
+            reward, done = self.do_step()
+            ep_reward += reward
+        return ep_reward
+
