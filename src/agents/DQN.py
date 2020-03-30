@@ -71,7 +71,7 @@ class DQNAgent(BaseAgent):
             self.target_model.set_weights(self.model.get_weights())
             self.decay(self.params.DECAY_RATE)
 
-    def run_episode(self):
+    def do_step(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)

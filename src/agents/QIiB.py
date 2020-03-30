@@ -106,7 +106,7 @@ class QIiBAgent(QAgent):
         self.update(state, action, reward, next_state, done)
         self.meta_agent.update(state, ab_index, reward, next_state, done)
 
-    def run_episode(self):
+    def do_step(self):
         state = self.current_state
         ab_index, action = self.e_greedy_IiB_action(state)
         next_state, reward, done = self.step(action)

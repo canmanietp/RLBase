@@ -54,7 +54,7 @@ class DQNLiAAgent(DQNAgent):
             ab.replay()
         self.replay()
 
-    def run_episode(self):
+    def do_step(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
         abstraction, action = self.e_greedy_LiA_action(state)
         next_state, reward, done = self.step_LiA(abstraction, action)

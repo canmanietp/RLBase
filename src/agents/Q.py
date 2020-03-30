@@ -28,7 +28,7 @@ class QAgent(BaseAgent):
             self.Q_table[state][action] += self.params.ALPHA * (
                 reward + self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action])
 
-    def run_episode(self):
+    def do_step(self):
         state = self.current_state
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)

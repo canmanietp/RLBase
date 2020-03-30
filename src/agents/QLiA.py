@@ -73,7 +73,7 @@ class QLiAAgent(QAgent):
 
         self.update(state, ab_index, reward, next_state, done)
 
-    def run_episode(self):
+    def do_step(self):
         state = self.current_state
         ab_index, action = self.e_greedy_LIA_action(state)
         next_state, reward, done = self.step(action)

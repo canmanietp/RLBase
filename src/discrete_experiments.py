@@ -12,6 +12,7 @@ from envs.coffee import CoffeeEnv
 from agents.Q import QAgent
 from agents.QLiA import QLiAAgent
 from agents.QIiB import QIiBAgent
+from agents.MaxQ import MaxQAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
 
@@ -108,17 +109,20 @@ def get_params_taxi(alg):
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999
+    sub_spaces = None
+    options = None
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QIiB':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
-    else:
-        sub_spaces = []
+    elif alg == 'MaxQ':
+        # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
+        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params(env_name, alg=None):
@@ -164,6 +168,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 agents.append(QLiAAgent(env, params))
             elif alg == 'QIiB':
                 agents.append(QIiBAgent(env, params))
+            elif alg == 'MaxQ':
+                agents.append(MaxQAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -190,9 +196,12 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 done = False
                 ep_reward = 0
 
-                while not done:
-                    reward, done = agent.run_episode()
-                    ep_reward += reward
+                if agent.name == 'MaxQ':
+                    ep_reward, done = agent.do_episode()
+                else:
+                    while not done:
+                        reward, done = agent.do_step()
+                        ep_reward += reward
 
                 episode_rewards[j].append(ep_reward)
                 if verbose:

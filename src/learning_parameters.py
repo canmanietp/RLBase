@@ -8,7 +8,7 @@ class Parameters:
 
 
 class DiscreteParameters(Parameters):
-    def __init__(self, alpha, alpha_min, epsilon, epsilon_min, discount, decay, num_episodes, phi=None, phi_min=None, size_state_vars=None, sub_spaces=None):
+    def __init__(self, alpha, alpha_min, epsilon, epsilon_min, discount, decay, num_episodes, phi=None, phi_min=None, size_state_vars=None, sub_spaces=None, options=None):
         super().__init__(num_episodes, discount, epsilon, epsilon_min, decay)
         self.ALPHA = alpha
         self.ALPHA_MIN = alpha_min
@@ -16,6 +16,7 @@ class DiscreteParameters(Parameters):
         self.PHI_MIN = phi_min
         self.size_state_vars = size_state_vars
         self.sub_spaces = sub_spaces
+        self.options = options
 
 
 class ContinuousParameters(Parameters):

@@ -1,5 +1,5 @@
 import numpy as np
-import helpers.dict_access
+import helpers.unnest
 
 
 class BaseAgent:
@@ -38,7 +38,6 @@ class BaseAgent:
         self.current_state = state
 
     def step(self, action):
-        print("POINT H -----------------")
         next_state, reward, done, _ = self.env.step(action)
 
         self.sa_visits[self.current_state][action] += 1
