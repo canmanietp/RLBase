@@ -10,4 +10,4 @@ For Deep RL:
 - tensorflow
 
 **Example of running algorithms on Taxi:**
-`python3 run.py --algorithms 'Q' 'QLiA' 'QIiB' --env='taxi' --num_trials=10`
+`python3 run.py --algorithms 'Q' 'QLiA' 'QVP' --env='taxi' --num_trials=10`
