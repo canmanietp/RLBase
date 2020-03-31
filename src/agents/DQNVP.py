@@ -3,7 +3,7 @@ import copy, random
 from agents.DQN import DQNAgent, DQNMiniAgent
 
 
-class DQNQVPAgent(DQNAgent):
+class DQNVPAgent(DQNAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
         self.name = 'QVP'
@@ -21,7 +21,7 @@ class DQNQVPAgent(DQNAgent):
         self.num_samples = 10
         self.d0 = 1.  # For pseudo count, should be a parameter for QVP
 
-    def step_QVP(self, abstraction, action):
+    def step_VP(self, abstraction, action):
         next_state, reward, done, next_state_info = self.env.step(action)
         if 'AtariARIWrapper' in str(self.env):
             next_state = self.info_into_state(next_state_info, None)
@@ -36,7 +36,7 @@ class DQNQVPAgent(DQNAgent):
 
         self.meta_agent.decay(decay_rate)
 
-    def e_greedy_QVP_action(self, state):
+    def e_greedy_VP_action(self, state):
         ab_index = self.meta_agent.e_greedy_action(state)
 
         if random.uniform(0, 1) < self.params.PHI or len(self.memory) < self.num_samples:
@@ -57,16 +57,16 @@ class DQNQVPAgent(DQNAgent):
 
             return ab_index, np.argmax(qs)
 
-    def replay_DQNQVP(self):
+    def replay_DQNVP(self):
         self.replay()
         self.meta_agent.replay()
 
     def do_step(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
-        abstraction, action = self.e_greedy_QVP_action(state)
-        next_state, reward, done = self.step_QVP(abstraction, action)
+        abstraction, action = self.e_greedy_VP_action(state)
+        next_state, reward, done = self.step_VP(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
-            self.replay_DQNQVP()
+            self.replay_DQNVP()
         return reward, done
 
     def sample_states(self, state, abs_vars):
