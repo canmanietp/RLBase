@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
-from agents.DQNIiB import DQNIiBAgent
+from agents.DQNQVP import DQNQVPAgent
 from learning_parameters import ContinuousParameters
 from helpers import plotting
 
@@ -218,8 +218,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 agents.append(DQNAgent(env, params))
             elif alg == 'DQNLiA':
                 agents.append(DQNLiAAgent(env, params))
-            elif alg == 'DQNIiB':
-                agents.append(DQNIiBAgent(env, params))
+            elif alg == 'DQNQVP':
+                agents.append(DQNQVPAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 

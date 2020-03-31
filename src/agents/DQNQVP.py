@@ -3,10 +3,10 @@ import copy, random
 from agents.DQN import DQNAgent, DQNMiniAgent
 
 
-class DQNIiBAgent(DQNAgent):
+class DQNQVPAgent(DQNAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
-        self.name = 'IiB'
+        self.name = 'QVP'
 
         self.model = params.INIT_MODEL
         self.target_model = params.INIT_MODEL
@@ -19,9 +19,9 @@ class DQNIiBAgent(DQNAgent):
         self.meta_agent = DQNMiniAgent(self.env, meta_params)
 
         self.num_samples = 10
-        self.d0 = 1.  # For pseudo count, should be a parameter for IiB
+        self.d0 = 1.  # For pseudo count, should be a parameter for QVP
 
-    def step_IiB(self, abstraction, action):
+    def step_QVP(self, abstraction, action):
         next_state, reward, done, next_state_info = self.env.step(action)
         if 'AtariARIWrapper' in str(self.env):
             next_state = self.info_into_state(next_state_info, None)
@@ -36,7 +36,7 @@ class DQNIiBAgent(DQNAgent):
 
         self.meta_agent.decay(decay_rate)
 
-    def e_greedy_IiB_action(self, state):
+    def e_greedy_QVP_action(self, state):
         ab_index = self.meta_agent.e_greedy_action(state)
 
         if random.uniform(0, 1) < self.params.PHI or len(self.memory) < self.num_samples:
@@ -57,16 +57,16 @@ class DQNIiBAgent(DQNAgent):
 
             return ab_index, np.argmax(qs)
 
-    def replay_DQNIiB(self):
+    def replay_DQNQVP(self):
         self.replay()
         self.meta_agent.replay()
 
     def do_step(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
-        abstraction, action = self.e_greedy_IiB_action(state)
-        next_state, reward, done = self.step_IiB(abstraction, action)
+        abstraction, action = self.e_greedy_QVP_action(state)
+        next_state, reward, done = self.step_QVP(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
-            self.replay_DQNIiB()
+            self.replay_DQNQVP()
         return reward, done
 
     def sample_states(self, state, abs_vars):

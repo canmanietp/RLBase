@@ -6,10 +6,10 @@ import random
 import copy
 
 
-class QIiBAgent(QAgent):
+class QVPAgent(QAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
-        self.name = 'IiB'
+        self.name = 'VP'
         self.action_space = self.env.action_space.n
         meta_params = self.params
         meta_params.EPSILON = meta_params.PHI
@@ -49,7 +49,7 @@ class QIiBAgent(QAgent):
 
         self.meta_agent.decay(decay_rate)
 
-    def e_greedy_IiB_action(self, state):
+    def e_greedy_VP_action(self, state):
         ab_index = self.meta_agent.e_greedy_action(state)
 
         if random.uniform(0, 1) < self.params.PHI:
@@ -102,13 +102,13 @@ class QIiBAgent(QAgent):
 
             return ab_index, np.argmax(qs)
 
-    def update_IiB(self, state, ab_index, action, reward, next_state, done):
+    def update_VP(self, state, ab_index, action, reward, next_state, done):
         self.update(state, action, reward, next_state, done)
         self.meta_agent.update(state, ab_index, reward, next_state, done)
 
     def do_step(self):
         state = self.current_state
-        ab_index, action = self.e_greedy_IiB_action(state)
+        ab_index, action = self.e_greedy_VP_action(state)
         next_state, reward, done = self.step(action)
-        self.update_IiB(state, ab_index, action, reward, next_state, done)
+        self.update_VP(state, ab_index, action, reward, next_state, done)
         return reward, done

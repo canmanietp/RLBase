@@ -11,7 +11,7 @@ from envs.coffee import CoffeeEnv
 
 from agents.Q import QAgent
 from agents.QLiA import QLiAAgent
-from agents.QIiB import QIiBAgent
+from agents.QVP import QVPAgent
 from agents.MaxQ import MaxQAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
@@ -45,7 +45,7 @@ def get_params_coffeemail(alg):
     decay_rate = 0.99
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
-    elif alg == 'QIiB':
+    elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
     else:
         sub_spaces = []
@@ -67,7 +67,7 @@ def get_params_office(alg):
     decay_rate = 0.99
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 5]]
-    elif alg == 'QIiB':
+    elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     else:
         sub_spaces = []
@@ -91,7 +91,7 @@ def get_params_taxifuel(alg):
     options = None
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
-    elif alg == 'QIiB':
+    elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
@@ -118,7 +118,7 @@ def get_params_taxi(alg):
     options = None
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
-    elif alg == 'QIiB':
+    elif alg == 'QVP':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
@@ -169,8 +169,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 agents.append(QAgent(env, params))
             elif alg == 'QLiA':
                 agents.append(QLiAAgent(env, params))
-            elif alg == 'QIiB':
-                agents.append(QIiBAgent(env, params))
+            elif alg == 'QVP':
+                agents.append(QVPAgent(env, params))
             elif alg == 'MaxQ':
                 agents.append(MaxQAgent(env, params))
             else:
