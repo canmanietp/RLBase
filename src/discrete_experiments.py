@@ -79,14 +79,14 @@ def get_params_office(alg):
 
 
 def get_params_taxifuel(alg):
-    init_alpha = 0.5
-    alpha_min = 0.1
+    init_alpha = 0.7
+    alpha_min = 0.2
     init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.95
-    decay_rate = 0.999
+    decay_rate = 0.9999
     sub_spaces = None
     options = None
     if alg == 'QLiA':
@@ -99,7 +99,7 @@ def get_params_taxifuel(alg):
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 50001
+    num_episodes = 80001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)

@@ -103,7 +103,7 @@ class MaxQAgent(BaseAgent):
                 return (i == self.root) * -1
         return self.is_terminal(i, self.done, state)
 
-    def MAXQQ(self, i, s):  # i is action number
+    def MAXQQ(self, i, state):  # i is action number
         if self.done:
             i = self.root + 1  # to end recursion
         self.done = False
@@ -112,12 +112,12 @@ class MaxQAgent(BaseAgent):
             self.new_s, r, self.done, _ = self.env.step(i)
             self.sa_visits[self.current_state][i] += 1
             self.r_sum += r
-            self.V[i, s] += self.params.ALPHA * (r - self.V[i, s])
-            return [s]
+            self.V[i, state] += self.params.ALPHA * (r - self.V[i, state])
+            return [state]
         elif i <= self.root:
             while not self.is_terminal(i, self.done):  # a is new action num
-                a = self.e_greedy_action(s, i)
-                child_seq = self.MAXQQ(a, s)
+                a = self.e_greedy_action(state, i)
+                child_seq = self.MAXQQ(a, state)
                 child_seq = list(helpers.unnest.flatten(child_seq))
                 q2 = []
                 for k in self.options[i]:
@@ -125,13 +125,13 @@ class MaxQAgent(BaseAgent):
                 poss = list(self.options[i])
                 a_star = poss[int(np.argmax(q2))]
                 for N, sq in enumerate(child_seq):
-                    r = (self.params.DISCOUNT ** (N+1)) * (self.C[i][self.new_s][a_star] + self.V[a_star, self.new_s])
-                    r2 = (self.params.DISCOUNT ** (N+1)) * (self.pseudo_reward(self.new_s, i) + self.C_2[i][self.new_s][a_star] + self.V[a_star, sq])
+                    r = (self.params.DISCOUNT ** (N + 1)) * (self.C[i][self.new_s][a_star] + self.V[a_star, self.new_s])
+                    r2 = (self.params.DISCOUNT ** (N + 1)) * (self.pseudo_reward(self.new_s, i) + self.C_2[i][self.new_s][a_star] + self.V[a_star, sq])
                     self.C_2[i, sq, a] = (1 - self.params.ALPHA) * self.C_2[i, sq, a] + self.params.ALPHA * r2
                     self.C[i, sq, a] = (1 - self.params.ALPHA) * self.C[i, sq, a] + self.params.ALPHA * r
                 seq.insert(0, child_seq)
-                s = self.new_s
-                self.current_state = s
+                state = self.new_s
+                self.current_state = state
         return seq
 
     def do_episode(self):
