@@ -1,4 +1,5 @@
 venv/
 junk/
-*/tmp/
+*/tmp/*
 *.pyc
+*/__pycache__/

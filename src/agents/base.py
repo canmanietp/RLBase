@@ -57,7 +57,7 @@ class BaseAgent:
         return np.array(state)
 
     def pygame_obs_into_state(self, obs, abstraction):
-        state = list(helpers.dict_access.NestedDictValues(obs))
+        state = list(helpers.unnest.flatten(obs))
         if abstraction is None:
             return state
         else:

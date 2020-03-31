@@ -54,11 +54,12 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
     def __init__(self):
         self.desc = np.asarray(MAP, dtype='c')
 
-        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
+        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]  #, (3, 2)]
 
         nS = 7000
-        nR = 5
-        nC = 5
+        nR = self.num_rows = 5
+        nC = self.num_columns = 5
+        nF = self.fuel_levels = 14
         maxR = nR - 1
         maxC = nC - 1
         isd = np.zeros(nS)
@@ -68,7 +69,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
             for col in range(nC):
                 for pass_idx in range(len(locs) + 1):
                     for dest_idx in range(len(locs)):
-                        for fuel in range(14):
+                        for fuel in range(nF):
                             state = self.encode(row, col, pass_idx, dest_idx, fuel)
                             if pass_idx < 4 and pass_idx != dest_idx:
                                 isd[state] += 1

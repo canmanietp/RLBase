@@ -34,7 +34,7 @@ class MaxQAgent(BaseAgent):
 
         self.done = False
         self.r_sum = 0
-        self.new_s = copy.copy(self.current_state)
+        self.new_s = self.current_state
         return self.current_state
 
     def is_primitive(self, action):
@@ -49,30 +49,30 @@ class MaxQAgent(BaseAgent):
         if state is None:
             state = self.current_state
 
-        decoded = list(self.env.decode(state))
+        decoded_state = list(self.env.decode(state))
 
         if 'TaxiEnv' in str(self.env):
             if a == 9:
-                return decoded[2] < 4
+                return decoded_state[2] < 4
             elif a == 8:
-                return decoded[2] >= 4
+                return decoded_state[2] >= 4
             elif a == 7:
-                return decoded[2] >= 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[3]]
+                return decoded_state[2] >= 4 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[3]]
             elif a == 6:
-                return decoded[2] < 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[2]]
+                return decoded_state[2] < 4 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[2]]
         elif 'TaxiFuelEnv' in str(self.env):
             if a == 12:
-                return decoded[4] >= 13
+                return decoded_state[4] >= 13
             elif a == 11:
-                return decoded[2] < 4
+                return decoded_state[2] < 4
             elif a == 10:
-                return decoded[2] >= 4
+                return decoded_state[2] >= 4
             elif a == 9:
-                return (decoded[0], decoded[1]) == (3, 2)
+                return (decoded_state[0], decoded_state[1]) == (3, 2)
             elif a == 8:
-                return decoded[2] >= 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[3]]
+                return decoded_state[2] >= 4 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[3]]
             elif a == 7:
-                return decoded[2] < 4 and (decoded[0], decoded[1]) == self.env.locs[decoded[2]]
+                return decoded_state[2] < 4 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[2]]
         else:
             print("Error: Must write MaxQ termination function for new environment")
             quit()
@@ -98,18 +98,19 @@ class MaxQAgent(BaseAgent):
 
     def pseudo_reward(self, state, i):
         if 'TaxiFuelEnv' in str(self.env):
-            taxirow, taxicol, passidx, destidx, fuel = list(self.env.decode(state))
-            if fuel == 0:
-                return -10 if i == self.root else 0
+            decoded = list(self.env.decode(state))
+            if decoded[4] == 0:
+                return (i == self.root) * -1
         return self.is_terminal(i, self.done, state)
 
-    def MAXQQ(self, i, s):
+    def MAXQQ(self, i, s):  # i is action number
         if self.done:
             i = self.root + 1  # to end recursion
         self.done = False
         seq = []
         if self.is_primitive(i):
             self.new_s, r, self.done, _ = self.env.step(i)
+            self.sa_visits[self.current_state][i] += 1
             self.r_sum += r
             self.V[i, s] += self.params.ALPHA * (r - self.V[i, s])
             return [s]
@@ -123,14 +124,14 @@ class MaxQAgent(BaseAgent):
                     q2.append((self.V[k, self.new_s] + self.C_2[i][self.new_s][k]))
                 poss = list(self.options[i])
                 a_star = poss[int(np.argmax(q2))]
-                for n, sq in enumerate(child_seq):
-                    r = (self.params.DISCOUNT ** (n+1)) * (self.C[i][self.new_s][a_star] + self.V[a_star, self.new_s])
-                    r2 = (self.params.DISCOUNT ** (n+1)) * (self.pseudo_reward(self.new_s, i) + self.C_2[i][self.new_s][a_star] + self.V[a_star, sq])
-                    self.C[i, sq, a] = (1 - self.params.ALPHA) * self.C[i, sq, a] + self.params.ALPHA * r
+                for N, sq in enumerate(child_seq):
+                    r = (self.params.DISCOUNT ** (N+1)) * (self.C[i][self.new_s][a_star] + self.V[a_star, self.new_s])
+                    r2 = (self.params.DISCOUNT ** (N+1)) * (self.pseudo_reward(self.new_s, i) + self.C_2[i][self.new_s][a_star] + self.V[a_star, sq])
                     self.C_2[i, sq, a] = (1 - self.params.ALPHA) * self.C_2[i, sq, a] + self.params.ALPHA * r2
+                    self.C[i, sq, a] = (1 - self.params.ALPHA) * self.C[i, sq, a] + self.params.ALPHA * r
                 seq.insert(0, child_seq)
                 s = self.new_s
-                self.current_state = self.new_s
+                self.current_state = s
         return seq
 
     def do_episode(self):

@@ -94,12 +94,12 @@ def get_params_taxifuel(alg):
     elif alg == 'QIiB':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
-        # south, north, east, west, pickup, dropoff, fillup, gotoSource, gotoDestination, gotoFuel,
-        # get, put, refuel, root
+        # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
+        # get 10, put 11, refuel 12, root 13
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 50000
+    num_episodes = 50001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -122,7 +122,7 @@ def get_params_taxi(alg):
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
-        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {9, 8}, ]
+        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -156,8 +156,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
     date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
-    env, params = get_params(env_name)
-    average_every = int(params.num_episodes / 100)
+    env, params = [], []
 
     trial_rewards = []
     trial_times = []
@@ -166,7 +165,6 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
         agents = []
         for alg in algs:
             env, params = get_params(env_name, alg)
-            average_every = int(params.num_episodes / 100)
             if alg == 'Q':
                 agents.append(QAgent(env, params))
             elif alg == 'QLiA':
@@ -199,16 +197,16 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                     agent.set_state(state)
 
                 ep_reward = agent.do_episode()
-
                 episode_rewards[j].append(ep_reward)
+
                 if verbose:
-                    print("{} Episode {}, reward={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward))
+                    print("{} Episode {}, reward={}, Last 100 average={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward, np.mean(episode_rewards[j][-100:])))
                 agent.decay(agent.params.DECAY_RATE)
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
 
-            plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
+            plt.plot(plotting.moving_average(episode_rewards[j], int(params.num_episodes / 100)), label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
@@ -221,7 +219,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
         df.to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
 
     for trial in np.average(trial_rewards, axis=0):
-        plt.plot(plotting.moving_average(trial, average_every))
+        plt.plot(plotting.moving_average(trial, int(params.num_episodes / 100)))
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
 
@@ -240,11 +238,11 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                    "phi_min={}\n"
                    "discount={}\n"
                    "sub_spaces={}\n"
+                   "options={}\n"
                    "size_state_vars={}".format(env, num_trials,
                                                params.num_episodes, trial_times, params.ALPHA, params.ALPHA_MIN,
                                                params.EPSILON, params.EPSILON_MIN,
                                                params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                               params.sub_spaces, params.size_state_vars))
+                                               params.sub_spaces, params.options, params.size_state_vars))
         file.close()
-
     return
