@@ -27,6 +27,7 @@ BIGMAP = [
     "+-------------+",
 ]
 
+
 class CoffeeMailEnv(discrete.DiscreteEnv):
     """
     The Coffee Mail problem

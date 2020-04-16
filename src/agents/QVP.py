@@ -9,7 +9,7 @@ import copy
 class QVPAgent(QAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
-        self.name = 'VP'
+        self.name = 'QVP'
         self.action_space = self.env.action_space.n
         meta_params = self.params
         meta_params.EPSILON = meta_params.PHI

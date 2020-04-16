@@ -130,6 +130,53 @@ def get_params_mspacman():
                                 num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
                                 sub_spaces=sub_spaces)
 
+def get_params_coffeemail():
+    memory_size = 10000
+    batch_size = 32
+    init_epsilon = 0.5
+    epsilon_min = 0.001
+    init_phi = 0.5
+    phi_min = 0.001
+    discount = 0.99
+    decay_rate = 0.99
+    num_episodes = 100
+    retrain_steps = 200
+    observation_space = 6
+    action_space = 4
+    learning_rate = 0.001
+    # --- Regular DQN model (input: full state, output: action)
+    model = Sequential()
+    model.add(Dense(24, input_dim=observation_space, activation='relu'))
+    model.add(Dense(24, activation='relu'))
+    model.add(Dense(action_space, activation='linear'))
+    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    # for abstraction methods
+    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 5], [0, 1, 2, 3, 4, 5]]
+    # -- Model for choosing sub_space agent (input: full state, output: sub_agent)
+    meta_model = Sequential()
+    meta_model.add(Dense(24, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(24, activation='relu'))
+    meta_model.add(Dense(len(sub_spaces), activation='linear'))
+    meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    # --- DQN model for sub_space1 (input: sub_space1, output: action)
+    sub_model1 = Sequential()
+    sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
+    sub_model1.add(Dense(24, activation='relu'))
+    sub_model1.add(Dense(action_space, activation='linear'))
+    sub_model1.compile(loss='mse', optimizer=Adam(lr=0.01))
+    # --- DQN model for sub_space1 (input: sub_space2, output: action)
+    sub_model2 = Sequential()
+    sub_model2.add(Dense(24, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(24, activation='relu'))
+    sub_model2.add(Dense(action_space, activation='linear'))
+    sub_model2.compile(loss='mse', optimizer=Adam(lr=0.01))
+    sub_models = [sub_model1, sub_model2]
+    return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
+                                batch_size=batch_size,
+                                learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                                discount=discount, decay=decay_rate, observation_space=observation_space, action_space=action_space,
+                                num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
+                                sub_spaces=sub_spaces)
 
 def get_params_cartpole():
     memory_size = 10000
@@ -152,7 +199,6 @@ def get_params_cartpole():
     model.add(Dense(24, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    # -- Model for choosing sub_space agent (input: full state, output: sub_agent)
     # -- Model for choosing sub_space agent (input: full state, output: sub_agent)
     meta_model = Sequential()
     meta_model.add(Dense(24, input_dim=observation_space, activation='relu'))
@@ -179,6 +225,10 @@ def get_params(env_name, alg=None):
         from envs.cartpole import CartPoleEnv
         env = CartPoleEnv()
         params = get_params_cartpole()
+    elif env_name == 'coffeemail':
+        from envs.coffeemail_continuous import CoffeeMailContinuousEnv
+        env = CoffeeMailContinuousEnv()
+        params = get_params_coffeemail()
     elif env_name == 'mspacman':
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
         env = AtariARIWrapper(gym.make('MsPacmanNoFrameskip-v4'))
@@ -206,7 +256,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name)
-    average_every = 1
+    average_every = int(params.num_episodes / 100)
 
     trial_rewards = []
     trial_times = []
@@ -227,7 +277,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         starting_states = []
         times_to_run = []
 
-        # plt.figure()
+        plt.figure()
 
         print("{} -- Starting Trial {} -- ".format(datetime.datetime.now().strftime("%H:%M:%S"), t + 1))
         for j, agent in enumerate(agents):
@@ -250,6 +300,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 while not done:
                     reward, done = agent.do_step()
                     ep_reward += reward
+                    agent.env.render()
 
                 episode_rewards[j].append(ep_reward)
                 writer.writerow([i, ep_reward])
@@ -262,19 +313,19 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
 
-            # plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
-            # plt.legend([a.name for a in agents], loc='lower right')
-            # plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
+            plt.plot(plotting.moving_average(episode_rewards[j], average_every), label=agent.name)
+            plt.legend([a.name for a in agents], loc='lower right')
+            plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
         # plt.close()
         trial_rewards.append(episode_rewards)
         pd.DataFrame(np.transpose(episode_rewards)).to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
 
-    # for trial in np.average(trial_rewards, axis=0):
-    #     plt.plot(plotting.moving_average(trial, average_every))
-    #
-    # plt.legend([a for a in algs], loc='lower right')
-    # plt.savefig('{}/final'.format(exp_dir))
+    for trial in np.average(trial_rewards, axis=0):
+        plt.plot(plotting.moving_average(trial, average_every))
+
+    plt.legend([a for a in algs], loc='lower right')
+    plt.savefig('{}/final'.format(exp_dir))
 
     for ia, alg in enumerate(algs):
         env, params = get_params(env_name, alg)

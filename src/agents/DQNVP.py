@@ -6,7 +6,7 @@ from agents.DQN import DQNAgent, DQNMiniAgent
 class DQNVPAgent(DQNAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
-        self.name = 'QVP'
+        self.name = 'DQNVP'
 
         self.model = params.INIT_MODEL
         self.target_model = params.INIT_MODEL
@@ -19,7 +19,7 @@ class DQNVPAgent(DQNAgent):
         self.meta_agent = DQNMiniAgent(self.env, meta_params)
 
         self.num_samples = 10
-        self.d0 = 1.  # For pseudo count, should be a parameter for QVP
+        self.d0 = .1  # For pseudo count, should be a parameter for QVP
 
     def step_VP(self, abstraction, action):
         next_state, reward, done, next_state_info = self.env.step(action)
@@ -93,8 +93,9 @@ class DQNVPAgent(DQNAgent):
                     min_max[iv][1] = var
         return min_max
 
+    # THIS APPEARS TO BE WRONG
     def pseudo_count(self, state):
-        count = [a for a in list(range(self.action_space))]
+        count = [0. for a in list(range(self.action_space))]
         for s, a, _, _, _ in self.memory:
             norm = 0.
             for p, sd in enumerate(state[0]):
