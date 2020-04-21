@@ -19,7 +19,7 @@ class DQNVPAgent(DQNAgent):
         self.meta_agent = DQNMiniAgent(self.env, meta_params)
 
         self.num_samples = 10
-        self.d0 = .1  # For pseudo count, should be a parameter for QVP
+        self.d0 = 1.  # For pseudo count, should be a parameter for QVP
 
     def step_VP(self, abstraction, action):
         next_state, reward, done, next_state_info = self.env.step(action)
@@ -67,6 +67,8 @@ class DQNVPAgent(DQNAgent):
         next_state, reward, done = self.step_VP(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
             self.replay_DQNVP()
+        if done:
+            self.decay(self.params.DECAY_RATE)
         return reward, done
 
     def sample_states(self, state, abs_vars):

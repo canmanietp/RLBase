@@ -17,13 +17,13 @@ class CoffeeMailContinuousEnv(gym.Env):
         self.force = 100.  # Newton
         self.timestep = 1.  # second
         self.acceleration = [0, 0]  # [x, y] m/s2
-        self.acceleration_decay = 0.8
+        self.acceleration_decay = 0.9
         self.boundary_min = 0.
         self.boundary_max = 100.
         self.coffee_loc = [10, 20]
         self.mail_loc = [70, 90]
         self.buffer_room = 10
-        self.officeA_loc = [self.boundary_min + self.buffer_room*1.5, self.boundary_max - self.buffer_room/2.]
+        self.officeA_loc = [self.boundary_min, self.boundary_max - self.buffer_room/2.]
         self.officeB_loc = [self.boundary_max - self.buffer_room/2., self.boundary_min + self.buffer_room*1.5]
 
         self.action_space = spaces.Discrete(4)
@@ -89,17 +89,17 @@ class CoffeeMailContinuousEnv(gym.Env):
         agent_has_mail = agent_has_mail or mail_reached
 
         if border_hit and not(officeA_reached or officeB_reached):
-            reward = -10
+            reward = -1  # 0
         else:
             reward = -1
 
         if officeA_reached and A_wants_coffee and agent_has_coffee:
-            reward = 100.
+            reward = 20.
             agent_has_coffee = False
             A_wants_coffee = False
 
         elif officeB_reached and B_wants_coffee and agent_has_coffee:
-            reward = 100.
+            reward = 20.
             agent_has_coffee = False
             B_wants_coffee = False
 
@@ -123,8 +123,8 @@ class CoffeeMailContinuousEnv(gym.Env):
         agent_location = self.np_random.uniform(low=self.boundary_min, high=self.boundary_max, size=(2,))
         agent_has_coffee = 0
         agent_has_mail = 0
-        A_wants_coffee = np.random.randint(0, 2)
         B_wants_coffee = np.random.randint(0, 2)
+        A_wants_coffee = not(B_wants_coffee)
         self.state = [agent_location[0], agent_location[1], agent_has_coffee, agent_has_mail, A_wants_coffee, B_wants_coffee]
         self.steps_beyond_done = None
         self.episode_history = []
@@ -132,8 +132,8 @@ class CoffeeMailContinuousEnv(gym.Env):
         return np.array(self.state)
 
     def render(self, mode='human'):
-        screen_width = self.boundary_max + self.buffer_room
-        screen_height = self.boundary_max + self.buffer_room
+        screen_width = self.boundary_max
+        screen_height = self.boundary_max
 
         object_width = self.buffer_room
         object_height = self.buffer_room
@@ -167,17 +167,17 @@ class CoffeeMailContinuousEnv(gym.Env):
             officeB.add_attr(self.officeBtrans)
             self.viewer.add_geom(officeA)
             self.viewer.add_geom(officeB)
-            border = rendering.PolyLine([(self.buffer_room/2., self.buffer_room/2.),
-                                         (self.boundary_max + self.buffer_room/2., self.buffer_room/2.),
-                                         (self.buffer_room/2., self.buffer_room/2.),
-                                         (self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
-                                         (self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
-                                         (self.boundary_max + self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
-                                         (self.boundary_max + self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
-                                         (self.boundary_max + self.buffer_room/2., self.buffer_room/2.)], False)
-            self.bordertrans = rendering.Transform()
-            border.add_attr(self.bordertrans)
-            self.viewer.add_geom(border)
+            # border = rendering.PolyLine([(self.buffer_room/2., self.buffer_room/2.),
+            #                              (self.boundary_max + self.buffer_room/2., self.buffer_room/2.),
+            #                              (self.buffer_room/2., self.buffer_room/2.),
+            #                              (self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
+            #                              (self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
+            #                              (self.boundary_max + self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
+            #                              (self.boundary_max + self.buffer_room/2., self.boundary_max + self.buffer_room/2.),
+            #                              (self.boundary_max + self.buffer_room/2., self.buffer_room/2.)], False)
+            # self.bordertrans = rendering.Transform()
+            # border.add_attr(self.bordertrans)
+            # self.viewer.add_geom(border)
 
         if self.state is None: return None
 
@@ -194,8 +194,6 @@ class CoffeeMailContinuousEnv(gym.Env):
                 self.viewer.geoms[4].set_color(.5, .1, .8)
             else:
                 self.viewer.geoms[4].set_color(0, 0., 0.)
-
-
 
         self.officeAtrans.set_translation(self.officeA_loc[0], self.officeA_loc[1])
         self.officeBtrans.set_translation(self.officeB_loc[0], self.officeB_loc[1])

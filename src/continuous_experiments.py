@@ -133,14 +133,14 @@ def get_params_mspacman():
 def get_params_coffeemail():
     memory_size = 10000
     batch_size = 32
-    init_epsilon = 0.5
+    init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
-    discount = 0.99
+    discount = 0.9
     decay_rate = 0.99
-    num_episodes = 100
-    retrain_steps = 200
+    num_episodes = 200
+    retrain_steps = 50
     observation_space = 6
     action_space = 4
     learning_rate = 0.001
@@ -151,7 +151,7 @@ def get_params_coffeemail():
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # for abstraction methods
-    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 5], [0, 1, 2, 3, 4, 5]]
+    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 5]]
     # -- Model for choosing sub_space agent (input: full state, output: sub_agent)
     meta_model = Sequential()
     meta_model.add(Dense(24, input_dim=observation_space, activation='relu'))
@@ -163,13 +163,13 @@ def get_params_coffeemail():
     sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
     sub_model1.add(Dense(24, activation='relu'))
     sub_model1.add(Dense(action_space, activation='linear'))
-    sub_model1.compile(loss='mse', optimizer=Adam(lr=0.01))
+    sub_model1.compile(loss='mse', optimizer=Adam(lr=0.001))
     # --- DQN model for sub_space1 (input: sub_space2, output: action)
     sub_model2 = Sequential()
     sub_model2.add(Dense(24, input_dim=len(sub_spaces[1]), activation='relu'))
     sub_model2.add(Dense(24, activation='relu'))
     sub_model2.add(Dense(action_space, activation='linear'))
-    sub_model2.compile(loss='mse', optimizer=Adam(lr=0.01))
+    sub_model2.compile(loss='mse', optimizer=Adam(lr=0.001))
     sub_models = [sub_model1, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
@@ -256,7 +256,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name)
-    average_every = int(params.num_episodes / 100)
+    average_every = int(params.num_episodes / 10)
 
     trial_rewards = []
     trial_times = []
@@ -265,11 +265,11 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
         agents = []
         for alg in algs:
             if alg == 'DQN':
-                agents.append(DQNAgent(env, params))
+                agents.append(DQNAgent(env, copy.copy(params)))
             elif alg == 'DQNLiA':
-                agents.append(DQNLiAAgent(env, params))
+                agents.append(DQNLiAAgent(env, copy.copy(params)))
             elif alg == 'DQNVP':
-                agents.append(DQNVPAgent(env, params))
+                agents.append(DQNVPAgent(env, copy.copy(params)))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -300,7 +300,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
                 while not done:
                     reward, done = agent.do_step()
                     ep_reward += reward
-                    agent.env.render()
+                    # agent.env.render()
 
                 episode_rewards[j].append(ep_reward)
                 writer.writerow([i, ep_reward])
@@ -317,7 +317,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False):
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
-        # plt.close()
+        plt.close()
         trial_rewards.append(episode_rewards)
         pd.DataFrame(np.transpose(episode_rewards)).to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
 

@@ -13,6 +13,7 @@ from agents.Q import QAgent
 from agents.QLiA import QLiAAgent
 from agents.QVP import QVPAgent
 from agents.MaxQ import MaxQAgent
+from agents.QLiA_T import QLiA_TAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
 
@@ -45,6 +46,8 @@ def get_params_coffeemail(alg):
     decay_rate = 0.99
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
+    if alg == 'QLiA_T':
+        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
     else:
@@ -67,6 +70,8 @@ def get_params_office(alg):
     decay_rate = 0.99
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 5]]
+    elif alg == 'QLiA_T':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 4], [0, 1, 3], [0, 1, 3, 5]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     else:
@@ -93,6 +98,8 @@ def get_params_taxifuel(alg):
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
+    elif alg == 'QLiA_T':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
         # get 10, put 11, refuel 12, root 13
@@ -118,13 +125,15 @@ def get_params_taxi(alg):
     options = None
     if alg == 'QLiA':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'QLiA_T':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 300
+    num_episodes = 600
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -173,6 +182,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 agents.append(QVPAgent(env, params))
             elif alg == 'MaxQ':
                 agents.append(MaxQAgent(env, params))
+            elif alg == 'QLiA_T':
+                agents.append(QLiA_TAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 

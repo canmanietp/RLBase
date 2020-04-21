@@ -60,4 +60,6 @@ class DQNLiAAgent(DQNAgent):
         next_state, reward, done = self.step_LiA(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
             self.replay_DQNLIA()
+        if done:
+            self.decay(self.params.DECAY_RATE)
         return reward, done

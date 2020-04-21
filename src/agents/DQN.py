@@ -67,15 +67,17 @@ class DQNAgent(BaseAgent):
 
         self.until_retrain += 1
         if self.until_retrain >= self.retrain_steps:
+
             self.until_retrain = 0
             self.target_model.set_weights(self.model.get_weights())
-            self.decay(self.params.DECAY_RATE)
 
     def do_step(self):
         state = np.reshape(self.current_state, [1, self.params.observation_space])
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
         self.replay()
+        if done:
+            self.decay(self.params.DECAY_RATE)
         return reward, done
 
 
