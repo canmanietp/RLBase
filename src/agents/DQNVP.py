@@ -87,7 +87,6 @@ class DQNVPAgent(DQNAgent):
                 else:
                     add_state.append(ranges[iv][0] + range_bin_width * n)
             states.append(np.reshape(add_state, [1, self.params.observation_space]))
-        print(states)
         return states
 
     def get_ranges(self):
