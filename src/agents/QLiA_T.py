@@ -11,6 +11,7 @@ class QLiA_TAgent(QAgent):
         self.name = 'LiA_T'
         self.sub_agents = []
         self.params = params
+        self.fixed_discount = params.DISCOUNT
 
         for ab in params.sub_spaces:
             ss = 1
@@ -27,6 +28,7 @@ class QLiA_TAgent(QAgent):
 
         self.active_sub_agent = None
         self.active_reward = [0 for s in self.sub_agents]
+        self.active_steps = [0 for s in self.sub_agents]
         self.inactive_reward = [0 for s in self.sub_agents]
         self.entry_state = None
 
@@ -83,6 +85,7 @@ class QLiA_TAgent(QAgent):
 
             next_state, reward, done = self.step(action)
             self.active_reward[self.active_sub_agent] += reward
+            self.active_steps[self.active_sub_agent] += 1
             next_state_vars = self.state_decodings[next_state]
 
             for ix, x in enumerate(self.sub_agents):
@@ -95,22 +98,27 @@ class QLiA_TAgent(QAgent):
 
                 if done:
                     self.inactive_reward[ix] = 0
-                    self.active_reward[ix] = 0
+                    # self.active_reward[ix] = 0
+                    # self.active_steps[ix] = 0
 
             if done:
                 if self.entry_state is not None:
+                    self.params.DISCOUNT = self.fixed_discount**self.active_steps[self.active_sub_agent]
                     self.update(self.entry_state, self.active_sub_agent, self.active_reward[self.active_sub_agent],
                                 self.current_state, True)
                 self.entry_state = None
                 self.active_reward[self.active_sub_agent] = 0
+                self.active_steps[self.active_sub_agent] = 0
                 self.inactive_reward[self.active_sub_agent] = 0
                 self.active_sub_agent = None
 
             return reward, done
         else:
             if self.entry_state is not None and self.active_sub_agent is not None:
+                self.params.DISCOUNT = self.fixed_discount ** self.active_steps[self.active_sub_agent]
                 self.update(self.entry_state, self.active_sub_agent, self.active_reward[self.active_sub_agent], self.current_state, False)
                 self.active_reward[self.active_sub_agent] = 0
+                self.active_steps[self.active_sub_agent] = 0
                 self.inactive_reward[self.active_sub_agent] = 0
             self.entry_state = self.current_state
             return 0, False

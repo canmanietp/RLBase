@@ -51,9 +51,9 @@ class CoffeeMailContinuousEnv(gym.Env):
         posx = state[0] + (self.timestep ** 2 * acceleration[0])
         posy = state[1] + (self.timestep ** 2 * acceleration[1])
         agent_has_coffee = bool(state[2])
-        agent_has_mail = bool(state[3])
-        A_wants_coffee = bool(state[4])
-        B_wants_coffee = bool(state[5])
+        # agent_has_mail = bool(state[3])
+        who_wants_coffee = bool(state[3])
+        # B_wants_coffee = bool(state[5])
 
         if posx > self.boundary_max:
             posx = self.boundary_max
@@ -83,30 +83,33 @@ class CoffeeMailContinuousEnv(gym.Env):
                or posx == self.boundary_min \
                or posy == self.boundary_min
 
-        done = not(A_wants_coffee or B_wants_coffee)
+        done = False # not(A_wants_coffee or B_wants_coffee)
 
         agent_has_coffee = agent_has_coffee or coffee_reached
-        agent_has_mail = agent_has_mail or mail_reached
+        # agent_has_mail = agent_has_mail or mail_reached
 
         if border_hit and not(officeA_reached or officeB_reached):
             reward = -1  # 0
         else:
             reward = -1
 
-        if officeA_reached and A_wants_coffee and agent_has_coffee:
+        if officeA_reached and who_wants_coffee and agent_has_coffee:
             reward = 20.
             agent_has_coffee = False
             A_wants_coffee = False
+            done = True
 
-        elif officeB_reached and B_wants_coffee and agent_has_coffee:
+        elif officeB_reached and not(who_wants_coffee) and agent_has_coffee:
             reward = 20.
             agent_has_coffee = False
             B_wants_coffee = False
+            done = True
 
-        A_wants_coffee = A_wants_coffee and not(officeA_reached and agent_has_coffee)
-        B_wants_coffee = B_wants_coffee and not(officeB_reached and agent_has_coffee)
+        # A_wants_coffee = A_wants_coffee and not(officeA_reached and agent_has_coffee)
+        # B_wants_coffee = B_wants_coffee and not(officeB_reached and agent_has_coffee)
 
-        self.state = [posx, posy, agent_has_coffee, agent_has_mail, A_wants_coffee, B_wants_coffee]
+        self.state = [posx, posy, agent_has_coffee, who_wants_coffee]
+        # self.state = [posx, posy, agent_has_coffee, agent_has_mail, A_wants_coffee, B_wants_coffee]
 
         # if self.steps_beyond_done is None:
         #     self.steps_beyond_done = 0
@@ -122,10 +125,11 @@ class CoffeeMailContinuousEnv(gym.Env):
     def reset(self):
         agent_location = self.np_random.uniform(low=self.boundary_min, high=self.boundary_max, size=(2,))
         agent_has_coffee = 0
-        agent_has_mail = 0
-        B_wants_coffee = np.random.randint(0, 2)
-        A_wants_coffee = not(B_wants_coffee)
-        self.state = [agent_location[0], agent_location[1], agent_has_coffee, agent_has_mail, A_wants_coffee, B_wants_coffee]
+        # agent_has_mail = 0
+        who_wants_coffee = np.random.randint(0, 2)
+        # A_wants_coffee = not(B_wants_coffee)
+        self.state = [agent_location[0], agent_location[1], agent_has_coffee, who_wants_coffee]
+        # self.state = [agent_location[0], agent_location[1], agent_has_coffee, agent_has_mail, A_wants_coffee, B_wants_coffee]
         self.steps_beyond_done = None
         self.episode_history = []
         self.acceleration = [0, 0]
@@ -186,21 +190,19 @@ class CoffeeMailContinuousEnv(gym.Env):
                 self.viewer.geoms[0].set_color(.5, .1, .8)
             else:
                 self.viewer.geoms[0].set_color(0., 0., 0.)
-            if self.state[4]:  # A wants coffee
+            if self.state[3]:  # A wants coffee
                 self.viewer.geoms[3].set_color(.5, .1, .8)
             else:
                 self.viewer.geoms[3].set_color(0, 0., 0.)
-            if self.state[5]:  # B wants coffee
+            if not(self.state[3]):  # B wants coffee
                 self.viewer.geoms[4].set_color(.5, .1, .8)
             else:
                 self.viewer.geoms[4].set_color(0, 0., 0.)
 
         self.officeAtrans.set_translation(self.officeA_loc[0], self.officeA_loc[1])
         self.officeBtrans.set_translation(self.officeB_loc[0], self.officeB_loc[1])
-
         self.coffeetrans.set_translation(self.coffee_loc[0], self.coffee_loc[1])
         self.mailtrans.set_translation(self.mail_loc[0], self.mail_loc[1])
-
         self.agenttrans.set_translation(self.state[0], self.state[1])
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')

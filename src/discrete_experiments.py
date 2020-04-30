@@ -1,6 +1,6 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 import time, os, datetime
 
 from envs.taxi import TaxiEnv
@@ -162,7 +162,7 @@ def get_params(env_name, alg=None):
     return env, params
 
 
-def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
+def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=False):
     date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)

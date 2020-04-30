@@ -6,8 +6,9 @@ if __name__ == "__main__":
                                      description='Runs a multi-task RL experiment over a particular environment.')
     parser.add_argument('--algorithms', nargs='+', default=['Q','QAMS'], type=str)
     parser.add_argument('--env', default='taxi', type=str)
-    parser.add_argument('--num_trials', default=2, type=int)
+    parser.add_argument('--num_trials', default=1, type=int)
     parser.add_argument('--verbose', default=False, type=str)
+    parser.add_argument('--render', default=False, type=str)
 
     args = parser.parse_args()
 
@@ -18,12 +19,13 @@ if __name__ == "__main__":
     env_name = args.env
     num_trials = args.num_trials
     verbose = bool(args.verbose)
+    render = bool(args.render)
 
     alg_strings = '\t'.join(alg_names)
 
     if 'DQN' in alg_strings:
         import continuous_experiments
-        continuous_experiments.run_continuous_experiment(num_trials, env_name, alg_names, verbose)
+        continuous_experiments.run_continuous_experiment(num_trials, env_name, alg_names, verbose, render)
     else:
         import discrete_experiments
-        discrete_experiments.run_discrete_experiment(num_trials, env_name, alg_names, verbose)
+        discrete_experiments.run_discrete_experiment(num_trials, env_name, alg_names, verbose, render)
