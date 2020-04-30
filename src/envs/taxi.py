@@ -125,6 +125,30 @@ class TaxiEnv(discrete.DiscreteEnv):
         discrete.DiscreteEnv.__init__(
             self, num_states, num_actions, P, initial_state_distrib)
 
+    def local_reward(self, state, action, seen_state_vars):
+        if seen_state_vars == [0, 1, 2, 3]:
+            return self.P[state][action][0][2]
+        row, col, pass_idx, dest_idx = list(self.decode(state))
+        if seen_state_vars == [0, 1, 2]:
+            if pass_idx < 4 and action == 4 and ([row, col] == self.locs[pass_idx]):
+                return 10
+            elif action in [4, 5]:
+                return -10
+            else:
+                return -1
+        if seen_state_vars == [0, 1, 3]:
+            if pass_idx == 4 and action == 5 and ([row, col] == self.locs[dest_idx]):
+                return 10
+            elif action in [4, 5]:
+                return -10
+            else:
+                return -1
+        else:
+            if action in [4, 5]:
+                return -10
+            else:
+                return -1
+
     def encode(self, taxi_row, taxi_col, pass_loc, dest_idx):
         # (5) 5, 5, 4
         i = taxi_row

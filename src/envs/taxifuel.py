@@ -54,7 +54,8 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
     def __init__(self):
         self.desc = np.asarray(MAP, dtype='c')
 
-        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]  #, (3, 2)]
+        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
+        self.fuel_loc = (3, 2)
 
         nS = 7000
         nR = self.num_rows = 5
@@ -105,7 +106,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
                                     else:
                                         reward = -10
                                 elif a == 6:  # fuel
-                                    if taxiloc == (3, 2):
+                                    if taxiloc == self.fuel_loc:
                                         new_fuel = 13
                                     else:
                                         reward = -10
@@ -128,6 +129,52 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
         self.s = self.encode(taxi_row, taxi_col, pass_loc, dest_loc, fuel)
         self.lastaction = None
         return self.s
+
+    def local_reward(self, state, action, seen_state_vars):
+        if seen_state_vars == [0, 1, 2, 3, 4]:
+            return self.P[state][action][0][2]
+        row, col, pass_idx, dest_idx, fuel = list(self.decode(state))
+        if seen_state_vars == [0, 1, 2, 4]:
+            if fuel == 0:
+                return - 20
+            if pass_idx < 4 and action == 4 and ([row, col] == self.locs[pass_idx]):
+                return 10
+            if action == 6 and [row, col] == self.fuel_loc:
+                return -1
+            if action in [4, 5, 6]:
+                return -10
+            else:
+                return -1
+        if seen_state_vars == [0, 1, 3, 4]:
+            if fuel == 0:
+                return - 20
+            if pass_idx == 4 and action == 5 and ([row, col] == self.locs[dest_idx]):
+                return 10
+            if action == 6 and [row, col] == self.fuel_loc:
+                return -1
+            if action in [4, 5, 6]:
+                return -10
+            else:
+                return -1
+        if seen_state_vars == [0, 1, 2]:
+            if pass_idx < 4 and action == 4 and ([row, col] == self.locs[pass_idx]):
+                return 10
+            elif action in [4, 5, 6]:
+                return -10
+            else:
+                return -1
+        if seen_state_vars == [0, 1, 3]:
+            if pass_idx == 4 and action == 5 and ([row, col] == self.locs[dest_idx]):
+                return 10
+            elif action in [4, 5, 6]:
+                return -10
+            else:
+                return -1
+        else:
+            if action in [4, 5, 6]:
+                return -10
+            else:
+                return -1
 
     def encode(self, taxirow, taxicol, passloc, destidx, fuel):
         # (5) 5, 5, 5, 3, 14

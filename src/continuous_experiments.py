@@ -151,7 +151,7 @@ def get_params_coffeemail():
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # for abstraction methods
-    sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 5]]
+    sub_spaces = [[0, 1, 2, 4, 5]]
     # -- Model for choosing sub_space agent (input: full state, output: sub_agent)
     meta_model = Sequential()
     meta_model.add(Dense(24, input_dim=observation_space, activation='relu'))
@@ -165,12 +165,12 @@ def get_params_coffeemail():
     sub_model1.add(Dense(action_space, activation='linear'))
     sub_model1.compile(loss='mse', optimizer=Adam(lr=0.001))
     # --- DQN model for sub_space1 (input: sub_space2, output: action)
-    sub_model2 = Sequential()
-    sub_model2.add(Dense(24, input_dim=len(sub_spaces[1]), activation='relu'))
-    sub_model2.add(Dense(24, activation='relu'))
-    sub_model2.add(Dense(action_space, activation='linear'))
-    sub_model2.compile(loss='mse', optimizer=Adam(lr=0.001))
-    sub_models = [sub_model1, sub_model2]
+    # sub_model2 = Sequential()
+    # sub_model2.add(Dense(24, input_dim=len(sub_spaces[1]), activation='relu'))
+    # sub_model2.add(Dense(24, activation='relu'))
+    # sub_model2.add(Dense(action_space, activation='linear'))
+    # sub_model2.compile(loss='mse', optimizer=Adam(lr=0.001))
+    sub_models = [model]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
                                 batch_size=batch_size,
                                 learning_rate=learning_rate, epsilon=init_epsilon, epsilon_min=epsilon_min,

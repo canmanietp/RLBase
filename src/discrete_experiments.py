@@ -14,6 +14,7 @@ from agents.QLiA import QLiAAgent
 from agents.QVP import QVPAgent
 from agents.MaxQ import MaxQAgent
 from agents.QLiA_T import QLiA_TAgent
+from agents.QAMS import QAMSAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
 
@@ -27,7 +28,7 @@ def get_params_coffee():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
+    sub_spaces = [[0, 1, 2, 3], [0, 1, 2, 4]]
     size_state_vars = [5, 5, 2, 2, 2]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -44,9 +45,9 @@ def get_params_coffeemail(alg):
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    if alg == 'QLiA':
+    if alg in ['QAMS', 'QLiA', 'QLiA_T']:
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
-    if alg == 'QLiA_T':
+    elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
@@ -68,10 +69,10 @@ def get_params_office(alg):
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.99
-    if alg == 'QLiA':
+    if alg in ['QAMS', 'QLiA_T']:
+        sub_spaces = [[0, 1, 2, 3, 4, 5]]
+    elif alg == 'QLiA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 5]]
-    elif alg == 'QLiA_T':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 4], [0, 1, 3], [0, 1, 3, 5]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
     else:
@@ -84,8 +85,8 @@ def get_params_office(alg):
 
 
 def get_params_taxifuel(alg):
-    init_alpha = 0.5
-    alpha_min = 0.5
+    init_alpha = 0.3
+    alpha_min = 0.3
     init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
@@ -94,19 +95,19 @@ def get_params_taxifuel(alg):
     decay_rate = 0.999
     sub_spaces = None
     options = None
-    if alg == 'QLiA':
+    if alg in ['QAMS']:
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
+    elif alg in ['QLiA', 'QLiA_T']:
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
-    elif alg == 'QLiA_T':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
         # get 10, put 11, refuel 12, root 13
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 30001
+    num_episodes = 50001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -123,7 +124,7 @@ def get_params_taxi(alg):
     decay_rate = 0.999
     sub_spaces = None
     options = None
-    if alg == 'QLiA':
+    if alg in ['QAMS', 'QLiA', 'QLiA_T']:
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
@@ -184,6 +185,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                 agents.append(MaxQAgent(env, params))
             elif alg == 'QLiA_T':
                 agents.append(QLiA_TAgent(env, params))
+            elif alg == 'QAMS':
+                agents.append(QAMSAgent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -234,7 +237,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
 
-    for alg in algs:
+    for ia, alg in enumerate(algs):
         env, params = get_params(env_name, alg)
         file = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
         file.write("Environment: {}\n"
@@ -251,7 +254,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False):
                    "sub_spaces={}\n"
                    "options={}\n"
                    "size_state_vars={}".format(env, num_trials,
-                                               params.num_episodes, trial_times, params.ALPHA, params.ALPHA_MIN,
+                                               params.num_episodes, np.array(trial_times)[:, ia], params.ALPHA, params.ALPHA_MIN,
                                                params.EPSILON, params.EPSILON_MIN,
                                                params.PHI, params.PHI_MIN, params.DISCOUNT,
                                                params.sub_spaces, params.options, params.size_state_vars))

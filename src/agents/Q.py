@@ -23,10 +23,12 @@ class QAgent(BaseAgent):
 
     def update(self, state, action, reward, next_state, done):
         if done:
-            self.Q_table[state][action] += self.params.ALPHA * (reward - self.Q_table[state][action])
+            td_error = reward - self.Q_table[state][action]
         else:
-            self.Q_table[state][action] += self.params.ALPHA * (
-                reward + self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action])
+            td_error = reward + self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action]
+
+        self.Q_table[state][action] += self.params.ALPHA * td_error
+        return td_error
 
     def do_step(self):
         state = self.current_state
