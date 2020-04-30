@@ -129,7 +129,8 @@ class CoffeeMailContinuousEnv(gym.Env):
         who_wants_coffee = np.random.randint(0, 2)
         # A_wants_coffee = not(B_wants_coffee)
         self.state = [agent_location[0], agent_location[1], agent_has_coffee, who_wants_coffee]
-        # self.state = [agent_location[0], agent_location[1], agent_has_coffee, agent_has_mail, A_wants_coffee, B_wants_coffee]
+        # self.state = [agent_location[0], agent_location[1], agent_has_coffee, agent_has_mail, A_wants_coffee,
+        # B_wants_coffee]
         self.steps_beyond_done = None
         self.episode_history = []
         self.acceleration = [0, 0]
