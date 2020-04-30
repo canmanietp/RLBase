@@ -18,8 +18,8 @@ class DQNVPAgent(DQNAgent):
         meta_params.action_space = len(meta_params.sub_spaces)
         self.meta_agent = DQNMiniAgent(self.env, meta_params)
 
-        self.num_samples = 20
-        self.d0 = 1.  # For pseudo count, should be a parameter for QVP
+        self.num_samples = 10
+        self.d0 = 100  # For pseudo count, should be a parameter for QVP
         self.hist = None
         self.binedges = None
 
@@ -69,7 +69,7 @@ class DQNVPAgent(DQNAgent):
         next_state, reward, done = self.step_VP(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
             self.replay_DQNVP()
-            self.calculate_pseudo_counts()
+            # self.calculate_pseudo_counts()
         if done:
             self.decay(self.params.DECAY_RATE)
         return reward, done
@@ -81,11 +81,13 @@ class DQNVPAgent(DQNAgent):
         for n in range(self.num_samples):
             add_state = []
             for iv, var in enumerate(vars):
+                range_bin_width = abs(ranges[iv][0] - ranges[iv][1]) / self.num_samples
                 if iv in abs_vars:
                     add_state.append(state[0][iv])
                 else:
-                    add_state.append(random.random() * (ranges[iv][1] - ranges[iv][0]) + ranges[iv][0])
+                    add_state.append(ranges[iv][0] + range_bin_width * n)
             states.append(np.reshape(add_state, [1, self.params.observation_space]))
+        print(states)
         return states
 
     def get_ranges(self):
@@ -101,39 +103,44 @@ class DQNVPAgent(DQNAgent):
     def calculate_pseudo_counts(self):
         sa = [np.append(item[0][0], item[1]) for item in self.memory]
         sa_data_array = np.array([np.array(xi) for xi in sa])
-        hist, binedges = np.histogramdd(sa_data_array, normed=False)
+        hist, binedges = np.histogramdd(sa_data_array)
         # states = [s[0] for s, a, _, _, _ in self.memory]
         # hist, binedges = np.histogramdd(np.array(states), normed=False)
         self.hist = np.array(hist)
         self.binedges = binedges
 
     def pseudo_count(self, state):
-        if self.hist is not None:
-            pseudo_count = [[] for a in range(self.action_space)]
-            for action in range(self.action_space):
-                bins = []
-                for i, d in enumerate(np.append(state[0], action)):
-                    for j in range(len(self.binedges[i])):
-                        if j + 1 < len(self.binedges[i]):
-                            if self.binedges[i][j] <= d < self.binedges[i][j + 1]:
-                                bins.append(j)
-                                continue
-                            elif j == len(self.binedges[i]) - 2 and d == self.binedges[i][j + 1]:
-                                bins.append(j)
-                                continue
-                if len(bins) == 3:
-                    pseudo_count[action] = self.hist[bins[0], bins[1], bins[2]]
-                elif len(bins) == 4:
-                    pseudo_count[action] = self.hist[bins[0], bins[1], bins[2], bins[3]]
-                elif len(bins) == 5:
-                    pseudo_count[action] = self.hist[bins[0], bins[1], bins[2], bins[3], bins[4]]
-            return pseudo_count
-        else:
-            return np.zeros(self.action_space)
-        # count = [0. for a in list(range(self.action_space))]
-        # for s, a, _, _, _ in self.memory:
-        #     norm = 0.
-        #     for p, sd in enumerate(state[0]):
-        #         norm += abs(sd - s[0][p])
-        #     count[a] += max(0., 1. - (norm / self.d0))
-        # return count
+        # if self.hist is not None:
+        #     pseudo_count = [[] for a in range(self.action_space)]
+        #     for action in range(self.action_space):
+        #         bins = []
+        #         for i, d in enumerate(np.append(state[0], action)):
+        #             for j in range(len(self.binedges[i])):
+        #                 if j + 1 < len(self.binedges[i]):
+        #                     if self.binedges[i][j] <= d < self.binedges[i][j + 1]:
+        #                         bins.append(j)
+        #                         continue
+        #                     elif j == len(self.binedges[i]) - 2 and d == self.binedges[i][j + 1]:
+        #                         bins.append(j)
+        #                         continue
+        #         if len(bins) == 3:
+        #             # print(3)
+        #             pseudo_count[action] = self.hist[bins[0], bins[1], bins[2]]
+        #         elif len(bins) == 4:
+        #             # print(4)
+        #             pseudo_count[action] = self.hist[bins[0], bins[1], bins[2], bins[3]]
+        #         elif len(bins) == 5:
+        #             # print(5)
+        #             pseudo_count[action] = self.hist[bins[0], bins[1], bins[2], bins[3], bins[4]]
+        #     return pseudo_count
+        # else:
+        #     return np.zeros(self.action_space)
+        count = [0. for a in list(range(self.action_space))]
+        if len(self.memory) > 1000:
+            minibatch = random.sample(self.memory, 1000)
+            for s, a, _, _, _ in minibatch:
+                norm = 0.
+                for p, sd in enumerate(state[0]):
+                    norm += abs(sd - s[0][p])
+                count[a] += max(0., 1. - (norm / self.d0))
+        return count

@@ -170,7 +170,7 @@ def get_params_coffeemail():
     sub_model1.add(Dense(24, input_dim=len(sub_spaces[0]), activation='relu'))
     sub_model1.add(Dense(24, activation='relu'))
     sub_model1.add(Dense(action_space, activation='linear'))
-    sub_model1.compile(loss='mse', optimizer=Adam(lr=0.01))
+    sub_model1.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- DQN model for sub_space1 (input: sub_space2, output: action)
     sub_model2 = Sequential()
     sub_model2.add(Dense(24, input_dim=len(sub_spaces[1]), activation='relu'))
