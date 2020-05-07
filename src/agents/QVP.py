@@ -19,6 +19,7 @@ class QVPAgent(QAgent):
         self.saved_abs_lookup = {}
 
         self.state_decodings = self.sweep_state_decodings()
+        self.num_visits = 0
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -74,6 +75,20 @@ class QVPAgent(QAgent):
                             is_valid = False
                             break
 
+                    # if is_valid:
+                    #     # rank actions
+                    #     array1 = self.Q_table[state]
+                    #     temp = array1.argsort()
+                    #     ranks1 = np.empty_like(temp)
+                    #     ranks1[temp] = np.arange(len(array1))
+                    #     array2 = self.Q_table[st]
+                    #     temp = array1.argsort()
+                    #     ranks2 = np.empty_like(temp)
+                    #     ranks2[temp] = np.arange(len(array2))
+                    #
+                    #     if not (ranks1 == ranks2).all():
+                    #         is_valid = False
+
                     if is_valid:
                         update_states.append(st)
                         merge_values.append(self.Q_table[st])
@@ -108,7 +123,15 @@ class QVPAgent(QAgent):
 
     def do_step(self):
         state = self.current_state
+        # confident = self.sa_visits[state][np.argmax(self.Q_table[state])] > np.percentile(self.num_visits, 80)
+        # if confident:
+        #     action = self.e_greedy_action(state)
+        #     next_state, reward, done = self.step(action)
+        #     self.update(state, action, reward, next_state, done)
+        # else:
         ab_index, action = self.e_greedy_VP_action(state)
         next_state, reward, done = self.step(action)
         self.update_VP(state, ab_index, action, reward, next_state, done)
+        # if done:
+        #     self.num_visits = np.array(self.sa_visits)[:, 1]
         return reward, done

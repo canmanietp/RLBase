@@ -67,7 +67,6 @@ class DQNAgent(BaseAgent):
 
         self.until_retrain += 1
         if self.until_retrain >= self.retrain_steps:
-
             self.until_retrain = 0
             self.target_model.set_weights(self.model.get_weights())
 
@@ -78,6 +77,11 @@ class DQNAgent(BaseAgent):
         self.replay()
         if done:
             self.decay(self.params.DECAY_RATE)
+            for il, layers in enumerate(self.model.layers):
+                if il == 2:
+                    print("layer: {}".format(il))
+                    weights = layers.get_weights()
+                    print(weights)
         return reward, done
 
 

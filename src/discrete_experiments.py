@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import time, os, datetime
 
 from envs.taxi import TaxiEnv
+from envs.taxilarge import TaxiLargeEnv
 from envs.taxifuel import TaxiFuelEnv
 from envs.rm_office import OfficeEnv
 from envs.coffeemail import CoffeeMailEnv
@@ -14,6 +15,7 @@ from agents.QLiA import QLiAAgent
 from agents.QVP import QVPAgent
 from agents.MaxQ import MaxQAgent
 from agents.QLiA_T import QLiA_TAgent
+from agents.QLiA_batch import QLiA_batchAgent
 from agents.QAMS import QAMSAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
@@ -45,7 +47,7 @@ def get_params_coffeemail(alg):
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    if alg in ['QAMS', 'QLiA', 'QLiA_T']:
+    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
@@ -97,7 +99,7 @@ def get_params_taxifuel(alg):
     options = None
     if alg in ['QAMS']:
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
-    elif alg in ['QLiA', 'QLiA_T']:
+    elif alg in ['QLiA', 'QLiA_T', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
@@ -108,6 +110,32 @@ def get_params_taxifuel(alg):
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
     num_episodes = 50001
+    return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                              discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
+
+def get_params_taxilarge(alg):
+    init_alpha = 0.1
+    alpha_min = 0.1
+    init_epsilon = 0.3
+    epsilon_min = 0.001
+    init_phi = 0.3
+    phi_min = 0.001
+    discount = 0.95
+    decay_rate = 0.999
+    sub_spaces = None
+    options = None
+    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'QLiA_T':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'QVP':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'MaxQ':
+        # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
+        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
+    size_state_vars = [10, 10, 9, 8]
+    num_episodes = 5000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -124,7 +152,7 @@ def get_params_taxi(alg):
     decay_rate = 0.999
     sub_spaces = None
     options = None
-    if alg in ['QAMS', 'QLiA', 'QLiA_T']:
+    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
@@ -144,6 +172,9 @@ def get_params(env_name, alg=None):
     if env_name == 'taxi':
         env = TaxiEnv()
         params = get_params_taxi(alg)
+    elif env_name == 'taxilarge':
+        env = TaxiLargeEnv()
+        params = get_params_taxilarge(alg)
     elif env_name == 'taxifuel':
         env = TaxiFuelEnv()
         params = get_params_taxifuel(alg)
@@ -185,6 +216,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 agents.append(MaxQAgent(env, params))
             elif alg == 'QLiA_T':
                 agents.append(QLiA_TAgent(env, params))
+            elif alg == 'QLiA_batch':
+                agents.append(QLiA_batchAgent(env, params))
             elif alg == 'QAMS':
                 agents.append(QAMSAgent(env, params))
             else:
@@ -234,6 +267,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
 
     for trial in np.average(trial_rewards, axis=0):
         plt.plot(plotting.moving_average(trial, int(params.num_episodes / 100)))
+
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
 

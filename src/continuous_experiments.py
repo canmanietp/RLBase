@@ -153,8 +153,9 @@ def get_params_coffeemail():
     learning_rate = 0.001
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
-    model.add(Dense(24, input_dim=observation_space, activation='relu'))
-    model.add(Dense(24, activation='relu'))
+    model.add(Dense(12, input_dim=observation_space, activation='relu'))
+    model.add(Dense(2, activation='relu'))
+    model.add(Dense(2, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # for abstraction methods
