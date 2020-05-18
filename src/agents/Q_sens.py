@@ -24,7 +24,7 @@ class QSensAgent(BaseAgent):
 
         self.state_ab_mapping = [[] for os in range(self.observation_space)]
 
-        self.trajectory = deque(maxlen=5)
+        self.history = [] # deque(maxlen=5)
         self.state_decodings = self.sweep_state_decodings()
 
     def sweep_state_decodings(self):
@@ -66,15 +66,15 @@ class QSensAgent(BaseAgent):
         self.Q_table[state][action] += self.params.ALPHA * td_error
 
         # if len(self.state_ab_mapping[state]) > 0:
-        # state_vars = self.state_decodings[state]
-        # next_state_vars = self.state_decodings[next_state]
-        # for ia, ab in enumerate(self.sub_agents):
-        #     ab_vars = [value for value in self.state_variables if value != ia]
-        #     abs_state = self.encode_abs_state(state_vars, ab_vars)
-        #     abs_next_state = self.encode_abs_state(next_state_vars, ab_vars)
+        state_vars = self.state_decodings[state]
+        next_state_vars = self.state_decodings[next_state]
+        for ia, ab in enumerate(self.sub_agents):
+            ab_vars = [value for value in self.state_variables if value != ia]
+            abs_state = self.encode_abs_state(state_vars, ab_vars)
+            abs_next_state = self.encode_abs_state(next_state_vars, ab_vars)
         #     # lr = self.params.ALPHA / (1 + (1 - ia == ab_index) * self.sa_visits[state][ia])
-        #     # ab.params.ALPHA = lr
-        #     ab.update(abs_state, action, reward, abs_next_state, done)
+            # ab.params.ALPHA = lr
+            ab.update(abs_state, action, reward, abs_next_state, done)
 
         return td_error
 
@@ -91,29 +91,22 @@ class QSensAgent(BaseAgent):
     def do_step(self):
         state = self.current_state
 
-        if np.sum(self.sa_visits[state]) < 15:  # random.uniform(0, 1) < self.params.EPSILON:
-            self.do_sens_analysis()
-            if self.state_ab_mapping[state] == []:
-                action = np.argmax(self.Q_table[state])
-                next_state, reward, done = self.step(action)
-
-            else:
-                least_influence = self.state_ab_mapping[state][0]  #  np.argmax(traj_sum)
-                state_vars = self.state_decodings[state]
-                ab_vars = [value for value in self.state_variables if value != least_influence]
-                abs_state = self.encode_abs_state(state_vars, ab_vars)
-                action = np.argmax(self.sub_agents[least_influence].Q_table[abs_state])
-                next_state, reward, done = self.step(action)
-                next_state_vars = self.state_decodings[next_state]
-                abs_next_state = self.encode_abs_state(next_state_vars, ab_vars)
-
-                self.sub_agents[least_influence].update(abs_state, action, reward, abs_next_state, done)
+        if 5 < np.sum(self.sa_visits[state]) < 20:  # random.uniform(0, 1) < self.params.EPSILON:
+            # if self.state_ab_mapping[state] == []:
+                # action = np.argmax(self.Q_table[state])
+                # next_state, reward, done = self.step(action)
+            # else:
+            sensitivities = sensitivity.do_sensitivity_analysis_single_state(self, self.history, state, self.state_variables)
+            least_influence = np.argmax(sensitivities) # self.state_ab_mapping[state][0]  #  np.argmax(traj_sum)
+            state_vars = self.state_decodings[state]
+            ab_vars = [value for value in self.state_variables if value != least_influence]
+            abs_state = self.encode_abs_state(state_vars, ab_vars)
+            action = np.argmax(self.sub_agents[least_influence].Q_table[abs_state])
+            next_state, reward, done = self.step(action)
         else:
             action = self.e_greedy_action(state) # np.argmax(self.Q_table[state])
-            next_state, reward, done = self.step(action)
 
+        next_state, reward, done = self.step(action)
         self.update(state, action, reward, next_state, done)
-        self.trajectory.append([state, action, reward, next_state])
-        if done:
-            self.trajectory.clear()
+        self.history.append([state, action, reward, next_state])
         return reward, done
