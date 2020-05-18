@@ -27,6 +27,9 @@ class QLiAAgent(QAgent):
 
         self.state_decodings = self.sweep_state_decodings()
 
+        self.last_ab = None
+        self.last_state = None
+
     def sweep_state_decodings(self):
         st_vars_lookup = []
         for s in range(self.observation_space):
@@ -57,8 +60,8 @@ class QLiAAgent(QAgent):
 
     def e_greedy_LIA_action(self, state):
         ab_index = self.e_greedy_action(state)
-        if ab_index == len(self.sub_agents):
-            return self.sub_agents[ab_index].e_greedy_action(state)
+        # if ab_index == len(self.sub_agents):
+        #     return self.sub_agents[ab_index].e_greedy_action(state)
         abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
         return ab_index, self.sub_agents[ab_index].e_greedy_action(abs_state)
 
@@ -66,11 +69,18 @@ class QLiAAgent(QAgent):
         state_vars = self.state_decodings[state]
         next_state_vars = self.state_decodings[next_state]
 
+        # ia = ab_index
+        # ab = self.sub_agents[ia]
+
         for ia, ab in enumerate(self.sub_agents):
+            # if ia == ab_index or self.sa_visits[state][ia] < 15:
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
+            lr = self.params.ALPHA / (1 + (1 - ia == ab_index)*self.sa_visits[state][ia])
+            ab.params.ALPHA = lr
             ab.update(abs_state, action, reward, abs_next_state, done)
-            # self.env.local_reward(state, action, self.params.sub_spaces[ia])
+
+        # self.env.local_reward(state, action, self.params.sub_spaces[ia])
 
         self.update(state, ab_index, reward, next_state, done)
 
@@ -79,5 +89,9 @@ class QLiAAgent(QAgent):
         ab_index, action = self.e_greedy_LIA_action(state)
         next_state, reward, done = self.step(action)
         self.update_LIA(state, ab_index, action, reward, next_state, done)
+        self.last_state = state
+        if done:
+            self.last_ab = None
+            self.last_state = None
         return reward, done
 

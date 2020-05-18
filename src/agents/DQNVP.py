@@ -1,5 +1,6 @@
 import numpy as np
 import copy, random
+import helpers.ranges
 from agents.DQN import DQNAgent, DQNMiniAgent
 
 
@@ -76,7 +77,7 @@ class DQNVPAgent(DQNAgent):
 
     def sample_states(self, state, abs_vars):
         vars = [v for v in list(range(self.params.observation_space))]
-        ranges = self.get_ranges()
+        ranges = helpers.ranges.get_ranges(self.memory, self.params.observation_space)
         states = []
         for n in range(self.num_samples):
             add_state = []
@@ -88,16 +89,6 @@ class DQNVPAgent(DQNAgent):
                     add_state.append(ranges[iv][0] + range_bin_width * n)
             states.append(np.reshape(add_state, [1, self.params.observation_space]))
         return states
-
-    def get_ranges(self):
-        min_max = [[float("inf"), float("-inf")] for v in list(range(self.params.observation_space))]
-        for s, _, _, _, _ in self.memory:
-            for iv, var in enumerate(s[0]):
-                if var < min_max[iv][0]:
-                    min_max[iv][0] = var
-                if var > min_max[iv][1]:
-                    min_max[iv][1] = var
-        return min_max
 
     def calculate_pseudo_counts(self):
         sa = [np.append(item[0][0], item[1]) for item in self.memory]
