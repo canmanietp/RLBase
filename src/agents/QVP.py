@@ -164,7 +164,7 @@ class QVPAgent(QAgent):
                         b = np.array([item[a] for item in merge_visits])
                         most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
                         qs[a] = merge_values[most_visited][a]
-                return None, np.argmax(qs)
+            return None, np.argmax(qs)
         else:
             return None, np.argmax(self.Q_table[state])
 
