@@ -25,8 +25,8 @@ class QVPAgent(QAgent):
         self.num_visits = 0
 
         self.state_variables = list(range(len(self.params.size_state_vars)))
-        self.ranges = ranges.get_var_ranges(self, [[0, 0, 0, 0, 0, 0], [5, 5, 2, 2, 2, 2, 2, 2]], self.state_variables)
-        self.trajectory = deque(maxlen=5)
+        self.ranges = ranges.get_var_ranges(self, [[0, 0, 0, 0, 0, 0, 0, 0], [5, 5, 2, 2, 2, 2, 2, 2]], self.state_variables)
+        self.trajectory = deque(maxlen=10)
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -123,12 +123,15 @@ class QVPAgent(QAgent):
         # return ab_index, np.argmax(qs)
 
         if np.random.uniform(0, 1) < self.params.EPSILON:
+            return None, self.random_action()
+        else:
             sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
             traj_sum = [0 for sv in self.state_variables]
             for s, _, _, _ in self.trajectory:
                 traj_sum = np.add(traj_sum, sensitivities[s])
-            least_influence = np.argmax(traj_sum)
-            if traj_sum[least_influence] > np.percentile(traj_sum, 75):
+            least_influence = np.argmin(traj_sum)
+            if traj_sum[least_influence] < np.percentile(traj_sum, 15):
+                # print("in state", list(self.env.decode(state)), "ignoring ", least_influence)
                 abstraction = [value for value in self.state_variables if value != least_influence]
 
                 update_states = []
@@ -166,8 +169,6 @@ class QVPAgent(QAgent):
                 return None, np.argmax(qs)
             else:
                 return None, np.argmax(self.Q_table[state])
-        else:
-            return None, np.argmax(self.Q_table[state])
 
     def update_VP(self, state, ab_index, action, reward, next_state, done):
         self.update(state, action, reward, next_state, done)

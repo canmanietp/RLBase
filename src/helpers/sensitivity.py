@@ -3,7 +3,7 @@ import numpy as np
 import helpers.ranges
 
 
-def do_sensitivity_analysis(agent, ranges, sars, state_variables, num_samples=10):
+def do_sensitivity_analysis(agent, ranges, sars, state_variables, num_samples=15):
     # state variables = [0, 1, 2]
     # history = [[s0, a0, r0, s1], ...]
 
@@ -27,7 +27,7 @@ def do_sensitivity_analysis(agent, ranges, sars, state_variables, num_samples=10
                         Qs_samp = agent.Q_table[state]
                         action_sort1 = [operator.itemgetter(0)(t) for t in sorted(enumerate(Qs,1), key=operator.itemgetter(1))]
                         action_sort2 = [operator.itemgetter(0)(t) for t in sorted(enumerate(Qs_samp,1), key=operator.itemgetter(1))]
-                        diff += action_sort1 == action_sort2  # measure of how different the ranks are   # np.sum(np.absolute(np.subtract(action_sort1, action_sort2)))  #
+                        diff += np.sum(np.absolute(np.subtract(action_sort1, action_sort2)))  # measure of how different the ranks are   # np.sum(np.absolute(np.subtract(action_sort1, action_sort2)))  #
                         # np.argmax(Qs) == np.argmax(Qs_samp)  # BIGGEST NUMBER IS LEAST INFLUENTIAL
                         # action_sort1 == action_sort2  # BIGGEST NUMBER IS LEAST INFLUENTIAL
                         # np.sum(np.absolute(np.subtract(action_sort1, action_sort2)))  # SMALLEST NUMBER IS LEAST INFLUENTIAL
