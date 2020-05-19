@@ -93,7 +93,7 @@ def get_params_eatfood(alg):
     init_alpha = 0.3
     alpha_min = 0.3
     init_epsilon = 0.3
-    epsilon_min = 0.001
+    epsilon_min = 0.01
     init_phi = 0.3
     phi_min = 0.001
     discount = 0.95
@@ -105,7 +105,7 @@ def get_params_eatfood(alg):
     else:
         sub_spaces = []
     size_state_vars = [5, 5, 25, 25]
-    num_episodes = 20000
+    num_episodes = 5000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
