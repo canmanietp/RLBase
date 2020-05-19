@@ -26,7 +26,7 @@ class QVPAgent(QAgent):
 
         self.state_variables = list(range(len(self.params.size_state_vars)))
         self.ranges = ranges.get_var_ranges(self, [np.zeros(self.observation_space), self.params.size_state_vars], self.state_variables)
-        self.trajectory = deque(maxlen=10)
+        self.trajectory = deque(maxlen=5)
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -130,7 +130,7 @@ class QVPAgent(QAgent):
             for s, _, _, _ in self.trajectory:
                 traj_sum = np.add(traj_sum, sensitivities[s])
             least_influence = np.argmax(traj_sum)
-            if traj_sum[least_influence] > np.percentile(traj_sum, 85):
+            if traj_sum[least_influence] > np.percentile(traj_sum, 95):
                 # print("in state", list(self.env.decode(state)), "ignoring ", least_influence)
                 abstraction = [value for value in self.state_variables if value != least_influence]
 
