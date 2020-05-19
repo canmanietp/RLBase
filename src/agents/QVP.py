@@ -25,7 +25,7 @@ class QVPAgent(QAgent):
         self.num_visits = 0
 
         self.state_variables = list(range(len(self.params.size_state_vars)))
-        self.ranges = ranges = ranges.get_var_ranges(self, [[0, 0, 0, 0, 0, 0], [5, 5, 2, 2, 2, 2, 2, 2]], self.state_variables)
+        self.ranges = ranges.get_var_ranges(self, [[0, 0, 0, 0, 0, 0], [5, 5, 2, 2, 2, 2, 2, 2]], self.state_variables)
         self.trajectory = deque(maxlen=5)
 
     def sweep_state_decodings(self):
