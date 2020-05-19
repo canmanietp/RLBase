@@ -52,7 +52,7 @@ class EatFoodEnv(discrete.DiscreteEnv):
 
                                 # if wolf caught rabbit, episode ends
                                 if (row * nR + col) == wolf_idx:
-                                    reward = 0
+                                    reward = -20
                                     done = True
                                 else:
                                     isd[state] += 1
@@ -67,7 +67,7 @@ class EatFoodEnv(discrete.DiscreteEnv):
                                         newcol = max(col-1, 0)
 
                                     if (newrow * nR + newcol) == food_idx:
-                                        reward = 1  # reward for eating food
+                                        reward = 10  # reward for eating food
 
                                     wolfcol = wolf_idx % nC
                                     wolfrow = int((wolf_idx - wolfcol) / nR)

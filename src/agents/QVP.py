@@ -122,7 +122,7 @@ class QVPAgent(QAgent):
         #         qs[a] = merge_values[most_visited][a]
         # return ab_index, np.argmax(qs)
 
-        if np.sum(self.sa_visits[state]) < 1:
+        if np.sum(self.sa_visits[state]) < 10:
             sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
             traj_sum = [0 for sv in self.state_variables]
             for s, _, _, _ in self.trajectory:
