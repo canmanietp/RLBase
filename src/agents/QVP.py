@@ -4,6 +4,9 @@ from learning_parameters import DiscreteParameters
 import numpy as np
 import random
 import copy
+from helpers import sensitivity
+from helpers import ranges
+from collections import deque
 
 
 class QVPAgent(QAgent):
@@ -20,6 +23,10 @@ class QVPAgent(QAgent):
 
         self.state_decodings = self.sweep_state_decodings()
         self.num_visits = 0
+
+        self.state_variables = list(range(len(self.params.size_state_vars)))
+        self.ranges = ranges = ranges.get_var_ranges(self, [[0, 0, 0, 0, 0, 0], [5, 5, 2, 2, 2, 2, 2, 2]], self.state_variables)
+        self.trajectory = deque(maxlen=5)
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -51,20 +58,83 @@ class QVPAgent(QAgent):
         self.meta_agent.decay(decay_rate)
 
     def e_greedy_VP_action(self, state):
-        ab_index = self.meta_agent.e_greedy_action(state)
+        # ab_index = self.meta_agent.e_greedy_action(state)
+        # if random.uniform(0, 1) < self.params.PHI:
+        #     return ab_index, self.random_action()
+        # else:
+        # abstraction = self.params.sub_spaces[ab_index]
+        # update_states = []
+        # merge_values = []
+        # merge_visits = []
+        #
+        # if state not in self.saved_abs_lookup:
+        #     self.saved_abs_lookup[state] = {}
+        #
+        # # if ab_index not in self.saved_abs_lookup[state]:
+        # state_vars = self.state_decodings[state]
+        # for st in range(self.observation_space):
+        #     st_vars = self.state_decodings[st]
+        #     is_valid = True
+        #
+        #     for av in abstraction:
+        #         if not state_vars[av] == st_vars[av]:
+        #             is_valid = False
+        #             break
+        #
+        #     # if is_valid:
+        #     #     # rank actions
+        #     #     array1 = self.Q_table[state]
+        #     #     temp = array1.argsort()
+        #     #     ranks1 = np.empty_like(temp)
+        #     #     ranks1[temp] = np.arange(len(array1))
+        #     #     array2 = self.Q_table[st]
+        #     #     temp = array1.argsort()
+        #     #     ranks2 = np.empty_like(temp)
+        #     #     ranks2[temp] = np.arange(len(array2))
+        #     #
+        #     #     if not (ranks1 == ranks2).all():
+        #     #         is_valid = False
+        #
+        #     if is_valid:
+        #         update_states.append(st)
+        #         merge_values.append(self.Q_table[st])
+        #         merge_visits.append(self.sa_visits[st])
+        #
+        # if not merge_visits:
+        #     update_states.append(state)
+        #     merge_values.append(self.Q_table[state])
+        #     merge_visits.append(self.sa_visits[state])
+        #
+        # # self.saved_abs_lookup[state][ab_index] = update_states
+        # # else:
+        # #     for us in self.saved_abs_lookup[state][ab_index]:
+        # #         update_states.append(us)
+        # #         merge_values.append(self.Q_table[us])
+        # #         merge_visits.append(self.sa_visits[us])
+        #
+        # if len(update_states) == 1:
+        #     qs = merge_values[0]
+        # else:
+        #     qs = np.zeros(self.action_space)
+        #     for a in range(self.action_space):
+        #         b = np.array([item[a] for item in merge_visits])
+        #         most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
+        #         qs[a] = merge_values[most_visited][a]
+        # return ab_index, np.argmax(qs)
 
-        if random.uniform(0, 1) < self.params.PHI:
-            return ab_index, self.random_action()
-        else:
-            update_states = []
-            merge_values = []
-            merge_visits = []
-            abstraction = self.params.sub_spaces[ab_index]
+        if np.random.uniform(0, 1) < self.params.EPSILON:
+            sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
+            traj_sum = [0 for sv in self.state_variables]
+            for s, _, _, _ in self.trajectory:
+                traj_sum = np.add(traj_sum, sensitivities[s])
+            least_influence = np.argmax(traj_sum)
+            if traj_sum[least_influence] > np.percentile(traj_sum, 75):
+                abstraction = [value for value in self.state_variables if value != least_influence]
 
-            if state not in self.saved_abs_lookup:
-                self.saved_abs_lookup[state] = {}
+                update_states = []
+                merge_values = []
+                merge_visits = []
 
-            if ab_index not in self.saved_abs_lookup[state]:
                 state_vars = self.state_decodings[state]
                 for st in range(self.observation_space):
                     st_vars = self.state_decodings[st]
@@ -74,20 +144,6 @@ class QVPAgent(QAgent):
                         if not state_vars[av] == st_vars[av]:
                             is_valid = False
                             break
-
-                    # if is_valid:
-                    #     # rank actions
-                    #     array1 = self.Q_table[state]
-                    #     temp = array1.argsort()
-                    #     ranks1 = np.empty_like(temp)
-                    #     ranks1[temp] = np.arange(len(array1))
-                    #     array2 = self.Q_table[st]
-                    #     temp = array1.argsort()
-                    #     ranks2 = np.empty_like(temp)
-                    #     ranks2[temp] = np.arange(len(array2))
-                    #
-                    #     if not (ranks1 == ranks2).all():
-                    #         is_valid = False
 
                     if is_valid:
                         update_states.append(st)
@@ -99,27 +155,24 @@ class QVPAgent(QAgent):
                     merge_values.append(self.Q_table[state])
                     merge_visits.append(self.sa_visits[state])
 
-                self.saved_abs_lookup[state][ab_index] = update_states
+                if len(update_states) == 1:
+                    qs = merge_values[0]
+                else:
+                    qs = np.zeros(self.action_space)
+                    for a in range(self.action_space):
+                        b = np.array([item[a] for item in merge_visits])
+                        most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
+                        qs[a] = merge_values[most_visited][a]
+                return None, np.argmax(qs)
             else:
-                for us in self.saved_abs_lookup[state][ab_index]:
-                    update_states.append(us)
-                    merge_values.append(self.Q_table[us])
-                    merge_visits.append(self.sa_visits[us])
-
-            if len(update_states) == 1:
-                qs = merge_values[0]
-            else:
-                qs = np.zeros(self.action_space)
-                for a in range(self.action_space):
-                    b = np.array([item[a] for item in merge_visits])
-                    most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
-                    qs[a] = merge_values[most_visited][a]
-
-            return ab_index, np.argmax(qs)
+                return None, np.argmax(self.Q_table[state])
+        else:
+            return None, np.argmax(self.Q_table[state])
 
     def update_VP(self, state, ab_index, action, reward, next_state, done):
         self.update(state, action, reward, next_state, done)
-        self.meta_agent.update(state, ab_index, reward, next_state, done)
+        if ab_index is not None:
+            self.meta_agent.update(state, ab_index, reward, next_state, done)
 
     def do_step(self):
         state = self.current_state
@@ -131,6 +184,7 @@ class QVPAgent(QAgent):
         # else:
         ab_index, action = self.e_greedy_VP_action(state)
         next_state, reward, done = self.step(action)
+        self.trajectory.append([state, action, reward, next_state])
         self.update_VP(state, ab_index, action, reward, next_state, done)
         # if done:
         #     self.num_visits = np.array(self.sa_visits)[:, 1]

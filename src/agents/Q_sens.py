@@ -102,9 +102,8 @@ class QSensAgent(BaseAgent):
             ab_vars = [value for value in self.state_variables if value != least_influence]
             abs_state = self.encode_abs_state(state_vars, ab_vars)
             action = np.argmax(self.sub_agents[least_influence].Q_table[abs_state])
-            next_state, reward, done = self.step(action)
         else:
-            action = self.e_greedy_action(state) # np.argmax(self.Q_table[state])
+            action = self.e_greedy_action(state)  # np.argmax(self.Q_table[state])
 
         next_state, reward, done = self.step(action)
         self.update(state, action, reward, next_state, done)

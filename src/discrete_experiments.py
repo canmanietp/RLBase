@@ -49,7 +49,7 @@ def get_params_coffeemail(alg):
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
-    decay_rate = 0.99
+    decay_rate = 0.999
     if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]  # [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QLiA_T':
@@ -114,7 +114,7 @@ def get_params_eatfood(alg):
 def get_params_taxifuel(alg):
     init_alpha = 0.3
     alpha_min = 0.3
-    init_epsilon = 0.8
+    init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
@@ -127,7 +127,7 @@ def get_params_taxifuel(alg):
     elif alg in ['QLiA', 'QLiA_T', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QVP':
-        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
         # get 10, put 11, refuel 12, root 13
