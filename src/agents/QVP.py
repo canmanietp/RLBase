@@ -123,54 +123,50 @@ class QVPAgent(QAgent):
         # return ab_index, np.argmax(qs)
 
         if np.random.uniform(0, 1) < self.params.EPSILON:
-            return None, self.random_action()
-        else:
-            if np.random.uniform(0, 1) < self.params.EPSILON:
-                sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
-                traj_sum = [0 for sv in self.state_variables]
-                for s, _, _, _ in self.trajectory:
-                    traj_sum = np.add(traj_sum, sensitivities[s])
-                least_influence = np.argmax(traj_sum)
-                if traj_sum[least_influence] > 1.5*np.std(traj_sum)+np.mean(traj_sum):
-                    abstraction = [value for value in self.state_variables if value != least_influence]
+            sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory,
+                                                                self.state_variables)
+            traj_sum = [0 for sv in self.state_variables]
+            for s, _, _, _ in self.trajectory:
+                traj_sum = np.add(traj_sum, sensitivities[s])
+            least_influence = np.argmax(traj_sum)
+            if traj_sum[least_influence] > 2.5 * np.std(traj_sum) + np.mean(traj_sum):
+                abstraction = [value for value in self.state_variables if value != least_influence]
 
-                    update_states = []
-                    merge_values = []
-                    merge_visits = []
+                update_states = []
+                merge_values = []
+                merge_visits = []
 
-                    state_vars = self.state_decodings[state]
-                    for st in range(self.observation_space):
-                        st_vars = self.state_decodings[st]
-                        is_valid = True
+                state_vars = self.state_decodings[state]
+                for st in range(self.observation_space):
+                    st_vars = self.state_decodings[st]
+                    is_valid = True
 
-                        for av in abstraction:
-                            if not state_vars[av] == st_vars[av]:
-                                is_valid = False
-                                break
+                    for av in abstraction:
+                        if not state_vars[av] == st_vars[av]:
+                            is_valid = False
+                            break
 
-                        if is_valid:
-                            update_states.append(st)
-                            merge_values.append(self.Q_table[st])
-                            merge_visits.append(self.sa_visits[st])
+                    if is_valid:
+                        update_states.append(st)
+                        merge_values.append(self.Q_table[st])
+                        merge_visits.append(self.sa_visits[st])
 
-                    if not merge_visits:
-                        update_states.append(state)
-                        merge_values.append(self.Q_table[state])
-                        merge_visits.append(self.sa_visits[state])
+                if not merge_visits:
+                    update_states.append(state)
+                    merge_values.append(self.Q_table[state])
+                    merge_visits.append(self.sa_visits[state])
 
-                    if len(update_states) == 1:
-                        qs = merge_values[0]
-                    else:
-                        qs = np.zeros(self.action_space)
-                        for a in range(self.action_space):
-                            b = np.array([item[a] for item in merge_visits])
-                            most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
-                            qs[a] = merge_values[most_visited][a]
-                    return None, np.argmax(qs)
+                if len(update_states) == 1:
+                    qs = merge_values[0]
                 else:
-                    return None, np.argmax(self.Q_table[state])
-            else:
-                return None, np.argmax(self.Q_table[state])
+                    qs = np.zeros(self.action_space)
+                    for a in range(self.action_space):
+                        b = np.array([item[a] for item in merge_visits])
+                        most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
+                        qs[a] = merge_values[most_visited][a]
+                return None, np.argmax(qs)
+        else:
+            return None, np.argmax(self.Q_table[state])
 
     def update_VP(self, state, ab_index, action, reward, next_state, done):
         self.update(state, action, reward, next_state, done)
