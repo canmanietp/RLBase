@@ -129,7 +129,7 @@ class QVPAgent(QAgent):
             for s, _, _, _ in self.trajectory:
                 traj_sum = np.add(traj_sum, sensitivities[s])
             least_influence = np.argmax(traj_sum)
-            if traj_sum[least_influence] > 2.5 * np.std(traj_sum) + np.mean(traj_sum):
+            if traj_sum[least_influence] > 2 * np.std(traj_sum) + np.mean(traj_sum):
                 abstraction = [value for value in self.state_variables if value != least_influence]
 
                 update_states = []
