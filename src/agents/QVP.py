@@ -26,7 +26,7 @@ class QVPAgent(QAgent):
 
         self.state_variables = list(range(len(self.params.size_state_vars)))
         self.ranges = ranges.get_var_ranges(self, [np.zeros(self.observation_space), self.params.size_state_vars], self.state_variables)
-        self.trajectory = deque(maxlen=5)
+        self.trajectory = deque(maxlen=10)
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -122,20 +122,22 @@ class QVPAgent(QAgent):
         #         qs[a] = merge_values[most_visited][a]
         # return ab_index, np.argmax(qs)
 
-        if np.random.uniform(0, 1) < self.params.EPSILON:
-            sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory,
-                                                                self.state_variables)
+        if np.sum(self.sa_visits[state]) < 5:
+            sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
             traj_sum = [0 for sv in self.state_variables]
             for s, _, _, _ in self.trajectory:
                 traj_sum = np.add(traj_sum, sensitivities[s])
             least_influence = np.argmax(traj_sum)
-            if traj_sum[least_influence] > 2.5 * np.std(traj_sum) + np.mean(traj_sum):
-                abstraction = [value for value in self.state_variables if value != least_influence]
+            abstraction = [value for value in self.state_variables if value != least_influence]
 
-                update_states = []
-                merge_values = []
-                merge_visits = []
+            update_states = []
+            merge_values = []
+            merge_visits = []
 
+            if state not in self.saved_abs_lookup:
+                self.saved_abs_lookup[state] = {}
+
+            if least_influence not in self.saved_abs_lookup[state]:
                 state_vars = self.state_decodings[state]
                 for st in range(self.observation_space):
                     st_vars = self.state_decodings[st]
@@ -156,19 +158,70 @@ class QVPAgent(QAgent):
                     merge_values.append(self.Q_table[state])
                     merge_visits.append(self.sa_visits[state])
 
-                if len(update_states) == 1:
-                    qs = merge_values[0]
-                else:
-                    qs = np.zeros(self.action_space)
-                    for a in range(self.action_space):
-                        b = np.array([item[a] for item in merge_visits])
-                        most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
-                        qs[a] = merge_values[most_visited][a]
-                return None, np.argmax(qs)
+                self.saved_abs_lookup[state][least_influence] = update_states
             else:
-                return None, self.random_action()
+                for us in self.saved_abs_lookup[state][least_influence]:
+                    update_states.append(us)
+                    merge_values.append(self.Q_table[us])
+                    merge_visits.append(self.sa_visits[us])
+
+            if len(update_states) == 1:
+                qs = merge_values[0]
+            else:
+                qs = np.zeros(self.action_space)
+                for a in range(self.action_space):
+                    b = np.array([item[a] for item in merge_visits])
+                    most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
+                    qs[a] = merge_values[most_visited][a]
+
+            return None, np.argmax(qs)
         else:
-            return None, np.argmax(self.Q_table[state])
+            return None, self.e_greedy_action(state)
+
+        # if np.random.uniform(0, 1) < self.params.EPSILON:
+        #     sensitivities = sensitivity.do_sensitivity_analysis_single_state(self, self.ranges, state,
+        #                                                         self.state_variables)
+        #     least_influence = int(np.argmax(sensitivities))
+        #     if sensitivities[least_influence] > 0.: # 2.0 * np.std(sensitivities) + np.mean(sensitivities):
+        #         abstraction = [value for value in self.state_variables if value != least_influence]
+        #
+        #         update_states = []
+        #         merge_values = []
+        #         merge_visits = []
+        #
+        #         state_vars = self.state_decodings[state]
+        #         for st in range(self.observation_space):
+        #             st_vars = self.state_decodings[st]
+        #             is_valid = True
+        #
+        #             for av in abstraction:
+        #                 if not state_vars[av] == st_vars[av]:
+        #                     is_valid = False
+        #                     break
+        #
+        #             if is_valid:
+        #                 update_states.append(st)
+        #                 merge_values.append(self.Q_table[st])
+        #                 merge_visits.append(self.sa_visits[st])
+        #
+        #         if not merge_visits:
+        #             update_states.append(state)
+        #             merge_values.append(self.Q_table[state])
+        #             merge_visits.append(self.sa_visits[state])
+        #
+        #         if len(update_states) == 1:
+        #             qs = merge_values[0]
+        #         else:
+        #             qs = np.zeros(self.action_space)
+        #             for a in range(self.action_space):
+        #                 b = np.array([item[a] for item in merge_visits])
+        #                 most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
+        #                 qs[a] = merge_values[most_visited][a]
+        #         return None, np.argmax(qs)
+        #     else:
+        #         return None, self.random_action()
+        # else:
+        #     return None, np.argmax(self.Q_table[state])
 
     def update_VP(self, state, ab_index, action, reward, next_state, done):
         self.update(state, action, reward, next_state, done)

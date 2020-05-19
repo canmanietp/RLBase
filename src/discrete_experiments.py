@@ -114,7 +114,7 @@ def get_params_eatfood(alg):
 def get_params_taxifuel(alg):
     init_alpha = 0.3
     alpha_min = 0.3
-    init_epsilon = 0.5
+    init_epsilon = 0.9
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
