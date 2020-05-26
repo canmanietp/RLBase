@@ -63,7 +63,7 @@ print("finished collecting memory")
 #     i += 1
 
 Q_table = np.zeros([num_meta_states+2, num_actions])
-epsilon = 0.5
+epsilon = 0.3
 alpha = 0.001
 gamma = 0.999
 
