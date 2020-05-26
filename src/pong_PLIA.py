@@ -85,9 +85,46 @@ print("finished collecting memory")
 #     i += 1
 
 Q_table = np.zeros([num_meta_states+2, num_actions])
+num_abstractions = 4
+Q_LIA_table = np.zeros([num_meta_states+2, num_abstractions])
+Q_you_ballx = np.zeros([255*255, num_actions])
+Q_you_bally = np.zeros([255*255, num_actions])
+Q_them_ballx = np.zeros([255*255, num_actions])
+Q_them_bally = np.zeros([255*255, num_actions])
 epsilon = 0.3
 alpha = 0.001
 gamma = 0.999
+
+# for i in range(10000):
+#     env.reset()
+#     episode_reward = 0
+#     done = False
+#
+#     _, _, _, info = env.step(np.random.randint(num_actions))
+#     state = info_into_state(info, None)
+#     meta_state = state_into_metastate(state, memory)
+#
+#     while not done:
+#         if np.random.uniform(0, 1) < epsilon:
+#             action = np.random.randint(num_actions)
+#         else:
+#             action = np.argmax(Q_table[meta_state])
+#
+#         next_obs, reward, done, next_state_info = env.step(action)
+#         env.render()
+#         episode_reward += reward
+#         next_state = info_into_state(next_state_info, None)
+#         next_meta_state = state_into_metastate(next_state, memory)
+#         print(i, epsilon, state, meta_state, action, reward)
+#
+#         Q_table[meta_state][action] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][action])
+#
+#         state = next_state
+#         meta_state = next_meta_state
+#
+#     epsilon = epsilon * 0.99
+#
+#     print("End of episode", i, "reward:", episode_reward)
 
 for i in range(10000):
     env.reset()
@@ -100,18 +137,55 @@ for i in range(10000):
 
     while not done:
         if np.random.uniform(0, 1) < epsilon:
-            action = np.random.randint(num_actions)
+            abstraction = np.random.randint(num_abstractions)
         else:
-            action = np.argmax(Q_table[meta_state])
+            abstraction = np.argmax(Q_table[meta_state])
+
+        you_ballx_state = state[0]*255 + state[4]
+        you_bally_state = state[0]*255 + state[5]
+        them_ballx_state = state[2]*255 + state[4]
+        them_bally_state = state[2]*255 + state[5]
+
+
+        if abstraction == 0:
+            if np.random.uniform(0, 1) < epsilon:
+                action = np.random.randint(num_actions)
+            else:
+                action = np.argmax(Q_you_ballx[you_ballx_state])
+        elif abstraction == 1:
+            if np.random.uniform(0, 1) < epsilon:
+                action = np.random.randint(num_actions)
+            else:
+                action = np.argmax(Q_you_bally[you_bally_state])
+        elif abstraction == 2:
+            if np.random.uniform(0, 1) < epsilon:
+                action = np.random.randint(num_actions)
+            else:
+                action = np.argmax(Q_them_ballx[them_ballx_state])
+        elif abstraction ==3:
+            if np.random.uniform(0, 1) < epsilon:
+                action = np.random.randint(num_actions)
+            else:
+                action = np.argmax(Q_them_bally[them_bally_state])
 
         next_obs, reward, done, next_state_info = env.step(action)
-        # env.render()
+        env.render()
         episode_reward += reward
         next_state = info_into_state(next_state_info, None)
+        if reward!= 0:
+            print("Episode", i, "score:", next_state[6], next_state[7])
         next_meta_state = state_into_metastate(next_state, memory)
-        print(i, epsilon, state, meta_state, action, reward)
+        # print(i, epsilon, state, meta_state, action, reward)
 
-        Q_table[meta_state][action] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][action])
+        Q_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
+        you_ballx_next_state = next_state[0]*255 + next_state[4]
+        you_bally_next_state = next_state[0]*255 + next_state[5]
+        them_ballx_next_state = next_state[2]*255 + next_state[4]
+        them_bally_next_state = next_state[2]*255 + next_state[5]
+        Q_you_ballx[you_ballx_state] += alpha * (reward + gamma * max(Q_you_ballx[you_ballx_next_state]) - Q_you_ballx[you_ballx_state][action])
+        Q_you_bally[you_bally_state] += alpha * (reward + gamma * max(Q_you_bally[you_bally_next_state]) - Q_you_bally[you_bally_state][action])
+        Q_them_ballx[them_ballx_state] += alpha * (reward + gamma * max(Q_them_ballx[them_ballx_next_state]) - Q_them_ballx[them_ballx_state][action])
+        Q_them_bally[them_bally_state] += alpha * (reward + gamma * max(Q_them_bally[them_bally_next_state]) - Q_them_bally[them_bally_state][action])
 
         state = next_state
         meta_state = next_meta_state
