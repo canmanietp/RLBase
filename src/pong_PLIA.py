@@ -3,7 +3,7 @@ import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
 import math
 
-num_meta_states = 9998
+num_meta_states = 1000
 num_actions = 6
 
 def info_into_state(info, abstraction):
