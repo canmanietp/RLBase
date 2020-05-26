@@ -3,7 +3,7 @@ import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
 import math
 
-num_meta_states = 100000
+num_meta_states = 5000
 num_actions = 6
 memory_averages = []
 
@@ -50,7 +50,7 @@ def state_into_metastate(state, memory):
             distance += np.linalg.norm(meme - state)
         elif im != 0:
             if distance < lowest_distance:
-                meta_state = int(im/divisions)
+                meta_state = int(im/divisions) - 1
                 lowest_distance = distance
             distance = 0
 
@@ -63,7 +63,7 @@ e = 0
 memory = []
 done = False
 
-while e < 100000:
+while e < 10000:
     next_state, reward, done, next_state_info = env.step(np.random.randint(num_actions))
     current_state = info_into_state(next_state_info, None)
     memory.append(current_state)
