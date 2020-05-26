@@ -93,7 +93,7 @@ for i in range(10000):
 
         meta_state = next_meta_state
 
-    epsilon = epsilon * 0.9999
+    epsilon = epsilon * 0.99
 
     print("End of episode", i, "reward:", episode_reward)
 
