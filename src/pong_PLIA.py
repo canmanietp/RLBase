@@ -3,7 +3,7 @@ import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
 import math
 
-num_meta_states = 5000
+num_meta_states = 500
 num_actions = 6
 memory_averages = []
 
@@ -62,11 +62,14 @@ env.reset()
 e = 0
 memory = []
 done = False
+random_action = np.random.randint(num_actions)
 
-while e < 10000:
-    next_state, reward, done, next_state_info = env.step(np.random.randint(num_actions))
+while e < 1000:
+    next_state, reward, done, next_state_info = env.step(random_action)
     current_state = info_into_state(next_state_info, None)
     memory.append(current_state)
+    if e % 4 == 0:
+        random_action = np.random.randint(num_actions)
     if done:
         e += 1
         done = False
@@ -92,7 +95,8 @@ Q_you_bally = np.zeros([255*255, num_actions])
 # Q_them_ballx = np.zeros([255*255, num_actions])
 # Q_them_bally = np.zeros([255*255, num_actions])
 epsilon = 0.3
-alpha = 0.001
+epsilon_min = 0.01
+alpha = 0.01
 gamma = 0.999
 
 # for i in range(10000):
@@ -146,6 +150,8 @@ for i in range(10000):
         # them_ballx_state = state[2]*255 + state[4]
         # them_bally_state = state[2]*255 + state[5]
 
+        action = -1
+
         if abstraction == 0:
             if np.random.uniform(0, 1) < epsilon:
                 action = np.random.randint(num_actions)
@@ -156,16 +162,16 @@ for i in range(10000):
                 action = np.random.randint(num_actions)
             else:
                 action = np.argmax(Q_you_bally[you_bally_state])
-        elif abstraction == 2:
-            if np.random.uniform(0, 1) < epsilon:
-                action = np.random.randint(num_actions)
-            else:
-                action = np.argmax(Q_them_ballx[them_ballx_state])
-        elif abstraction ==3:
-            if np.random.uniform(0, 1) < epsilon:
-                action = np.random.randint(num_actions)
-            else:
-                action = np.argmax(Q_them_bally[them_bally_state])
+        # elif abstraction == 2:
+        #     if np.random.uniform(0, 1) < epsilon:
+        #         action = np.random.randint(num_actions)
+        #     else:
+        #         action = np.argmax(Q_them_ballx[them_ballx_state])
+        # elif abstraction ==3:
+        #     if np.random.uniform(0, 1) < epsilon:
+        #         action = np.random.randint(num_actions)
+        #     else:
+        #         action = np.argmax(Q_them_bally[them_bally_state])
 
         next_obs, reward, done, next_state_info = env.step(action)
         # env.render()
@@ -189,7 +195,8 @@ for i in range(10000):
         state = next_state
         meta_state = next_meta_state
 
-    epsilon = epsilon * 0.99
+    if epsilon > epsilon_min:
+        epsilon = epsilon * 0.99
 
     print("End of episode", i, "reward:", episode_reward, "epsilon", epsilon)
 
