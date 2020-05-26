@@ -180,7 +180,7 @@ for i in range(10000):
         if reward!= 0:
             print("Episode", i, "score:", next_state[6], next_state[7])
         next_meta_state = state_into_metastate(next_state, memory)
-        print(i, epsilon, state, meta_state, action, reward)
+        # print(i, epsilon, state, meta_state, action, reward)
 
         Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
         you_ballx_next_state = next_state[0]*255 + next_state[4]
