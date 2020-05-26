@@ -64,7 +64,7 @@ memory = []
 done = False
 random_action = np.random.randint(num_actions)
 
-while e < 1000:
+while e < 100:
     next_state, reward, done, next_state_info = env.step(random_action)
     current_state = info_into_state(next_state_info, None)
     memory.append(current_state)
@@ -87,9 +87,9 @@ print("finished collecting memory")
 #     print(i, current_state, state_into_metastate(current_state, memory))
 #     i += 1
 
-Q_table = np.zeros([num_meta_states+2, num_actions])
+Q_table = np.zeros([num_meta_states*2, num_actions])
 num_abstractions = 2
-Q_LIA_table = np.zeros([num_meta_states+2, num_abstractions])
+Q_LIA_table = np.zeros([num_meta_states*2, num_abstractions])
 Q_you_ballx = np.zeros([255*255, num_actions])
 Q_you_bally = np.zeros([255*255, num_actions])
 # Q_them_ballx = np.zeros([255*255, num_actions])
@@ -180,7 +180,7 @@ for i in range(10000):
         if reward!= 0:
             print("Episode", i, "score:", next_state[6], next_state[7])
         next_meta_state = state_into_metastate(next_state, memory)
-        # print(i, epsilon, state, meta_state, action, reward)
+        print(i, epsilon, state, meta_state, action, reward)
 
         Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
         you_ballx_next_state = next_state[0]*255 + next_state[4]
