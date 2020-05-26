@@ -3,7 +3,7 @@ import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
 import math
 
-num_meta_states = 1000
+num_meta_states = 100000
 num_actions = 6
 memory_averages = []
 
@@ -24,6 +24,7 @@ def calculate_memory_interval_averages(memory):
     for i, _ in enumerate(memory[::step]):
         sub_list = memory[i * step:] if (i + 1) * step > len(memory) else memory[i * step:(i + 1) * step]
         memory_averages.append(np.average(sub_list, axis=0))
+
 
 def state_into_metastate(state, memory):
     if memory_averages == []:
