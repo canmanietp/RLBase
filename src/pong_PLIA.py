@@ -139,7 +139,7 @@ for i in range(10000):
         if np.random.uniform(0, 1) < epsilon:
             abstraction = np.random.randint(num_abstractions)
         else:
-            abstraction = np.argmax(Q_table[meta_state])
+            abstraction = np.argmax(Q_LIA_table[meta_state])
 
         you_ballx_state = state[0]*255 + state[4]
         you_bally_state = state[0]*255 + state[5]
@@ -176,7 +176,7 @@ for i in range(10000):
         next_meta_state = state_into_metastate(next_state, memory)
         # print(i, epsilon, state, meta_state, action, reward)
 
-        Q_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
+        Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
         you_ballx_next_state = next_state[0]*255 + next_state[4]
         you_bally_next_state = next_state[0]*255 + next_state[5]
         them_ballx_next_state = next_state[2]*255 + next_state[4]
@@ -191,7 +191,7 @@ for i in range(10000):
 
     epsilon = epsilon * 0.99
 
-    print("End of episode", i, "reward:", episode_reward)
+    print("End of episode", i, "reward:", episode_reward, "epsilon", epsilon)
 
 
 
