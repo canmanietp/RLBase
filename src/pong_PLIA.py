@@ -3,7 +3,7 @@ import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
 import math
 
-num_meta_states = 500
+num_meta_states = 1000
 num_actions = 6
 memory_averages = []
 
@@ -89,12 +89,13 @@ print("finished collecting memory")
 #     i += 1
 
 Q_table = np.zeros([num_meta_states*2, num_actions])
-num_abstractions = 2
+num_abstractions = 3
 Q_LIA_table = np.zeros([num_meta_states*2, num_abstractions])
 Q_you_ballx = np.zeros([255*255, num_actions])
 Q_you_bally = np.zeros([255*255, num_actions])
-# Q_them_ballx = np.zeros([255*255, num_actions])
-# Q_them_bally = np.zeros([255*255, num_actions])
+Q_ballx_bally = np.zeros([255*255, num_actions])
+Q_them_ballx = np.zeros([255*255, num_actions])
+Q_them_bally = np.zeros([255*255, num_actions])
 epsilon = 0.3
 epsilon_min = 0.01
 alpha = 0.01
@@ -148,6 +149,7 @@ for i in range(10000):
 
         you_ballx_state = state[0]*255 + state[4]
         you_bally_state = state[0]*255 + state[5]
+        ballx_bally_state = state[4]*255 + state[5]
         # them_ballx_state = state[2]*255 + state[4]
         # them_bally_state = state[2]*255 + state[5]
 
@@ -163,6 +165,11 @@ for i in range(10000):
                 action = np.random.randint(num_actions)
             else:
                 action = np.argmax(Q_you_bally[you_bally_state])
+        elif abstraction == 2:
+            if np.random.uniform(0, 1) < epsilon:
+                action = np.random.randint(num_actions)
+            else:
+                action = np.argmax(Q_ballx_bally[ballx_bally_state])
         # elif abstraction == 2:
         #     if np.random.uniform(0, 1) < epsilon:
         #         action = np.random.randint(num_actions)
@@ -186,10 +193,12 @@ for i in range(10000):
         Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
         you_ballx_next_state = next_state[0]*255 + next_state[4]
         you_bally_next_state = next_state[0]*255 + next_state[5]
-        them_ballx_next_state = next_state[2]*255 + next_state[4]
-        them_bally_next_state = next_state[2]*255 + next_state[5]
+        ballx_bally_next_state = next_state[4]*255 + next_state[5]
+        # them_ballx_next_state = next_state[2]*255 + next_state[4]
+        # them_bally_next_state = next_state[2]*255 + next_state[5]
         Q_you_ballx[you_ballx_state] += alpha * (reward + gamma * max(Q_you_ballx[you_ballx_next_state]) - Q_you_ballx[you_ballx_state][action])
         Q_you_bally[you_bally_state] += alpha * (reward + gamma * max(Q_you_bally[you_bally_next_state]) - Q_you_bally[you_bally_state][action])
+        Q_ballx_bally[ballx_bally_state] += alpha * (reward + gamma * max(Q_ballx_bally[ballx_bally_next_state]) - Q_ballx_bally[ballx_bally_state][action])
         # Q_them_ballx[them_ballx_state] += alpha * (reward + gamma * max(Q_them_ballx[them_ballx_next_state]) - Q_them_ballx[them_ballx_state][action])
         # Q_them_bally[them_bally_state] += alpha * (reward + gamma * max(Q_them_bally[them_bally_next_state]) - Q_them_bally[them_bally_state][action])
 
