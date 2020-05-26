@@ -6,12 +6,14 @@ import time, os, datetime
 from envs.taxi import TaxiEnv
 from envs.taxilarge import TaxiLargeEnv
 from envs.taxifuel import TaxiFuelEnv
+from envs.noisy_taxi import NoisyTaxiEnv
 from envs.eatfood import EatFoodEnv
 from envs.rm_office import OfficeEnv
 from envs.coffeemail import CoffeeMailEnv
 from envs.coffee import CoffeeEnv
 
 from agents.Q import QAgent
+from agents.L2Q import L2QAgent
 from agents.Q_sens import QSensAgent
 from agents.QLiA import QLiAAgent
 from agents.QVP import QVPAgent
@@ -33,7 +35,7 @@ def get_params_coffee():
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    sub_spaces = [[1, 2, 3, 4], [0, 1, 2, 3, 4]]
+    sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
     size_state_vars = [5, 5, 2, 2, 2]
     num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -55,11 +57,11 @@ def get_params_coffeemail(alg):
     elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QVP':
-        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 2, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     else:
         sub_spaces = []
     size_state_vars = [7, 7, 2, 2, 2, 2, 2, 2]
-    num_episodes = 7000
+    num_episodes = 2500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -79,7 +81,7 @@ def get_params_office(alg):
     elif alg == 'QLiA':
         sub_spaces = [[0, 2, 3, 4, 5], [0, 1, 3, 4, 5], [0, 1, 2, 3, 4, 5]]  # [[1, 2, 3, 4, 5], [0, 2, 3, 4, 5], [0, 1, 2, 4, 5]]  #
     elif alg == 'QVP':
-        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4, 5]]
+        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 4, 5]]
     else:
         sub_spaces = []
     size_state_vars = [9, 12, 2, 2, 2, 2]
@@ -93,14 +95,14 @@ def get_params_eatfood(alg):
     init_alpha = 0.3
     alpha_min = 0.3
     init_epsilon = 0.3
-    epsilon_min = 0.01
+    epsilon_min = 0.1
     init_phi = 0.3
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999
     if alg in ['QAMS', 'QLiA_T']:
         sub_spaces = [[0, 1, 2, 3]]
-    elif alg == 'QLiA':
+    elif alg in ['QLiA', 'QVP']:
         sub_spaces = [[0, 1, 2], [0, 1, 3]]
     else:
         sub_spaces = []
@@ -114,9 +116,9 @@ def get_params_eatfood(alg):
 def get_params_taxifuel(alg):
     init_alpha = 0.3
     alpha_min = 0.3
-    init_epsilon = 0.9
+    init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.001
     discount = 0.95
     decay_rate = 0.999
@@ -127,14 +129,14 @@ def get_params_taxifuel(alg):
     elif alg in ['QLiA', 'QLiA_T', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QVP':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
+        sub_spaces = [[0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
         # get 10, put 11, refuel 12, root 13
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 50001
+    num_episodes = 80001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -142,7 +144,7 @@ def get_params_taxifuel(alg):
 def get_params_taxilarge(alg):
     init_alpha = 0.1
     alpha_min = 0.1
-    init_epsilon = 0.5
+    init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.3
     phi_min = 0.001
@@ -166,9 +168,9 @@ def get_params_taxilarge(alg):
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
-def get_params_taxi(alg):
+def get_params_noisytaxi(alg):
     init_alpha = 0.2
-    alpha_min = 0.2
+    alpha_min = 0.05
     init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.3
@@ -188,8 +190,40 @@ def get_params_taxi(alg):
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     else:
         sub_spaces = []
-    size_state_vars = [5, 5, 5, 4]
+    size_state_vars = [5, 5, 5, 4, 5]
     num_episodes = 1000
+    return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                              discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
+
+
+def get_params_taxi(alg):
+    init_alpha = 0.1
+    alpha_min = 0.1
+    init_epsilon = 0.5
+    epsilon_min = 0.001
+    init_phi = 0.9
+    phi_min = 0.01
+    discount = 0.95
+    decay_rate = 0.99
+    sub_spaces = None
+    options = None
+    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'QLiA_T':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'QVP':
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg == 'MaxQ':
+        # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
+        options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
+    # elif alg == 'Q':
+    #     init_epsilon = 0.2
+    #     epsilon_min = 0.01
+    else:
+        sub_spaces = []
+    size_state_vars = [5, 5, 5, 4]
+    num_episodes = 5000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -205,6 +239,9 @@ def get_params(env_name, alg=None):
     elif env_name == 'taxifuel':
         env = TaxiFuelEnv()
         params = get_params_taxifuel(alg)
+    elif env_name == 'noisytaxi':
+        env = NoisyTaxiEnv()
+        params = get_params_noisytaxi(alg)
     elif env_name == 'eatfood':
         env = EatFoodEnv()
         params = get_params_eatfood(alg)
@@ -240,6 +277,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 agents.append(QAgent(env, params))
             elif alg == 'Q_sens':
                 agents.append(QSensAgent(env, params))
+            elif alg == 'L2Q':
+                agents.append(L2QAgent(env, params))
             elif alg == 'QLiA':
                 agents.append(QLiAAgent(env, params))
             elif alg == 'QVP':
@@ -267,6 +306,9 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
             for i in range(params.num_episodes):
                 agent.reset()
+                if 'Noisy' in str(agent.env):
+                    agent.env = NoisyTaxiEnv()
+
                 if j == 0:
                     state = agent.current_state
                     starting_states.append(state)
@@ -276,16 +318,6 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                     agent.set_state(state)
 
                 ep_reward = agent.do_episode()
-                # if i == agent.params.num_episodes - 1:
-                #     state_variables = list(range(len(agent.params.size_state_vars)))
-                #     sensitivities = sensitivity.do_sensitivity_analysis(agent, agent.history, state_variables)
-                #     states_of_interest = [agent.env.encode(3, 3, 2, 1), agent.env.encode(3, 2, 2, 1), agent.env.encode(4, 3, 2, 1)]
-                #     for si in states_of_interest:
-                #         print(si, np.sum(agent.sa_visits[si]), sensitivities[si])
-                #     sums = [0. for va in state_variables]
-                #     for key, value in sensitivities.items():
-                #         sums = np.add(sums, value)
-                #     print(sums)
                 episode_rewards[j].append(ep_reward)
 
                 if verbose:
@@ -298,6 +330,35 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             plt.plot(plotting.moving_average(episode_rewards[j], int(params.num_episodes / 100)), label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
+
+            # from helpers import sensitivity
+            #
+            # for s in range(agent.observation_space):
+            #     sensitivities = sensitivity.do_sensitivity_analysis_single_state(agent, agent.ranges, s, agent.state_variables)
+            #     least_influence = int(np.argmax(sensitivities))
+            #
+            #     state = list(agent.env.decode(s))
+            #     print("Least influence for state: ", state, sensitivities, least_influence)
+            # state = agent.env.encode(1, 1, 1, 3)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 2, 3)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 3, 3)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 4, 3)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 1, 0)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 1, 1)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 1, 2)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 4, 0)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 4, 1)
+            # print("Q values for state: ", state, agent.Q_table[state])
+            # state = agent.env.encode(1, 1, 4, 2)
+            # print("Q values for state: ", state, agent.Q_table[state])
 
         plt.close()
         trial_rewards.append(episode_rewards)

@@ -16,11 +16,13 @@ class MaxQAgent(BaseAgent):
         self.C = np.zeros((num_options, self.observation_space, num_options))
         self.C_2 = np.zeros((num_options, self.observation_space, num_options))
 
-        if 'TaxiEnv' in str(self.env):
+        if 'NoisyTaxiEnv' in str(self.sa_visits):
             self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx
         elif 'TaxiFuelEnv' in str(self.env):
             self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx (NO DESTINATION OR FUEL)
             self.V.append(np.zeros((num_options, 5 * 5 * 5 * 4)))  # taxi row, taxi col, passidx, fuel (NO FUEL)
+        elif 'TaxiEnv' in str(self.env):
+            self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx
 
         self.done = False
         self.r_sum = 0

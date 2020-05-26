@@ -1,6 +1,8 @@
 from agents.base import BaseAgent
 import numpy as np
 import random, copy
+from helpers import ranges
+
 
 
 class QAgent(BaseAgent):
@@ -9,6 +11,9 @@ class QAgent(BaseAgent):
         self.name = 'Q'
         self.params = copy.copy(params)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
+
+        self.state_variables = list(range(len(self.params.size_state_vars)))
+        self.ranges = ranges.get_var_ranges(self, [np.zeros(self.observation_space), self.params.size_state_vars], self.state_variables)
 
     def e_greedy_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
@@ -35,6 +40,7 @@ class QAgent(BaseAgent):
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
         self.update(state, action, reward, next_state, done)
+        self.current_state = next_state
         return reward, done
 
 

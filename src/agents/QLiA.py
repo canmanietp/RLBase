@@ -76,6 +76,7 @@ class QLiAAgent(QAgent):
             # if ia == ab_index or self.sa_visits[state][ia] < 15:
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
+            # Shouldn't the LR be smaller if it's not confident? and bigger if it is?
             lr = self.params.ALPHA / (1 + (1 - ia == ab_index)*self.sa_visits[state][ia])
             ab.params.ALPHA = lr
             ab.update(abs_state, action, reward, abs_next_state, done)
@@ -90,6 +91,7 @@ class QLiAAgent(QAgent):
         next_state, reward, done = self.step(action)
         self.update_LIA(state, ab_index, action, reward, next_state, done)
         self.last_state = state
+        self.current_state = next_state
         if done:
             self.last_ab = None
             self.last_state = None

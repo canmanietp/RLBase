@@ -72,11 +72,11 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         self.num_columns = 5
 
         # ---IF BIG
-        self.desc = np.asarray(BIGMAP, dtype='c')
-        self.c_loc = (6, 1)
-        self.A_loc = (6, 6)
-        self.num_rows = 7
-        self.num_columns = 7
+        # self.desc = np.asarray(BIGMAP, dtype='c')
+        # self.c_loc = (6, 1)
+        # self.A_loc = (6, 6)
+        # self.num_rows = 7
+        # self.num_columns = 7
 
         self.state_desc = ['x', 'y', 'rc', 'rm', 'ac', 'bc', 'am', 'bm']
 
@@ -167,9 +167,9 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         rc = 0
         rm = 0
         ac = np.random.randint(0, 2)
-        bc = np.random.randint(0, 2)
+        bc = not ac  # np.random.randint(0, 2)
         am = np.random.randint(0, 2)
-        bm = np.random.randint(0, 2)
+        bm = not am  # np.random.randint(0, 2)
         self.s = self.encode(x, y, rc, rm, ac, bc, am, bm)
         self.lastaction = None
         return self.s

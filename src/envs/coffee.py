@@ -124,7 +124,7 @@ class CoffeeEnv(discrete.DiscreteEnv):
         y = np.random.randint(0, 5)
         rc = 0
         ac = np.random.randint(0, 2)
-        bc = np.random.randint(0, 2)
+        bc = not ac  # np.random.randint(0, 2)
         self.s = self.encode(x, y, rc, ac, bc)
         self.lastaction = None
         return self.s
