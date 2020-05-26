@@ -63,17 +63,19 @@ e = 0
 memory = []
 done = False
 random_action = np.random.randint(num_actions)
+p = 0
 
-while e < 10:
+while e < 4:
     next_state, reward, done, next_state_info = env.step(random_action)
     current_state = info_into_state(next_state_info, None)
     memory.append(current_state)
-    if e % 4 == 0:
+    if p % 4 == 0:
         random_action = np.random.randint(num_actions)
     if done:
         e += 1
         done = False
         env.reset()
+    p += 1
 
 print("finished collecting memory")
 
@@ -140,36 +142,38 @@ for i in range(10000):
     _, _, _, info = env.step(np.random.randint(num_actions))
     state = info_into_state(info, None)
     meta_state = state_into_metastate(state, memory)
+    abstraction = np.random.randint(num_abstractions)
+    action = np.random.randint(num_actions)
+    k = 0
 
     while not done:
-        if np.random.uniform(0, 1) < epsilon:
-            abstraction = np.random.randint(num_abstractions)
-        else:
-            abstraction = np.argmax(Q_LIA_table[meta_state])
-
-        you_ballx_state = state[0]*255 + state[4]
-        you_bally_state = state[0]*255 + state[5]
-        ballx_bally_state = state[4]*255 + state[5]
+        you_ballx_state = state[0] * 255 + state[4]
+        you_bally_state = state[0] * 255 + state[5]
+        ballx_bally_state = state[4] * 255 + state[5]
         # them_ballx_state = state[2]*255 + state[4]
         # them_bally_state = state[2]*255 + state[5]
 
-        action = -1
+        if k % 4 == 0:
+            if np.random.uniform(0, 1) < epsilon:
+                abstraction = np.random.randint(num_abstractions)
+            else:
+                abstraction = np.argmax(Q_LIA_table[meta_state])
 
-        if abstraction == 0:
-            if np.random.uniform(0, 1) < epsilon:
-                action = np.random.randint(num_actions)
-            else:
-                action = np.argmax(Q_you_ballx[you_ballx_state])
-        elif abstraction == 1:
-            if np.random.uniform(0, 1) < epsilon:
-                action = np.random.randint(num_actions)
-            else:
-                action = np.argmax(Q_you_bally[you_bally_state])
-        elif abstraction == 2:
-            if np.random.uniform(0, 1) < epsilon:
-                action = np.random.randint(num_actions)
-            else:
-                action = np.argmax(Q_ballx_bally[ballx_bally_state])
+            if abstraction == 0:
+                if np.random.uniform(0, 1) < epsilon:
+                    action = np.random.randint(num_actions)
+                else:
+                    action = np.argmax(Q_you_ballx[you_ballx_state])
+            elif abstraction == 1:
+                if np.random.uniform(0, 1) < epsilon:
+                    action = np.random.randint(num_actions)
+                else:
+                    action = np.argmax(Q_you_bally[you_bally_state])
+            elif abstraction == 2:
+                if np.random.uniform(0, 1) < epsilon:
+                    action = np.random.randint(num_actions)
+                else:
+                    action = np.argmax(Q_ballx_bally[ballx_bally_state])
         # elif abstraction == 2:
         #     if np.random.uniform(0, 1) < epsilon:
         #         action = np.random.randint(num_actions)
@@ -182,10 +186,10 @@ for i in range(10000):
         #         action = np.argmax(Q_them_bally[them_bally_state])
 
         next_obs, reward, done, next_state_info = env.step(action)
-        # env.render()
+        env.render()
         episode_reward += reward
         next_state = info_into_state(next_state_info, None)
-        if reward!= 0:
+        if reward != 0:
             print("Episode", i, "score:", next_state[6], next_state[7])
         next_meta_state = state_into_metastate(next_state, memory)
         # print(i, epsilon, state, meta_state, action, reward)
@@ -204,6 +208,7 @@ for i in range(10000):
 
         state = next_state
         meta_state = next_meta_state
+        k += 1
 
     if epsilon > epsilon_min:
         epsilon = epsilon * 0.99
