@@ -64,8 +64,8 @@ print("finished collecting memory")
 
 Q_table = np.zeros([num_meta_states+2, num_actions])
 epsilon = 0.5
-alpha = 0.05
-gamma = 0.99
+alpha = 0.001
+gamma = 0.999
 
 for i in range(10000):
     env.reset()
@@ -87,7 +87,7 @@ for i in range(10000):
         episode_reward += reward
         next_state = info_into_state(next_state_info, None)
         next_meta_state = state_into_metastate(next_state, memory)
-        print(i, state, meta_state, next_state, next_meta_state, action, reward)
+        print(i, epsilon, state, meta_state, action, reward)
 
         Q_table[meta_state][action] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][action])
 
