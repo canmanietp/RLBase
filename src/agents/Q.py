@@ -12,9 +12,6 @@ class QAgent(BaseAgent):
         self.params = copy.copy(params)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
-        self.state_variables = list(range(len(self.params.size_state_vars)))
-        self.ranges = ranges.get_var_ranges(self, [np.zeros(self.observation_space), self.params.size_state_vars], self.state_variables)
-
     def e_greedy_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
             return self.random_action()
@@ -36,11 +33,19 @@ class QAgent(BaseAgent):
         return td_error
 
     def do_step(self):
-        state = self.current_state
-        action = self.e_greedy_action(state)
-        next_state, reward, done = self.step(action)
-        self.update(state, action, reward, next_state, done)
-        self.current_state = next_state
+        if 'AtariARIWrapper' in str(self.env):
+            state = self.current_state
+            action = self.e_greedy_action(state)
+            next_state, reward, done, next_state_info = self.env.step(action)
+            next_state = self.info_into_state(next_state_info, None)
+            self.update(state, action, reward, next_state, done)
+            self.current_state = next_state
+        else:
+            state = self.current_state
+            action = self.e_greedy_action(state)
+            next_state, reward, done = self.step(action)
+            self.update(state, action, reward, next_state, done)
+            self.current_state = next_state
         return reward, done
 
 

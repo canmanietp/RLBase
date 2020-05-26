@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 import time, os, datetime
+import gym
 
 from envs.taxi import TaxiEnv
 from envs.taxilarge import TaxiLargeEnv
@@ -24,6 +25,22 @@ from agents.QAMS import QAMSAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
 from helpers import sensitivity
+
+def get_params_pong():
+    init_alpha = 0.1
+    alpha_min = 0.1
+    init_epsilon = 0.9
+    epsilon_min = 0.001
+    init_phi = 0.3
+    phi_min = 0.001
+    discount = 0.99
+    decay_rate = 0.99999
+    sub_spaces = [[0, 1, 2, 3, 4, 5, 6, 7]]
+    size_state_vars = [51, 51, 51, 51, 51, 51, 21, 21]
+    num_episodes = 100000
+    return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                              discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params_coffee():
@@ -223,7 +240,7 @@ def get_params_taxi(alg):
     else:
         sub_spaces = []
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 5000
+    num_episodes = 1000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -254,6 +271,10 @@ def get_params(env_name, alg=None):
     elif env_name == 'coffee':
         env = CoffeeEnv()
         params = get_params_coffee()
+    elif env_name == 'pong':
+        from envs.atariari.benchmark.wrapper import AtariARIWrapper
+        env = AtariARIWrapper(gym.make('Pong-v0'))
+        params = get_params_pong()
     else:
         print("Error: Unknown environment")
         return
@@ -306,16 +327,17 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
             for i in range(params.num_episodes):
                 agent.reset()
-                if 'Noisy' in str(agent.env):
-                    agent.env = NoisyTaxiEnv()
+                if 'AtariARIWrapper' not in str(agent.env):
+                    if 'Noisy' in str(agent.env):
+                        agent.env = NoisyTaxiEnv()
 
-                if j == 0:
-                    state = agent.current_state
-                    starting_states.append(state)
-                    decoded_ss.append(list(env.decode(state)))
-                else:
-                    state = starting_states[i]
-                    agent.set_state(state)
+                    if j == 0:
+                        state = agent.current_state
+                        starting_states.append(state)
+                        decoded_ss.append(list(env.decode(state)))
+                    else:
+                        state = starting_states[i]
+                        agent.set_state(state)
 
                 ep_reward = agent.do_episode()
                 episode_rewards[j].append(ep_reward)
@@ -373,6 +395,13 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
 
     plt.legend([a for a in algs], loc='lower right')
     plt.savefig('{}/final'.format(exp_dir))
+
+    plt.figure()
+    for trial in np.average(trial_rewards, axis=0):
+        plt.plot(np.cumsum(trial))
+
+    plt.legend([a for a in algs], loc='lower right')
+    plt.savefig('{}/cumsum'.format(exp_dir))
 
     for ia, alg in enumerate(algs):
         env, params = get_params(env_name, alg)

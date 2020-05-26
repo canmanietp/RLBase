@@ -6,8 +6,8 @@ class BaseAgent:
     def __init__(self, env):
         self.name = 'Base'
         self.env = env
-        self.observation_space = env.observation_space.n
-        self.action_space = env.action_space.n
+        self.observation_space = np.product([51, 51, 51, 51, 51, 51, 21, 21]) # env.observation_space.n
+        self.action_space = 6  # env.action_space.n
         self.sa_visits = np.zeros([self.observation_space, self.action_space])
         self.current_state = self.reset()
 

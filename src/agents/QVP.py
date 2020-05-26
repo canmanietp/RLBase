@@ -202,14 +202,13 @@ class QVPAgent(QAgent):
         #     return None, np.argmax(qs)
         # else:
         #     return None, self.e_greedy_action(state)
-        if len(self.trajectory) >= self.memory_length:  # and np.sum(self.sa_visits[state]) < 5
+        if len(self.trajectory) >= self.memory_length and np.sum(self.sa_visits[state]) < 20:
             # sensitivities = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
             sensitivities = sensitivity.do_sensitivity_analysis_single_state(self, self.ranges, state, self.state_variables)
 
             if sensitivities is not None:
-                minus_inf = [si for si in sensitivities if si != float("inf")]
-                if min(minus_inf) < np.mean(minus_inf) - 1*np.std(minus_inf):
-                    least_influence = int(np.argmin(sensitivities))
+                if max(sensitivities) > np.mean(sensitivities) + 1*np.std(sensitivities):
+                    least_influence = int(np.argmax(sensitivities))
                     abstraction = [value for value in self.state_variables if value != least_influence]
 
                     update_states = []
@@ -265,8 +264,8 @@ class QVPAgent(QAgent):
                         #         qs = v
                         #         max_val = np.max(v)
 
-                    if np.argmax(qs) != np.argmax(self.Q_table[state]):
-                        print(sensitivities, "in state ", list(self.env.decode(state)), "and ignoring", least_influence, "taking action", np.argmax(qs), "instead of", np.argmax(self.Q_table[state]))
+                    # if np.argmax(qs) != np.argmax(self.Q_table[state]):
+                    #     print(sensitivities, "in state ", list(self.env.decode(state)), "and ignoring", least_influence, "taking action", np.argmax(qs), "instead of", np.argmax(self.Q_table[state]))
                     return True, np.argmax(qs)
                 else:
                     return False, self.e_greedy_action(state)
