@@ -70,7 +70,7 @@ p = 0
 
 while e < 4:
     next_state, reward, done, next_state_info = env.step(random_action)
-    current_state = info_into_state(next_state_info, [4, 5])
+    current_state = info_into_state(next_state_info, None)
     memory.append(current_state)
     if p % 4 == 0:
         random_action = np.random.randint(num_actions)
