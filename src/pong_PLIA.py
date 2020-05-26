@@ -87,7 +87,7 @@ for i in range(10000):
         episode_reward += reward
         next_state = info_into_state(next_state_info, None)
         next_meta_state = state_into_metastate(next_state, memory)
-        print(state, meta_state, next_state, next_meta_state, action, reward)
+        print(i, state, meta_state, next_state, next_meta_state, action, reward)
 
         Q_table[meta_state][action] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][action])
 
