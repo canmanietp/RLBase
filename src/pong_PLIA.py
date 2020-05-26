@@ -91,6 +91,7 @@ for i in range(10000):
 
         Q_table[meta_state][action] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][action])
 
+        state = next_state
         meta_state = next_meta_state
 
     epsilon = epsilon * 0.99
