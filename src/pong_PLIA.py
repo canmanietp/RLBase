@@ -146,7 +146,6 @@ for i in range(10000):
         them_ballx_state = state[2]*255 + state[4]
         them_bally_state = state[2]*255 + state[5]
 
-
         if abstraction == 0:
             if np.random.uniform(0, 1) < epsilon:
                 action = np.random.randint(num_actions)
@@ -169,7 +168,7 @@ for i in range(10000):
                 action = np.argmax(Q_them_bally[them_bally_state])
 
         next_obs, reward, done, next_state_info = env.step(action)
-        env.render()
+        # env.render()
         episode_reward += reward
         next_state = info_into_state(next_state_info, None)
         if reward!= 0:
