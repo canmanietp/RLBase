@@ -3,7 +3,7 @@ import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
 import math
 
-num_meta_states = 500
+num_meta_states = 2000
 num_actions = 6
 memory_averages = []
 
@@ -64,7 +64,7 @@ memory = []
 done = False
 random_action = np.random.randint(num_actions)
 
-while e < 100:
+while e < 20:
     next_state, reward, done, next_state_info = env.step(random_action)
     current_state = info_into_state(next_state_info, None)
     memory.append(current_state)
@@ -73,6 +73,7 @@ while e < 100:
     if done:
         e += 1
         done = False
+        env.reset()
 
 print("finished collecting memory")
 
