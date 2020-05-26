@@ -5,6 +5,7 @@ import math
 
 num_meta_states = 1000
 num_actions = 6
+memory_averages = []
 
 def info_into_state(info, abstraction):
     state = []
@@ -18,21 +19,42 @@ def info_into_state(info, abstraction):
     return np.array(state)
 
 
+def calculate_memory_interval_averages(memory):
+    step = int(len(memory) / num_meta_states)
+    for i, _ in enumerate(memory[::step]):
+        sub_list = memory[i * step:] if (i + 1) * step > len(memory) else memory[i * step:(i + 1) * step]
+        memory_averages.append(np.average(sub_list, axis=0))
+
 def state_into_metastate(state, memory):
+    if memory_averages == []:
+        calculate_memory_interval_averages(memory)
     lowest_distance = float("inf")
     meta_state = -1
-    divisions = math.floor(len(memory) / num_meta_states)
     distance = float("inf")
-    for im, meme in enumerate(memory):
-        if im % divisions != 0:
-            distance += np.linalg.norm(meme - state)
-        else:
-            if distance < lowest_distance:
-                meta_state = math.floor(im/divisions)
-                lowest_distance = distance
-            distance = 0
+    for im, meme in enumerate(memory_averages):
+        distance = np.linalg.norm(meme - state)
+        if distance < lowest_distance:
+            meta_state = im
+            lowest_distance = distance
 
     return meta_state
+
+
+# def state_into_metastate(state, memory):
+#     lowest_distance = float("inf")
+#     meta_state = -1
+#     divisions = int(len(memory) / num_meta_states)
+#     distance = float("inf")
+#     for im, meme in enumerate(memory):
+#         if im % divisions != 0:
+#             distance += np.linalg.norm(meme - state)
+#         elif im != 0:
+#             if distance < lowest_distance:
+#                 meta_state = int(im/divisions)
+#                 lowest_distance = distance
+#             distance = 0
+#
+#     return meta_state
 
 
 env = AtariARIWrapper(gym.make('Pong-v0'))
