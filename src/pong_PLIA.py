@@ -1,3 +1,6 @@
+import datetime
+import os
+
 import gym
 import numpy as np
 from envs.atariari.benchmark.wrapper import AtariARIWrapper
@@ -67,7 +70,7 @@ p = 0
 
 while e < 4:
     next_state, reward, done, next_state_info = env.step(random_action)
-    current_state = info_into_state(next_state_info, None)
+    current_state = info_into_state(next_state_info, [4, 5])
     memory.append(current_state)
     if p % 4 == 0:
         random_action = np.random.randint(num_actions)
@@ -101,7 +104,7 @@ Q_them_bally = np.zeros([255*255, num_actions])
 epsilon = 0.3
 epsilon_min = 0.01
 alpha = 0.01
-gamma = 0.999
+gamma = 0.99
 
 # for i in range(10000):
 #     env.reset()
@@ -134,6 +137,11 @@ gamma = 0.999
 #
 #     print("End of episode", i, "reward:", episode_reward)
 
+date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+exp_dir = "tmp/{}".format(date_string)
+os.mkdir(exp_dir)
+f = open(exp_dir+str('/episode_rewards.csv'), 'w')
+
 for i in range(10000):
     env.reset()
     episode_reward = 0
@@ -142,6 +150,8 @@ for i in range(10000):
     _, _, _, info = env.step(np.random.randint(num_actions))
     state = info_into_state(info, None)
     meta_state = state_into_metastate(state, memory)
+    # meta_state_vars = info_into_state(info, [4, 5])
+    # meta_state = meta_state_vars[1] * 255 + meta_state_vars[0]
     abstraction = np.random.randint(num_abstractions)
     action = np.random.randint(num_actions)
     k = 0
@@ -192,9 +202,11 @@ for i in range(10000):
         if reward != 0:
             print("Episode", i, "score:", next_state[6], next_state[7])
         next_meta_state = state_into_metastate(next_state, memory)
+        # next_meta_state_vars = info_into_state(next_state_info, [4, 5])
+        # next_meta_state = next_meta_state_vars[1]*255 + next_meta_state_vars[0]
         # print(i, epsilon, state, meta_state, action, reward)
 
-        Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_table[next_meta_state]) - Q_table[meta_state][abstraction])
+        Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_LIA_table[next_meta_state]) - Q_LIA_table[meta_state][abstraction])
         you_ballx_next_state = next_state[0]*255 + next_state[4]
         you_bally_next_state = next_state[0]*255 + next_state[5]
         ballx_bally_next_state = next_state[4]*255 + next_state[5]
@@ -214,6 +226,9 @@ for i in range(10000):
         epsilon = epsilon * 0.99
 
     print("End of episode", i, "reward:", episode_reward, "epsilon", epsilon)
+    f.write(str(i)+','+str(episode_reward)+'\n')
+
+f.close()
 
 
 
