@@ -61,26 +61,26 @@ def state_into_metastate(state, memory):
 
 
 env = AtariARIWrapper(gym.make('Pong-v0'))
-env.reset()
-e = 0
-memory = []
-done = False
-random_action = np.random.randint(num_actions)
-p = 0
-
-while e < 4:
-    next_state, reward, done, next_state_info = env.step(random_action)
-    current_state = info_into_state(next_state_info, None)
-    memory.append(current_state)
-    if p % 4 == 0:
-        random_action = np.random.randint(num_actions)
-    if done:
-        e += 1
-        done = False
-        env.reset()
-    p += 1
-
-print("finished collecting memory")
+# env.reset()
+# e = 0
+# memory = []
+# done = False
+# random_action = np.random.randint(num_actions)
+# p = 0
+#
+# while e < 4:
+#     next_state, reward, done, next_state_info = env.step(random_action)
+#     current_state = info_into_state(next_state_info, None)
+#     memory.append(current_state)
+#     if p % 4 == 0:
+#         random_action = np.random.randint(num_actions)
+#     if done:
+#         e += 1
+#         done = False
+#         env.reset()
+#     p += 1
+#
+# print("finished collecting memory")
 
 # env.reset()
 #
@@ -95,13 +95,13 @@ print("finished collecting memory")
 
 Q_table = np.zeros([num_meta_states*2, num_actions])
 num_abstractions = 3
-Q_LIA_table = np.zeros([num_meta_states*2, num_abstractions])
+Q_LIA_table = np.zeros([255*255, num_abstractions])
 Q_you_ballx = np.zeros([255*255, num_actions])
 Q_you_bally = np.zeros([255*255, num_actions])
 Q_ballx_bally = np.zeros([255*255, num_actions])
 Q_them_ballx = np.zeros([255*255, num_actions])
 Q_them_bally = np.zeros([255*255, num_actions])
-epsilon = 0.3
+epsilon = 0.4
 epsilon_min = 0.01
 alpha = 0.01
 gamma = 0.99
@@ -149,9 +149,9 @@ for i in range(10000):
 
     _, _, _, info = env.step(np.random.randint(num_actions))
     state = info_into_state(info, None)
-    meta_state = state_into_metastate(state, memory)
-    # meta_state_vars = info_into_state(info, [4, 5])
-    # meta_state = meta_state_vars[1] * 255 + meta_state_vars[0]
+    # meta_state = state_into_metastate(state, memory)
+    meta_state_vars = info_into_state(info, [4, 5])
+    meta_state = meta_state_vars[1] * 255 + meta_state_vars[0]
     abstraction = np.random.randint(num_abstractions)
     action = np.random.randint(num_actions)
     k = 0
@@ -201,9 +201,9 @@ for i in range(10000):
         next_state = info_into_state(next_state_info, None)
         if reward != 0:
             print("Episode", i, "score:", next_state[6], next_state[7])
-        next_meta_state = state_into_metastate(next_state, memory)
-        # next_meta_state_vars = info_into_state(next_state_info, [4, 5])
-        # next_meta_state = next_meta_state_vars[1]*255 + next_meta_state_vars[0]
+        # next_meta_state = state_into_metastate(next_state, memory)
+        next_meta_state_vars = info_into_state(next_state_info, [4, 5])
+        next_meta_state = next_meta_state_vars[1]*255 + next_meta_state_vars[0]
         # print(i, epsilon, state, meta_state, action, reward)
 
         Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_LIA_table[next_meta_state]) - Q_LIA_table[meta_state][abstraction])
@@ -223,7 +223,7 @@ for i in range(10000):
         k += 1
 
     if epsilon > epsilon_min:
-        epsilon = epsilon * 0.99
+        epsilon = epsilon * 0.999
 
     print("End of episode", i, "reward:", episode_reward, "epsilon", epsilon)
     f.write(str(i)+','+str(episode_reward)+'\n')
