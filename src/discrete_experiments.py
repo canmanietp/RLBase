@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 import time, os, datetime
-import gym
 
 from envs.taxi import TaxiEnv
 from envs.taxilarge import TaxiLargeEnv
@@ -25,23 +24,6 @@ from agents.QAMS import QAMSAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
 from helpers import sensitivity
-
-def get_params_pong():
-    init_alpha = 0.1
-    alpha_min = 0.1
-    init_epsilon = 0.9
-    epsilon_min = 0.001
-    init_phi = 0.3
-    phi_min = 0.001
-    discount = 0.99
-    decay_rate = 0.99999
-    sub_spaces = [[0, 1, 2, 3, 4, 5, 6, 7]]
-    size_state_vars = [51, 51, 51, 51, 51, 51, 21, 21]
-    num_episodes = 100000
-    return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
-                              discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
-
 
 def get_params_coffee():
     init_alpha = 0.5
@@ -271,10 +253,6 @@ def get_params(env_name, alg=None):
     elif env_name == 'coffee':
         env = CoffeeEnv()
         params = get_params_coffee()
-    elif env_name == 'pong':
-        from envs.atariari.benchmark.wrapper import AtariARIWrapper
-        env = AtariARIWrapper(gym.make('Pong-v0'))
-        params = get_params_pong()
     else:
         print("Error: Unknown environment")
         return

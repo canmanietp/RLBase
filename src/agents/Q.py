@@ -33,19 +33,11 @@ class QAgent(BaseAgent):
         return td_error
 
     def do_step(self):
-        if 'AtariARIWrapper' in str(self.env):
-            state = self.current_state
-            action = self.e_greedy_action(state)
-            next_state, reward, done, next_state_info = self.env.step(action)
-            next_state = self.info_into_state(next_state_info, None)
-            self.update(state, action, reward, next_state, done)
-            self.current_state = next_state
-        else:
-            state = self.current_state
-            action = self.e_greedy_action(state)
-            next_state, reward, done = self.step(action)
-            self.update(state, action, reward, next_state, done)
-            self.current_state = next_state
+        state = self.current_state
+        action = self.e_greedy_action(state)
+        next_state, reward, done = self.step(action)
+        self.update(state, action, reward, next_state, done)
+        self.current_state = next_state
         return reward, done
 
 
