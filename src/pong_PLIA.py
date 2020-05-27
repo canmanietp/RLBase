@@ -141,6 +141,7 @@ date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 exp_dir = "tmp/{}".format(date_string)
 os.mkdir(exp_dir)
 f = open(exp_dir+str('/episode_rewards.csv'), 'w')
+episode_rewards = []
 
 for i in range(10000):
     env.reset()
@@ -154,7 +155,7 @@ for i in range(10000):
     meta_state = meta_state_vars[1] * 255 + meta_state_vars[0]
     abstraction = np.random.randint(num_abstractions)
     action = np.random.randint(num_actions)
-    k = 0
+    step = 0
 
     while not done:
         you_ballx_state = state[0] * 255 + state[4]
@@ -163,7 +164,7 @@ for i in range(10000):
         # them_ballx_state = state[2]*255 + state[4]
         # them_bally_state = state[2]*255 + state[5]
 
-        if k % 2 == 0:
+        if step % 2 == 0:
             if np.random.uniform(0, 1) < epsilon:
                 abstraction = np.random.randint(num_abstractions)
             else:
@@ -199,8 +200,8 @@ for i in range(10000):
         # env.render()
         episode_reward += reward
         next_state = info_into_state(next_state_info, None)
-        if reward != 0:
-            print("Episode", i, "score:", next_state[6], next_state[7])
+        # if reward != 0:
+        #     print("Episode", i, "score:", next_state[6], next_state[7])
         # next_meta_state = state_into_metastate(next_state, memory)
         next_meta_state_vars = info_into_state(next_state_info, [4, 5])
         next_meta_state = next_meta_state_vars[1]*255 + next_meta_state_vars[0]
@@ -220,13 +221,17 @@ for i in range(10000):
 
         state = next_state
         meta_state = next_meta_state
-        k += 1
+        step += 1
 
     if epsilon > epsilon_min:
         epsilon = epsilon * 0.999
 
     print("End of episode", i, "reward:", episode_reward, "epsilon", epsilon)
+    episode_rewards.append(episode_reward)
     f.write(str(i)+','+str(episode_reward)+'\n')
+
+    if i !=0 and i % 100 == 0:
+        print("Last 100 episodes average reward", np.mean(episode_rewards[-100:]))
 
 f.close()
 
