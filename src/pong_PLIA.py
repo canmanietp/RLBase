@@ -94,17 +94,17 @@ env = AtariARIWrapper(gym.make('Pong-v0'))
 #     i += 1
 
 Q_table = np.zeros([num_meta_states*2, num_actions])
-num_abstractions = 3
+num_abstractions = 2
 Q_LIA_table = np.zeros([255*255, num_abstractions])
 Q_you_ballx = np.zeros([255*255, num_actions])
 Q_you_bally = np.zeros([255*255, num_actions])
-Q_ballx_bally = np.zeros([255*255, num_actions])
-Q_them_ballx = np.zeros([255*255, num_actions])
-Q_them_bally = np.zeros([255*255, num_actions])
+# Q_ballx_bally = np.zeros([255*255, num_actions])
+# Q_them_ballx = np.zeros([255*255, num_actions])
+# Q_them_bally = np.zeros([255*255, num_actions])
 epsilon = 0.4
 epsilon_min = 0.01
-alpha = 0.01
-gamma = 0.99
+alpha = 0.001
+gamma = 0.995
 
 # for i in range(10000):
 #     env.reset()
@@ -159,7 +159,7 @@ for i in range(10000):
     while not done:
         you_ballx_state = state[0] * 255 + state[4]
         you_bally_state = state[0] * 255 + state[5]
-        ballx_bally_state = state[4] * 255 + state[5]
+        # ballx_bally_state = state[4] * 255 + state[5]
         # them_ballx_state = state[2]*255 + state[4]
         # them_bally_state = state[2]*255 + state[5]
 
@@ -209,12 +209,12 @@ for i in range(10000):
         Q_LIA_table[meta_state][abstraction] += alpha * (reward + gamma * max(Q_LIA_table[next_meta_state]) - Q_LIA_table[meta_state][abstraction])
         you_ballx_next_state = next_state[0]*255 + next_state[4]
         you_bally_next_state = next_state[0]*255 + next_state[5]
-        ballx_bally_next_state = next_state[4]*255 + next_state[5]
+        # ballx_bally_next_state = next_state[4]*255 + next_state[5]
         # them_ballx_next_state = next_state[2]*255 + next_state[4]
         # them_bally_next_state = next_state[2]*255 + next_state[5]
         Q_you_ballx[you_ballx_state] += alpha * (reward + gamma * max(Q_you_ballx[you_ballx_next_state]) - Q_you_ballx[you_ballx_state][action])
         Q_you_bally[you_bally_state] += alpha * (reward + gamma * max(Q_you_bally[you_bally_next_state]) - Q_you_bally[you_bally_state][action])
-        Q_ballx_bally[ballx_bally_state] += alpha * (reward + gamma * max(Q_ballx_bally[ballx_bally_next_state]) - Q_ballx_bally[ballx_bally_state][action])
+        # Q_ballx_bally[ballx_bally_state] += alpha * (reward + gamma * max(Q_ballx_bally[ballx_bally_next_state]) - Q_ballx_bally[ballx_bally_state][action])
         # Q_them_ballx[them_ballx_state] += alpha * (reward + gamma * max(Q_them_ballx[them_ballx_next_state]) - Q_them_ballx[them_ballx_state][action])
         # Q_them_bally[them_bally_state] += alpha * (reward + gamma * max(Q_them_bally[them_bally_next_state]) - Q_them_bally[them_bally_state][action])
 
