@@ -1,3 +1,6 @@
+import random
+
+from keras import backend as K
 import numpy as np
 import copy
 from agents.DQN import DQNAgent, DQNMiniAgent
@@ -49,8 +52,9 @@ class DQNLiAAgent(DQNAgent):
         action = self.sub_agents[ab_index].e_greedy_action(abs_state)
         return ab_index, action
 
-    def replay_DQNLIA(self):
+    def replay_DQNLIA(self, abstraction, state):
         for ia, ab in enumerate(self.sub_agents):
+            K.set_value(ab.model.optimizer.learning_rate, self.model.optimizer.learning_rate / (1 + (1 - ia == abstraction)*self.pseudo_count(state)))
             ab.replay()
         self.replay()
 
@@ -59,7 +63,18 @@ class DQNLiAAgent(DQNAgent):
         abstraction, action = self.e_greedy_LiA_action(state)
         next_state, reward, done = self.step_LiA(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
-            self.replay_DQNLIA()
+            self.replay_DQNLIA(abstraction, state)
         if done:
             self.decay(self.params.DECAY_RATE)
         return reward, done
+
+    def pseudo_count(self, state):
+        count = [0. for a in list(range(self.action_space))]
+        if len(self.memory) > 1000:
+            minibatch = random.sample(self.memory, 1000)
+            for s, a, _, _, _ in minibatch:
+                norm = 0.
+                for p, sd in enumerate(state[0]):
+                    norm += abs(sd - s[0][p])
+                count[a] += max(0., 1. - (norm / 0.1))
+        return count

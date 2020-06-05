@@ -12,10 +12,19 @@ class QAgent(BaseAgent):
         self.params = copy.copy(params)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
+        self.max_steps = 200
+        self.steps = 0
+
+    def greedy_action(self, state):
+        qv = self.Q_table[state]
+        return np.random.choice(np.flatnonzero(qv == qv.max()))
+
     def e_greedy_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
             return self.random_action()
-        return np.argmax(self.Q_table[state])
+        if all([x == 0 for x in self.Q_table[state]]):
+            return self.random_action()
+        return self.greedy_action(state)
 
     def decay(self, decay_rate):
         if self.params.ALPHA > self.params.ALPHA_MIN:
@@ -36,8 +45,11 @@ class QAgent(BaseAgent):
         state = self.current_state
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
+        # if self.steps > self.max_steps:
+        #     done = True
         self.update(state, action, reward, next_state, done)
         self.current_state = next_state
+        self.steps += 1
         return reward, done
 
 

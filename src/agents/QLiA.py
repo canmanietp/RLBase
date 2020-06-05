@@ -59,7 +59,10 @@ class QLiAAgent(QAgent):
             ab.decay(decay_rate)
 
     def e_greedy_LIA_action(self, state):
-        ab_index = self.e_greedy_action(state)
+        if np.sum(self.sa_visits[state]) == 0 and self.last_ab is not None:
+            ab_index = self.last_ab
+        else:
+            ab_index = self.e_greedy_action(state)
         # if ab_index == len(self.sub_agents):
         #     return self.sub_agents[ab_index].e_greedy_action(state)
         abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
@@ -77,7 +80,7 @@ class QLiAAgent(QAgent):
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
             # Shouldn't the LR be smaller if it's not confident? and bigger if it is?
-            lr = self.params.ALPHA / (1 + (1 - ia == ab_index)*self.sa_visits[state][ia])
+            lr = self.params.ALPHA / (1 + (1 - ia == ab_index)*np.sum(self.sa_visits[state]))
             ab.params.ALPHA = lr
             ab.update(abs_state, action, reward, abs_next_state, done)
 
