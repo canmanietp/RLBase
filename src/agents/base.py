@@ -16,6 +16,7 @@ class BaseAgent:
             self.env.reset()
             _, _, _, info = self.env.step(self.random_action())
             self.current_state = self.info_into_state(info, None)
+            self.last_two_states = np.concatenate((self.current_state, self.current_state))
         elif 'PLE' in str(self.env):
             self.env.init()
             obs = self.env.getGameState()

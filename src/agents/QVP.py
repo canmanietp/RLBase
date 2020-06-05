@@ -24,12 +24,10 @@ class QVPAgent(QAgent):
         self.state_decodings = self.sweep_state_decodings()
 
         self.state_variables = list(range(len(self.params.size_state_vars)))
-        self.ranges = ranges.get_var_ranges(self, [np.zeros(self.observation_space), self.params.size_state_vars], self.state_variables)
+        self.ranges = ranges.get_var_ranges(self, [np.zeros(self.observation_space), self.params.size_state_vars],
+                                            self.state_variables)
         self.memory_length = 3
         self.trajectory = deque(maxlen=self.memory_length)
-
-        self.max_steps = 200
-        self.steps = 0
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -62,7 +60,7 @@ class QVPAgent(QAgent):
 
     def e_greedy_ignore_action(self, state):
         if np.random.uniform(0, 1) > self.params.EPSILON or all([x == 0. for x in self.Q_table[state]]):
-            if np.sum(self.sa_visits[state]) < 1:
+            if np.sum(self.sa_visits[state]) == 0:
                 most_visits = float("-inf")
                 qs = []
                 ignoring = -1
@@ -143,9 +141,11 @@ class QVPAgent(QAgent):
 
     def e_greedy_VP_action(self, state):
         if np.random.uniform(0, 1) > self.params.EPSILON or all([x == 0 for x in self.Q_table[state]]):
-            if len(self.trajectory) >= self.memory_length and np.sum(self.sa_visits[state]) < 15:
+            if len(self.trajectory) >= self.memory_length and 500 > np.sum(self.sa_visits[state]) > 50:
                 # least_influence, update_states = sensitivity.do_sensitivity_analysis(self, self.ranges, self.trajectory, self.state_variables)
-                least_influence, update_states = sensitivity.do_sensitivity_analysis_single_state(self, self.ranges, state, self.state_variables)
+                least_influence, update_states = sensitivity.do_sensitivity_analysis_single_state(self, self.ranges,
+                                                                                                  state,
+                                                                                                  self.state_variables)
 
                 if least_influence is not None:
                     abstraction = [value for value in self.state_variables if value != least_influence]
@@ -231,10 +231,8 @@ class QVPAgent(QAgent):
         self.trajectory.append([state, action, reward, next_state])
         self.update_VP(state, action, reward, next_state, done)
         self.current_state = next_state
-        if self.steps > self.max_steps:
-            done = True
         if done:
             self.trajectory.clear()
 
-        self.steps +=1
+        self.steps += 1
         return reward, done

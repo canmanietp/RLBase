@@ -13,6 +13,7 @@ class DQNAgent(BaseAgent):
         self.model = params.INIT_MODEL
         self.target_model = copy.copy(self.model)
         self.current_state = None
+        self.last_two_states = None
         self.memory = deque(maxlen=params.MEMORY_SIZE)
 
         self.until_retrain = 0
@@ -31,8 +32,10 @@ class DQNAgent(BaseAgent):
         else:
             next_state, reward, done, next_state_info = self.env.step(action)
 
-        self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), action, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
+        next_last_two_states = np.concatenate((self.current_state, next_state))
+        self.remember(np.reshape(self.last_two_states, [1, self.params.observation_space]), action, reward, np.reshape(next_last_two_states, [1, self.params.observation_space]), done)
         self.current_state = next_state
+        self.last_two_states = next_last_two_states
         return next_state, reward, done
 
     def remember(self, state, action, reward, next_state, done):
@@ -71,7 +74,7 @@ class DQNAgent(BaseAgent):
             self.target_model.set_weights(self.model.get_weights())
 
     def do_step(self):
-        state = np.reshape(self.current_state, [1, self.params.observation_space])
+        state = np.reshape(self.last_two_states, [1, self.params.observation_space])
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
         self.replay()

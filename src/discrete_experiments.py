@@ -96,7 +96,7 @@ def get_params_eatfood(alg):
     init_epsilon = 0.3
     epsilon_min = 0.1
     init_phi = 0.3
-    phi_min = 0.001
+    phi_min = 0.01
     discount = 0.95
     decay_rate = 0.999
     if alg in ['QAMS', 'QLiA_T']:
