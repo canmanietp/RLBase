@@ -58,9 +58,9 @@ def get_params_waterworld():
 def get_params_pong():
     memory_size = 1000000
     batch_size = 32
-    init_epsilon = 0.5
+    init_epsilon = 0.3
     epsilon_min = 0.01
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.01
     discount = 0.95
     decay_rate = 0.999
@@ -69,7 +69,7 @@ def get_params_pong():
     observation_space = 8*2
     action_space = 6
     learning_rate = 0.0002
-    sub_spaces = [[0, 5, 8, 13], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13]]
+    sub_spaces = [[1, 5, 9, 13], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
