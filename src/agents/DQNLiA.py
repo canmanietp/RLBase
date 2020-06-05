@@ -35,12 +35,15 @@ class DQNLiAAgent(DQNAgent):
         next_state, reward, done, next_state_info = self.env.step(action)
         if 'AtariARIWrapper' in str(self.env):
             next_state = self.info_into_state(next_state_info, None)
-        self.remember(np.reshape(self.current_state, [1, self.params.observation_space]), abstraction, reward, np.reshape(next_state, [1, self.params.observation_space]), done)
+        next_last_two_states = np.concatenate((self.current_state, next_state))
+        self.remember(np.reshape(self.last_two_states, [1, self.params.observation_space]), abstraction, reward,
+                      np.reshape(next_last_two_states, [1, self.params.observation_space]), done)
         for sax, sa in enumerate(self.sub_agents):
-            abs_state = self.current_state[self.params.sub_spaces[sax]]
-            abs_next_state = next_state[self.params.sub_spaces[sax]]
-            sa.remember(np.reshape(abs_state, [1, sa.params.observation_space]), action, reward, np.reshape(abs_next_state, [1, sa.params.observation_space]), done)
+            abs_last_two_states = self.last_two_states[self.params.sub_spaces[sax]]
+            abs_next_last_two_states = next_last_two_states[self.params.sub_spaces[sax]]
+            sa.remember(np.reshape(abs_last_two_states, [1, sa.params.observation_space]), action, reward, np.reshape(abs_next_last_two_states, [1, sa.params.observation_space]), done)
         self.current_state = next_state
+        self.last_two_states = next_last_two_states
         return next_state, reward, done
 
     def e_greedy_LiA_action(self, state):
@@ -50,17 +53,17 @@ class DQNLiAAgent(DQNAgent):
         action = self.sub_agents[ab_index].e_greedy_action(abs_state)
         return ab_index, action
 
-    def replay_DQNLIA(self, abstraction, state):
+    def replay_DQNLIA(self):
         for ia, ab in enumerate(self.sub_agents):
             ab.replay()
         self.replay()
 
     def do_step(self):
-        state = np.reshape(self.current_state, [1, self.params.observation_space])
+        state = np.reshape(self.last_two_states, [1, self.params.observation_space])
         abstraction, action = self.e_greedy_LiA_action(state)
         next_state, reward, done = self.step_LiA(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
-            self.replay_DQNLIA(abstraction, state)
+            self.replay_DQNLIA()
         if done:
             self.decay(self.params.DECAY_RATE)
         return reward, done

@@ -68,8 +68,8 @@ def get_params_pong():
     retrain_steps = 1000
     observation_space = 8*2
     action_space = 6
-    learning_rate = 0.001
-    sub_spaces = [[0, 4], [0, 4, 5]]
+    learning_rate = 0.0002
+    sub_spaces = [[0, 4, 5, 8, 12, 13], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
@@ -78,19 +78,19 @@ def get_params_pong():
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Meta DQN model (input: full state, output: abstraction)
     meta_model = Sequential()
-    meta_model.add(Dense(24, input_dim=observation_space, activation='relu'))
-    meta_model.add(Dense(12, activation='relu'))
+    meta_model.add(Dense(64, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(24, activation='relu'))
     meta_model.add(Dense(len(sub_spaces), activation='linear'))
     meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 1 (input: subspace1, output: action)
     sub_model = Sequential()
-    sub_model.add(Dense(64, input_dim=len(sub_spaces[0])*2, activation='relu'))
+    sub_model.add(Dense(64, input_dim=len(sub_spaces[0]), activation='relu'))
     sub_model.add(Dense(24, activation='relu'))
     sub_model.add(Dense(action_space, activation='linear'))
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 2 (input: subspace2, output:action)
     sub_model2 = Sequential()
-    sub_model2.add(Dense(64, input_dim=len(sub_spaces[1])*2, activation='relu'))
+    sub_model2.add(Dense(64, input_dim=len(sub_spaces[1]), activation='relu'))
     sub_model2.add(Dense(24, activation='relu'))
     sub_model2.add(Dense(action_space, activation='linear'))
     sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
