@@ -54,7 +54,6 @@ class DQNLiAAgent(DQNAgent):
 
     def replay_DQNLIA(self, abstraction, state):
         for ia, ab in enumerate(self.sub_agents):
-            K.set_value(ab.model.optimizer.learning_rate, self.model.optimizer.learning_rate / (1 + (1 - ia == abstraction)*self.pseudo_count(state)))
             ab.replay()
         self.replay()
 
