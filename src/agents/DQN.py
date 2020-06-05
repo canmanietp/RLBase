@@ -80,11 +80,11 @@ class DQNAgent(BaseAgent):
         self.replay()
         if done:
             self.decay(self.params.DECAY_RATE)
-            for il, layers in enumerate(self.model.layers):
-                if il == 2:
-                    print("layer: {}".format(il))
-                    weights = layers.get_weights()
-                    print(weights)
+            # for il, layers in enumerate(self.model.layers):
+            #     if il == 2:
+            #         print("layer: {}".format(il))
+            #         weights = layers.get_weights()
+            #         print(weights)
         return reward, done
 
 
