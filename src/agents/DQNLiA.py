@@ -1,6 +1,4 @@
 import random
-
-from keras import backend as K
 import numpy as np
 import copy
 from agents.DQN import DQNAgent, DQNMiniAgent

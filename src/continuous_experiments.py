@@ -69,7 +69,7 @@ def get_params_pong():
     observation_space = 8
     action_space = 6
     learning_rate = 0.0001
-    sub_spaces = [[0, 1, 4, 5], [0, 1, 2, 3, 4, 5]]
+    sub_spaces = [[0, 4], [0, 5]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
