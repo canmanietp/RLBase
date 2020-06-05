@@ -74,6 +74,8 @@ def get_params_pong():
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
     model.add(Dense(64, activation='relu'))
+    model.add(Dense(24, activation='relu'))
+    model.add(Dense(12, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Meta DQN model (input: full state, output: abstraction)
