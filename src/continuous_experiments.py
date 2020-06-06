@@ -65,7 +65,7 @@ def get_params_pong():
     discount = 0.95
     decay_rate = 0.99
     num_episodes = 2000
-    retrain_steps = 100
+    retrain_steps = 1000
     observation_space = 8*2
     action_space = 6
     learning_rate = 0.001
