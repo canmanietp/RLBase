@@ -63,12 +63,12 @@ def get_params_pong():
     init_phi = 0.3
     phi_min = 0.01
     discount = 0.95
-    decay_rate = 0.999
-    num_episodes = 10000
-    retrain_steps = 1000
+    decay_rate = 0.99
+    num_episodes = 2000
+    retrain_steps = 100
     observation_space = 8*2
     action_space = 6
-    learning_rate = 0.0001
+    learning_rate = 0.001
     sub_spaces = [[1, 5, 9, 13], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
