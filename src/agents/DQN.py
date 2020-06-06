@@ -72,6 +72,7 @@ class DQNAgent(BaseAgent):
         if self.until_retrain >= self.retrain_steps:
             self.until_retrain = 0
             self.target_model.set_weights(self.model.get_weights())
+            print("retraining")
 
     def do_step(self):
         state = np.reshape(self.last_two_states, [1, self.params.observation_space])

@@ -68,7 +68,7 @@ def get_params_pong():
     retrain_steps = 1000
     observation_space = 8*2
     action_space = 6
-    learning_rate = 0.001
+    learning_rate = 0.0002
     sub_spaces = [[0, 4, 5, 8, 12, 13], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
