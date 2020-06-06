@@ -95,7 +95,7 @@ def get_params_pong():
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 2 (input: subspace2, output:action)
     sub_model2 = Sequential()
-    sub_model2.add(Dense(128, input_dim=observation_space, activation='relu'))
+    sub_model2.add(Dense(128, input_dim=len(sub_spaces[1]), activation='relu'))
     sub_model2.add(Dense(64, activation='relu'))
     sub_model2.add(Dense(24, activation='relu'))
     sub_model2.add(Dense(12, activation='relu'))
