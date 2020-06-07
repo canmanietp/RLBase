@@ -63,9 +63,9 @@ def get_params_pong():
     init_phi = 0.3
     phi_min = 0.01
     discount = 0.95
-    decay_rate = 0.99
+    decay_rate = 0.995
     num_episodes = 2000
-    retrain_steps = 1000
+    retrain_steps = 10000
     observation_space = 8*2
     action_space = 6
     learning_rate = 0.0002
