@@ -63,6 +63,7 @@ class QLiAAgent(QAgent):
             ab_index = self.last_ab
         else:
             ab_index = self.e_greedy_action(state)
+
         # if ab_index == len(self.sub_agents):
         #     return self.sub_agents[ab_index].e_greedy_action(state)
         abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
@@ -92,11 +93,14 @@ class QLiAAgent(QAgent):
         state = self.current_state
         ab_index, action = self.e_greedy_LIA_action(state)
         next_state, reward, done = self.step(action)
+        if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
+            done = True
         self.update_LIA(state, ab_index, action, reward, next_state, done)
         self.last_state = state
         self.current_state = next_state
         if done:
             self.last_ab = None
             self.last_state = None
+        self.steps += 1
         return reward, done
 

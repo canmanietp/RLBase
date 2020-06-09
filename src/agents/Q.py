@@ -12,7 +12,7 @@ class QAgent(BaseAgent):
         self.params = copy.copy(params)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
-        self.max_steps = 200
+        self.max_steps = 1
         self.steps = 0
 
     def greedy_action(self, state):
@@ -45,8 +45,8 @@ class QAgent(BaseAgent):
         state = self.current_state
         action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
-        # if self.steps > self.max_steps:
-        #     done = True
+        if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
+            done = True
         self.update(state, action, reward, next_state, done)
         self.current_state = next_state
         self.steps += 1

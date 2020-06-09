@@ -119,13 +119,13 @@ def get_params_taxifuel(alg):
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.95
-    decay_rate = 0.999
+    decay_rate = 0.99
     sub_spaces = None
     options = None
     if alg in ['QAMS']:
         sub_spaces = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3, 4]]  #  [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg in ['QLiA', 'QVP', 'QLiA_batch']:
-        sub_spaces = [[0, 1, 2, 4], [0, 1, 3, 4], [0, 1, 2, 3, 4]]
+        sub_spaces = [[0, 1], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'QVA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
@@ -134,7 +134,7 @@ def get_params_taxifuel(alg):
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 50001
+    num_episodes = 100001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -205,7 +205,7 @@ def get_params_taxi(alg):
     sub_spaces = None
     options = None
     if alg in ['QAMS', 'QLiA', 'QVA']:
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+        sub_spaces = [[0, 1], [0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QVP':
@@ -235,8 +235,8 @@ def get_params_sysadmin(alg):
     decay_rate = 0.99
     sub_spaces = []
     options = None
-    # if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
-    #     sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
+        sub_spaces = [[4, 5, 6, 7, 0, 1, 2], [2, 3, 4, 5, 6, 7, 0]]
     # elif alg == 'QLiA_T':
     #     sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     # elif alg == 'QVP':
@@ -247,8 +247,8 @@ def get_params_sysadmin(alg):
     # elif alg == 'Q':
     #     init_epsilon = 0.2
     #     epsilon_min = 0.01
-    size_state_vars = [2, 2, 2, 2, 2, 2]
-    num_episodes = 1000000
+    size_state_vars = [2, 2, 2, 2, 2, 2, 2, 2]
+    num_episodes = 1000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -279,7 +279,7 @@ def get_params(env_name, alg=None):
         env = CoffeeEnv()
         params = get_params_coffee()
     elif env_name == 'sysadmin':
-        env = SysAdminEnv(size=6)
+        env = SysAdminEnv(size=8)
         params = get_params_sysadmin(alg)
     else:
         print("Error: Unknown environment")
@@ -352,13 +352,13 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 episode_rewards[j].append(ep_reward)
 
                 if verbose:
-                    print("{} Episode {}, reward={}, Last 100 average={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward, np.mean(episode_rewards[j][-100:])))
+                    print("{} Episode {}, episode reward={}, Last 100 average={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward, np.mean(episode_rewards[j][-100:])))
                 agent.decay(agent.params.DECAY_RATE)
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
 
-            plt.plot(plotting.moving_average(episode_rewards[j], int(params.num_episodes / 100)), label=agent.name)
+            plt.plot(plotting.moving_average(episode_rewards[j], int(params.num_episodes / 1)), label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
