@@ -20,9 +20,10 @@ class DiscreteParameters(Parameters):
 
 
 class ContinuousParameters(Parameters):
-    def __init__(self, init_model, memory_size, batch_size, learning_rate, discount, epsilon, epsilon_min, decay, observation_space, action_space, retrain_steps, num_episodes, meta_model=None, sub_models=None, phi=None, phi_min=None, sub_spaces=None):
+    def __init__(self, init_model, repeat_n_frames, memory_size, batch_size, learning_rate, discount, epsilon, epsilon_min, decay, observation_space, action_space, retrain_steps, num_episodes, meta_model=None, sub_models=None, phi=None, phi_min=None, sub_spaces=None):
         super().__init__(num_episodes, discount, epsilon, epsilon_min, decay)
         self.INIT_MODEL = init_model
+        self.REPEAT_N_FRAMES = repeat_n_frames
         self.MEMORY_SIZE = memory_size
         self.BATCH_SIZE = batch_size
         self.LEARNING_RATE = learning_rate

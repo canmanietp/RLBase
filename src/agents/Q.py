@@ -37,7 +37,6 @@ class QAgent(BaseAgent):
             td_error = reward - self.Q_table[state][action]
         else:
             td_error = reward + self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action]
-
         self.Q_table[state][action] += self.params.ALPHA * td_error
         return td_error
 

@@ -14,6 +14,7 @@ from envs.coffee import CoffeeEnv
 from envs.sysadmin import SysAdminEnv
 
 from agents.Q import QAgent
+from agents.QBias import QBiasAgent
 from agents.L2Q import L2QAgent
 from agents.Q_sens import QSensAgent
 from agents.QLiA import QLiAAgent
@@ -125,7 +126,7 @@ def get_params_taxifuel(alg):
     if alg in ['QAMS']:
         sub_spaces = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3, 4]]  #  [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg in ['QLiA', 'QVP', 'QLiA_batch']:
-        sub_spaces = [[0, 1], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'QVA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
@@ -304,6 +305,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 agents.append(QAgent(env, params))
             elif alg == 'Q_sens':
                 agents.append(QSensAgent(env, params))
+            elif alg == 'QBias':
+                agents.append(QBiasAgent(env, params))
             elif alg == 'L2Q':
                 agents.append(L2QAgent(env, params))
             elif alg == 'QLiA':
