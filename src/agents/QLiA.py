@@ -81,8 +81,9 @@ class QLiAAgent(QAgent):
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
             # Shouldn't the LR be smaller if it's not confident? and bigger if it is?
-            lr = self.params.ALPHA / (1 + (1 - ia == ab_index)*np.sum(ab.sa_visits[abs_state]))
-            ab.params.ALPHA = lr
+            if np.sum(ab.sa_visits[abs_state]) > 0:
+                lr = self.params.ALPHA / (1 + (1 - ia == ab_index)*np.sum(ab.sa_visits[abs_state])/100)
+                ab.params.ALPHA = lr
             ab.update(abs_state, action, reward, abs_next_state, done)
 
         # self.env.local_reward(state, action, self.params.sub_spaces[ia])

@@ -68,15 +68,15 @@ def get_params_pong():
     retrain_steps = 500
     observation_space = 8*2
     action_space = 6
-    learning_rate = 0.0002
+    learning_rate = 0.0001
     sub_spaces = [[0, 4, 5, 8, 12, 13], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
-    model.add(Dense(32, input_dim=observation_space, activation='relu'))
+    model.add(Dense(128, input_dim=observation_space, activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(32, activation='relu'))
     model.add(Dense(16, activation='relu'))
-    model.add(Dense(16, activation='relu'))
-    model.add(Dense(8, activation='relu'))
-    model.add(Dense(8, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Meta DQN model (input: full state, output: abstraction)
