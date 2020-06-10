@@ -24,6 +24,8 @@ class DQNLiAAgent(DQNAgent):
         self.model = self.params.META_MODEL
         self.target_model = copy.copy(self.params.META_MODEL)
 
+        self.last_abstraction = None
+
     def decay(self, decay_rate):
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate
@@ -33,6 +35,7 @@ class DQNLiAAgent(DQNAgent):
 
     def step_LiA(self, abstraction, action):
         next_state, reward, done, next_state_info = self.env.step(action)
+        self.step_count += 1
         if 'AtariARIWrapper' in str(self.env):
             next_state = self.info_into_state(next_state_info, None)
         temp = copy.copy(self.last_n_states[int(self.params.observation_space/self.params.REPEAT_N_FRAMES):])
@@ -66,7 +69,13 @@ class DQNLiAAgent(DQNAgent):
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
-        abstraction, action = self.e_greedy_LiA_action(state)
+        if self.step_count % 4 == 0:
+            abstraction, action = self.e_greedy_LiA_action(state)
+            self.last_action = action
+            self.last_abstraction = abstraction
+        else:
+            action = self.last_action
+            abstraction = self.last_abstraction
         next_state, reward, done = self.step_LiA(abstraction, action)
         if len(self.memory) > self.params.BATCH_SIZE:
             self.replay_DQNLIA()
