@@ -38,8 +38,7 @@ class DQNAgent(BaseAgent):
         temp = np.append(temp, next_state)
         next_last_n_states = temp
 
-        if len(self.last_n_states) == self.params.REPEAT_N_FRAMES:
-            self.remember(np.reshape(self.last_n_states, [1, self.params.observation_space]), action, reward,
+        self.remember(np.reshape(self.last_n_states, [1, self.params.observation_space]), action, reward,
                           np.reshape(next_last_n_states, [1, self.params.observation_space]), done)
 
         self.current_state = next_state

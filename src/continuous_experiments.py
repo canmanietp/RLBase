@@ -63,14 +63,14 @@ def get_params_pong():
     init_phi = 0.3
     phi_min = 0.01
     discount = 0.95
-    decay_rate = 0.995
+    decay_rate = 0.9995
     num_episodes = 2000
     retrain_steps = 500
     repeat_n_frames = 4
     observation_space = 8*repeat_n_frames
     action_space = 6
     learning_rate = 0.0001
-    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]
+    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
     model.add(Dense(128, input_dim=observation_space, activation='relu'))
@@ -82,10 +82,10 @@ def get_params_pong():
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Meta DQN model (input: full state, output: abstraction)
     meta_model = Sequential()
-    meta_model.add(Dense(12, input_dim=observation_space, activation='relu'))
-    meta_model.add(Dense(8, activation='relu'))
-    meta_model.add(Dense(8, activation='relu'))
-    meta_model.add(Dense(8, activation='relu'))
+    meta_model.add(Dense(128, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(64, activation='relu'))
+    meta_model.add(Dense(32, activation='relu'))
+    meta_model.add(Dense(16, activation='relu'))
     meta_model.add(Dense(len(sub_spaces), activation='linear'))
     meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 1 (input: subspace1, output: action)
@@ -97,14 +97,14 @@ def get_params_pong():
     sub_model.add(Dense(action_space, activation='linear'))
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 2 (input: subspace2, output:action)
-    # sub_model2 = Sequential()
-    # sub_model2.add(Dense(12, input_dim=len(sub_spaces[1]), activation='relu'))
-    # sub_model2.add(Dense(8, activation='relu'))
-    # sub_model2.add(Dense(8, activation='relu'))
-    # sub_model2.add(Dense(8, activation='relu'))
-    # sub_model2.add(Dense(action_space, activation='linear'))
-    # sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_models = [sub_model]
+    sub_model2 = Sequential()
+    sub_model2.add(Dense(128, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(64, activation='relu'))
+    sub_model2.add(Dense(32, activation='relu'))
+    sub_model2.add(Dense(16, activation='relu'))
+    sub_model2.add(Dense(action_space, activation='linear'))
+    sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_models = [sub_model, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, repeat_n_frames=repeat_n_frames, memory_size=memory_size,
                                 batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon,
                                 epsilon_min=epsilon_min,
