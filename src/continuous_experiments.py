@@ -5,10 +5,13 @@ import time, sys, os, datetime, copy, csv
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+import tensorflow as tf
 # from silence_tensorflow import silence_tensorflow
 from matplotlib import pyplot as plt
 
 # silence_tensorflow()
+
+sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
