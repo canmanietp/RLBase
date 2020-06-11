@@ -3,7 +3,7 @@
 #SBATCH --qos=long
 #SBATCH --time=10:00:00
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:6
 #SBATCH --mem=1024
 #SBATCH --mail-type=END
 module use /opt/insy/modulefiles
@@ -13,3 +13,4 @@ cd ..
 cd src
 
 srun python3 run.py --algorithms “DQN” --env=pong --verbose=True
+srun hostname
