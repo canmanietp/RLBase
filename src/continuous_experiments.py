@@ -66,7 +66,7 @@ def get_params_pong():
     init_phi = 0.3
     phi_min = 0.01
     discount = 0.95
-    decay_rate = 0.9995
+    decay_rate = 0.995
     num_episodes = 2000
     retrain_steps = 500
     repeat_n_frames = 4

@@ -68,7 +68,7 @@ class DQNLiAAgent(DQNAgent):
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
-        if self.step_count % 2 == 0:
+        if self.step_count % 10 == 0:
             abstraction, action = self.e_greedy_LiA_action(state)
             self.last_action = action
             self.last_abstraction = abstraction
