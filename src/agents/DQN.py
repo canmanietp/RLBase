@@ -2,7 +2,7 @@ from agents.base import BaseAgent
 import numpy as np
 from collections import deque
 import random, copy
-
+import scipy.special
 
 class DQNAgent(BaseAgent):
     def __init__(self, env, params):
@@ -22,6 +22,8 @@ class DQNAgent(BaseAgent):
 
         self.last_action = None
         self.step_count = 0
+
+        self.temperature = 0.5
 
     def step(self, action):
         if 'AtariARIWrapper' in str(self.env):
@@ -62,6 +64,12 @@ class DQNAgent(BaseAgent):
         q_values = self.model.predict(state)
         return np.argmax(q_values[0])
 
+    def boltzmann_action(self, state):
+        q_values = self.model.predict(state)
+        softmaxed = scipy.special.softmax(q_values/self.temperature)
+        action_value = np.random.choice(softmaxed[0], p=softmaxed[0])
+        return np.argmax(softmaxed[0] == action_value)
+
     def replay(self):
         if len(self.memory) < self.params.BATCH_SIZE:
             return
@@ -87,7 +95,7 @@ class DQNAgent(BaseAgent):
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
         if self.step_count % 2 == 0:
-            action = self.e_greedy_action(state)
+            action = self.boltzmann_action(state)
             self.last_action = action
         else:
             action = self.last_action

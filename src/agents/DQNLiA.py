@@ -2,6 +2,7 @@ import random
 import numpy as np
 import copy
 from agents.DQN import DQNAgent, DQNMiniAgent
+import scipy.special
 
 
 class DQNLiAAgent(DQNAgent):
@@ -61,6 +62,19 @@ class DQNLiAAgent(DQNAgent):
         action = self.sub_agents[ab_index].e_greedy_action(abs_state)
         return ab_index, action
 
+    def boltzmann_LiA_action(self, state):
+        q_values = self.model.predict(state)
+        softmaxed = scipy.special.softmax(q_values/self.temperature)
+        ab_value = np.random.choice(softmaxed[0], p=softmaxed[0])
+        ab_index = np.argmax(softmaxed[0] == ab_value)
+        abs_state = list(state[0][self.params.sub_spaces[ab_index]])
+        abs_state = np.reshape(abs_state, [1, len(self.params.sub_spaces[ab_index])])
+        q_values = self.sub_agents[ab_index].model.predict(abs_state)
+        softmaxed = scipy.special.softmax(q_values/self.sub_agents[ab_index].temperature)
+        action_value = np.random.choice(softmaxed[0], p=softmaxed[0])
+        action = np.argmax(softmaxed[0] == action_value)
+        return ab_index, action
+
     def replay_DQNLIA(self):
         for ia, ab in enumerate(self.sub_agents):
             ab.replay()
@@ -69,7 +83,7 @@ class DQNLiAAgent(DQNAgent):
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
         if self.step_count % 10 == 0:
-            abstraction, action = self.e_greedy_LiA_action(state)
+            abstraction, action = self.boltzmann_LiA_action(state)
             self.last_action = action
             self.last_abstraction = abstraction
         else:
