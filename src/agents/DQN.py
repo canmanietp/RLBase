@@ -86,7 +86,7 @@ class DQNAgent(BaseAgent):
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
-        if self.step_count % 4 == 0:
+        if self.step_count % 2 == 0:
             action = self.e_greedy_action(state)
             self.last_action = action
         else:

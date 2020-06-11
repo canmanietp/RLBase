@@ -6,6 +6,7 @@ import random
 class QBiasAgent(QAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
+        self.name = "QBias"
         self.biases = np.zeros([self.observation_space, self.action_space])
         self.saved_abs_lookup = {}
         self.state_decodings = self.sweep_state_decodings()
@@ -21,8 +22,7 @@ class QBiasAgent(QAgent):
             return self.random_action()
 
         if np.sum(self.biases[state]) > 0:  # i.e. there is a biased action
-            if random.uniform(0, 1) > np.sum(self.sa_visits[state])/max(self.biases[state]):
-                return np.argmax(self.biases[state])
+            return np.argmax(self.biases[state])
 
         if all([x == 0 for x in self.Q_table[state]]):
             return self.random_action()
