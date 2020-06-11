@@ -12,4 +12,4 @@ module load cuda/10.0 cudnn/10.0-7.3.0.29
 cd ..
 cd src
 
-srun python3 run.py —algorithms “DQN” —env=pong
+srun python3 run.py --algorithms “DQN” --env=pong
