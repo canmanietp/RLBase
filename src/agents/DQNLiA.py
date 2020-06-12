@@ -2,7 +2,7 @@ import random
 import numpy as np
 import copy
 from agents.DQN import DQNAgent, DQNMiniAgent
-import scipy.special
+from helpers import functions
 
 
 class DQNLiAAgent(DQNAgent):
@@ -64,13 +64,13 @@ class DQNLiAAgent(DQNAgent):
 
     def boltzmann_LiA_action(self, state):
         q_values = self.model.predict(state)
-        softmaxed = scipy.special.softmax(q_values/self.temperature)
+        softmaxed = functions.softmax(q_values/self.temperature)
         ab_value = np.random.choice(softmaxed[0], p=softmaxed[0])
         ab_index = np.argmax(softmaxed[0] == ab_value)
         abs_state = list(state[0][self.params.sub_spaces[ab_index]])
         abs_state = np.reshape(abs_state, [1, len(self.params.sub_spaces[ab_index])])
         q_values = self.sub_agents[ab_index].model.predict(abs_state)
-        softmaxed = scipy.special.softmax(q_values/self.sub_agents[ab_index].temperature)
+        softmaxed = functions.softmax(q_values/self.sub_agents[ab_index].temperature)
         action_value = np.random.choice(softmaxed[0], p=softmaxed[0])
         action = np.argmax(softmaxed[0] == action_value)
         return ab_index, action

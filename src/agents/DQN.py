@@ -2,7 +2,7 @@ from agents.base import BaseAgent
 import numpy as np
 from collections import deque
 import random, copy
-import scipy.special
+from helpers import functions
 
 class DQNAgent(BaseAgent):
     def __init__(self, env, params):
@@ -66,7 +66,7 @@ class DQNAgent(BaseAgent):
 
     def boltzmann_action(self, state):
         q_values = self.model.predict(state)
-        softmaxed = scipy.special.softmax(q_values/self.temperature)
+        softmaxed = functions.softmax(q_values/self.temperature)
         action_value = np.random.choice(softmaxed[0], p=softmaxed[0])
         return np.argmax(softmaxed[0] == action_value)
 
