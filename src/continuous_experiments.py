@@ -16,6 +16,7 @@ sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
 from agents.DQNVP import DQNVPAgent
+from agents.ACTCR import ACTCRAgent
 from learning_parameters import ContinuousParameters
 from helpers import plotting
 
@@ -65,14 +66,14 @@ def get_params_pong():
     epsilon_min = 0.01
     init_phi = 0.3
     phi_min = 0.01
-    discount = 0.95
+    discount = 0.99
     decay_rate = 0.995
-    num_episodes = 2000
+    num_episodes = 1000
     retrain_steps = 50
     repeat_n_frames = 4
     observation_space = 8*repeat_n_frames
     action_space = 6
-    learning_rate = 0.0001
+    learning_rate = 0.000025
     sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
@@ -262,7 +263,7 @@ def get_params(env_name, alg=None):
         params = get_params_mspacman()
     elif env_name == 'pong':
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
-        env = AtariARIWrapper(gym.make('Pong-v0'))
+        env = AtariARIWrapper(gym.make('PongDeterministic-v4'))
         params = get_params_pong()
     elif env_name == 'waterworld':
         sys.path.append('envs/PyGame-Learning-Environment/')
@@ -297,6 +298,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
                 agents.append(DQNLiAAgent(env, copy.copy(params)))
             elif alg == 'DQNVP':
                 agents.append(DQNVPAgent(env, copy.copy(params)))
+            elif alg == 'ACTCR':
+                agents.append(ACTCRAgent(env, copy.copy(params)))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -336,6 +339,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
                     print(
                         "{} Episode {}, reward={}, exploration={}".format(datetime.datetime.now().strftime("%H:%M:%S"),
                                                                           i, ep_reward, agent.params.EPSILON))
+            agent.env.close()
             csvfile.close()
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))

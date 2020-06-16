@@ -13,7 +13,6 @@ class DQNAgent(BaseAgent):
         self.model = params.INIT_MODEL
         self.target_model = copy.copy(self.model)
         self.current_state = None
-        # self.last_two_states = None
         self.last_n_states = []
         self.memory = deque(maxlen=params.MEMORY_SIZE)
 
@@ -92,7 +91,6 @@ class DQNAgent(BaseAgent):
             self.target_model.set_weights(self.model.get_weights())
 
         self.model.fit(np.array(states), np.array(values), verbose=0)
-
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
