@@ -29,6 +29,8 @@ class QLiAAgent(QAgent):
 
         self.last_ab = None
         self.last_state = None
+        self.next_abstraction = None
+        self.next_action = None
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -59,35 +61,43 @@ class QLiAAgent(QAgent):
             ab.decay(decay_rate)
 
     def e_greedy_LIA_action(self, state):
-        if np.sum(self.sa_visits[state]) == 0 and self.last_ab is not None:
-            ab_index = self.last_ab
+        # if np.sum(self.sa_visits[state]) == 0 and self.last_ab is not None:
+        #     ab_index = self.last_ab
+        # else:
+        if self.next_abstraction:
+            ab_index = self.next_abstraction # self.e_greedy_action(state)
         else:
             ab_index = self.e_greedy_action(state)
-
         # if ab_index == len(self.sub_agents):
         #     return self.sub_agents[ab_index].e_greedy_action(state)
-        abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
-        return ab_index, self.sub_agents[ab_index].e_greedy_action(abs_state)
+        if self.next_action:
+            action = self.next_action
+        else:
+            abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
+            action = self.sub_agents[ab_index].e_greedy_action(abs_state)
+
+        return ab_index, action
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):
         state_vars = self.state_decodings[state]
         next_state_vars = self.state_decodings[next_state]
-
         # ia = ab_index
         # ab = self.sub_agents[ia]
+
+        self.next_abstraction = self.sarsa_update(state, ab_index, reward, next_state, done)
 
         for ia, ab in enumerate(self.sub_agents):
             # if ia == ab_index or self.sa_visits[state][ia] < 15:
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-            # # Shouldn't the LR be smaller if it's not confident? and bigger if it is?
-            # lr = self.params.ALPHA / (1 + (1 - int(ia == ab_index))*np.sum(ab.sa_visits[abs_state]))
-            # ab.params.ALPHA = lr
-            ab.update(abs_state, action, reward, abs_next_state, done)
+
+            if ia == self.next_abstraction:
+                self.next_action = ab.sarsa_update(abs_state, action, reward, abs_next_state, done)
+            else:
+                ab.sarsa_update(abs_state, action, reward, abs_next_state, done)
 
         # self.env.local_reward(state, action, self.params.sub_spaces[ia])
 
-        self.update(state, ab_index, reward, next_state, done)
 
     def do_step(self):
         state = self.current_state

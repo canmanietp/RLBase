@@ -40,6 +40,15 @@ class QAgent(BaseAgent):
         self.Q_table[state][action] += self.params.ALPHA * td_error
         return td_error
 
+    def sarsa_update(self, state, action, reward, next_state, done):
+        next_action = self.e_greedy_action(next_state)
+        if done:
+            td_error = reward - self.Q_table[state][action]
+        else:
+            td_error = reward + self.params.DISCOUNT * self.Q_table[next_state, next_action] - self.Q_table[state][action]
+        self.Q_table[state][action] += self.params.ALPHA * td_error
+        return next_action
+
     def do_step(self):
         state = self.current_state
         action = self.e_greedy_action(state)

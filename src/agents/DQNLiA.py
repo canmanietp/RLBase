@@ -57,16 +57,21 @@ class DQNLiAAgent(DQNAgent):
 
     def e_greedy_LiA_action(self, state):
         ab_index = self.e_greedy_action(state)
+        if len(self.memory) > self.params.BATCH_SIZE:
+            self.sub_agents[ab_index].replay()
         abs_state = list(state[0][self.params.sub_spaces[ab_index]])
         abs_state = np.reshape(abs_state, [1, len(self.params.sub_spaces[ab_index])])
         action = self.sub_agents[ab_index].e_greedy_action(abs_state)
         return ab_index, action
 
     def boltzmann_LiA_action(self, state):
-        q_values = self.model.predict(state)
-        softmaxed = functions.softmax(q_values/self.temperature)
-        ab_value = np.random.choice(softmaxed[0], p=softmaxed[0])
-        ab_index = np.argmax(softmaxed[0] == ab_value)
+        # q_values = self.model.predict(state)
+        # softmaxed = functions.softmax(q_values/self.temperature)
+        # ab_value = np.random.choice(softmaxed[0], p=softmaxed[0])
+        # ab_index = np.argmax(softmaxed[0] == ab_value)
+        ab_index = 0 if self.params.EPSILON < 0.05 else 1
+        if len(self.memory) > self.params.BATCH_SIZE:
+            self.sub_agents[ab_index].replay()
         abs_state = list(state[0][self.params.sub_spaces[ab_index]])
         abs_state = np.reshape(abs_state, [1, len(self.params.sub_spaces[ab_index])])
         q_values = self.sub_agents[ab_index].model.predict(abs_state)
@@ -75,15 +80,10 @@ class DQNLiAAgent(DQNAgent):
         action = np.argmax(softmaxed[0] == action_value)
         return ab_index, action
 
-    def replay_DQNLIA(self):
-        for ia, ab in enumerate(self.sub_agents):
-            ab.replay()
-        self.replay()
-
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
         if self.step_count % 10 == 0:
-            abstraction, action = self.boltzmann_LiA_action(state)
+            abstraction, action = self.e_greedy_LiA_action(state)
             self.last_action = action
             self.last_abstraction = abstraction
         else:
@@ -92,7 +92,8 @@ class DQNLiAAgent(DQNAgent):
         next_state, reward, done = self.step_LiA(abstraction, action)
         self.step_count += 1
         if len(self.memory) > self.params.BATCH_SIZE:
-            self.replay_DQNLIA()
+            pass
+            # self.replay()
         if done:
             self.decay(self.params.DECAY_RATE)
         return reward, done

@@ -85,12 +85,14 @@ class DQNAgent(BaseAgent):
             # Filtering out states and targets for training
             states.append(state[0])
             values.append(q_values[0])
-        self.model.fit(np.array(states), np.array(values), verbose=0)
 
         self.until_retrain += 1
         if self.until_retrain >= self.retrain_steps:
             self.until_retrain = 0
             self.target_model.set_weights(self.model.get_weights())
+
+        self.model.fit(np.array(states), np.array(values), verbose=0)
+
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])

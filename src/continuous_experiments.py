@@ -59,7 +59,7 @@ def get_params_waterworld():
 
 
 def get_params_pong():
-    memory_size = 1000000
+    memory_size = 300000
     batch_size = 32
     init_epsilon = 0.3
     epsilon_min = 0.01
@@ -68,7 +68,7 @@ def get_params_pong():
     discount = 0.95
     decay_rate = 0.995
     num_episodes = 2000
-    retrain_steps = 500
+    retrain_steps = 50
     repeat_n_frames = 4
     observation_space = 8*repeat_n_frames
     action_space = 6
@@ -76,16 +76,17 @@ def get_params_pong():
     sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
-    model.add(Dense(128, input_dim=observation_space, activation='relu'))
+    model.add(Dense(256, input_dim=observation_space, activation='relu'))
+    model.add(Dense(128, activation='relu'))
     model.add(Dense(64, activation='relu'))
-    model.add(Dense(32, activation='relu'))
     model.add(Dense(32, activation='relu'))
     model.add(Dense(16, activation='relu'))
     model.add(Dense(action_space, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Meta DQN model (input: full state, output: abstraction)
     meta_model = Sequential()
-    meta_model.add(Dense(128, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(256, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(128, activation='relu'))
     meta_model.add(Dense(64, activation='relu'))
     meta_model.add(Dense(32, activation='relu'))
     meta_model.add(Dense(16, activation='relu'))
@@ -93,7 +94,8 @@ def get_params_pong():
     meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 1 (input: subspace1, output: action)
     sub_model = Sequential()
-    sub_model.add(Dense(128, input_dim=len(sub_spaces[0]), activation='relu'))
+    sub_model.add(Dense(256, input_dim=len(sub_spaces[0]), activation='relu'))
+    sub_model.add(Dense(128, activation='relu'))
     sub_model.add(Dense(64, activation='relu'))
     sub_model.add(Dense(32, activation='relu'))
     sub_model.add(Dense(16, activation='relu'))
@@ -101,7 +103,8 @@ def get_params_pong():
     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Submodel 2 (input: subspace2, output:action)
     sub_model2 = Sequential()
-    sub_model2.add(Dense(128, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(256, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(128, activation='relu'))
     sub_model2.add(Dense(64, activation='relu'))
     sub_model2.add(Dense(32, activation='relu'))
     sub_model2.add(Dense(16, activation='relu'))

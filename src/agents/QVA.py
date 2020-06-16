@@ -157,8 +157,8 @@ class QVAAgent(QAgent):
     def update_VA(self, state, ab_index, action, reward, next_state, done):
         # p = 400
         # self.meta_agent.params.ALPHA = self.params.ALPHA / (1 + np.sum(self.sa_visits[state]) / p)
-        self.meta_agent.update(state, ab_index, reward, next_state, done)
-        self.update(state, action, reward, next_state, done)
+        self.meta_agent.sarsa_update(state, ab_index, reward, next_state, done)
+        self.sarsa_update(state, action, reward, next_state, done)
 
     def do_step(self):
         state = self.current_state
