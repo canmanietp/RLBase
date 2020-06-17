@@ -169,10 +169,8 @@ class A2CAgent(BaseAgent):
         for a in advantages:
             reshaped_ad.append(a)
         print(reshaped_ad)
-        reshaped_ad = K.expand_dims(reshaped_ad, 0)
-        print(reshaped_ad)
         actor_loss = self.model_actor.fit(
-            [self.states, self.actions_probs, K.expand_dims(reshaped_ad, 0), np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
+            [self.states, self.actions_probs, reshaped_ad, np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
             [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8)
         critic_loss = self.model_critic.fit([self.states], [np.reshape(returns, newshape=(-1, 1))], shuffle=True, epochs=8,
                                        verbose=False)
