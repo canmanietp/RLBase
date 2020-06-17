@@ -157,9 +157,8 @@ class A2CAgent(BaseAgent):
 
     def act(self, state):
         # Use the network to predict the next action to take, using the model
-        state_input = K.expand_dims(state, 0)
-        print('act', state_input.shape)
-        action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
+        print('act', state.shape)
+        action_dist = self.model_actor.predict([state, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action = np.random.choice(self.action_space, p=action_dist[0, :])
         return action
 
@@ -178,8 +177,10 @@ class A2CAgent(BaseAgent):
         print(actor_loss, critic_loss)
 
     def do_step(self):
-        print(print('do step', self.last_n_states))
-        action = self.act(self.last_n_states)
+        state = np.reshape(self.last_n_states, self.input_shape)
+        state = np.expand_dims(state, axis=0)
+        print("do step", state)
+        action = self.act(state)
         next_state, reward, done = self.step(action)
 
         self.step_count += 1
