@@ -91,8 +91,8 @@ class A2CAgent(BaseAgent):
         values = Input(shape=(1, 1,))
 
         # Classification block
-        x = Dense(512, activation='relu', name='fc1')(state_input)
-        x = Dense(256, activation='relu', name='fc2')(x)
+        x = Dense(128, activation='relu', name='fc1')(state_input)
+        x = Dense(64, activation='relu', name='fc2')(x)
         out_actions = Dense(self.action_space, activation='softmax', name='predictions')(x)
 
         model = Model(inputs=[state_input, oldpolicy_probs, advantages, rewards, values],
@@ -109,8 +109,8 @@ class A2CAgent(BaseAgent):
         state_input = Input(shape=input_dims)
 
         # Classification block
-        x = Dense(512, activation='relu', name='fc1')(state_input)
-        x = Dense(256, activation='relu', name='fc2')(x)
+        x = Dense(128, activation='relu', name='fc1')(state_input)
+        x = Dense(64, activation='relu', name='fc2')(x)
         out_actions = Dense(1, activation='tanh')(x)
 
         model = Model(inputs=[state_input], outputs=[out_actions])
@@ -161,7 +161,6 @@ class A2CAgent(BaseAgent):
         # Use the network to predict the next action to take, using the model
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action = np.random.choice(self.action_space, p=action_dist[0][0])
-        print(self.step_count, action)
         return action
 
     def decay(self, decay_rate):
@@ -192,7 +191,7 @@ class A2CAgent(BaseAgent):
 
         self.step_count += 1
 
-        if self.step_count % 25 == 0:
+        if self.step_count % 100 == 0:
             # add last value
             q_value = self.model_critic.predict([state_input], steps=1)
             self.values.append(q_value)
