@@ -115,8 +115,7 @@ class A2CAgent(BaseAgent):
         return model
 
     def remember(self, state, action, reward, done):
-        state_input = np.expand_dims(state, axis=0)
-        print('remember', state.shape)
+        state_input = K.expand_dims(state, 0)
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action_onehot = np.zeros(self.action_space)
         action_onehot[action] = 1
@@ -143,17 +142,14 @@ class A2CAgent(BaseAgent):
             next_state, reward, done, next_state_info = self.env.step(action)
 
         state = np.reshape(self.last_n_states, self.input_shape)
-        print('step', state.shape)
+        self.remember(state, action, reward, done)
 
         self.current_state = next_state
-
-        self.remember(state, action, reward, done)
         return next_state, reward, done
 
-    def act(self, state):
+    def act(self, state_input):
         # Use the network to predict the next action to take, using the model
-        print('act', state.shape)
-        action_dist = self.model_actor.predict([state, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
+        action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action = np.random.choice(self.action_space, p=action_dist[0][0])
         print(action)
         return action
@@ -175,16 +171,16 @@ class A2CAgent(BaseAgent):
 
     def do_step(self):
         state = np.reshape(self.last_n_states, self.input_shape)
-        state = np.expand_dims(state, axis=0)
+        state_input = K.expand_dims(state, 0)
         print("do step", state)
-        action = self.act(state)
+        action = self.act(state_input)
         next_state, reward, done = self.step(action)
 
         self.step_count += 1
 
         if self.step_count % 25 == 0:
             # add last value
-            q_value = self.model_critic.predict([state], steps=1)
+            q_value = self.model_critic.predict([state_input], steps=1)
             self.values.append(q_value)
             self.replay()
 
