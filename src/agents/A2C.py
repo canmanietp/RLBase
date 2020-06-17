@@ -58,7 +58,7 @@ class A2CAgent(BaseAgent):
         self.env = env
         self.action_space = params.action_space
         self.params = params
-        self.input_shape = np.array(params.REPEAT_N_FRAMES, int(params.observation_space / params.REPEAT_N_FRAMES))
+        self.input_shape = np.array((params.REPEAT_N_FRAMES, int(params.observation_space / params.REPEAT_N_FRAMES)))
         self.model_actor = self.get_model_actor(self.input_shape, self.action_space)
         self.model_critic = self.get_model_critic(self.input_shape)
         self.current_state = None
@@ -145,12 +145,7 @@ class A2CAgent(BaseAgent):
         state_input = np.expand_dims(state, axis=0)
         print('step', state_input.shape)
 
-        temp = copy.copy(self.last_n_states[int(self.params.observation_space / self.params.REPEAT_N_FRAMES):])
-        temp = np.append(temp, next_state)
-        next_last_n_states = temp
-
         self.current_state = next_state
-        self.last_n_states = next_last_n_states
 
         self.remember(state_input, action, reward, done)
         return next_state, reward, done
@@ -160,6 +155,7 @@ class A2CAgent(BaseAgent):
         print('act', state.shape)
         action_dist = self.model_actor.predict([state, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action = np.random.choice(self.action_space, p=action_dist[0][0])
+        print(action)
         return action
 
     def decay(self, decay_rate):
