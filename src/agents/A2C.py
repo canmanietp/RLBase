@@ -156,6 +156,7 @@ class A2CAgent(BaseAgent):
     def act(self, state_input):
         # Use the network to predict the next action to take, using the model
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
+        print('act', action_dist, state_input.shape)
         action = np.random.choice(self.action_space, p=action_dist[0:, ])
         print(action)
         return action
