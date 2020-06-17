@@ -23,7 +23,8 @@ def get_advantages(values, masks, rewards):
     returns = []
     gae = 0
     for i in reversed(range(len(rewards))):
-        delta = rewards[i] + gamma * values[i + 1] * masks[i] - values[i]
+        print("get advantages loop", values[0], values[i])
+        delta = rewards[i] + gamma * values[i + 1][0][0] * masks[i] - values[i][0][0]
         gae = delta + gamma * lmbda * masks[i] * gae
         returns.insert(0, gae + values[i])
 
