@@ -43,8 +43,8 @@ def ppo_loss(oldpolicy_probs, advantages, rewards, values):
         total_loss = critic_discount * critic_loss + actor_loss - entropy_beta * K.mean(
             -(newpolicy_probs * K.log(newpolicy_probs + 1e-10)))
         return total_loss
-
     return loss
+
 
 def one_hot_encoding(probs):
     one_hot = np.zeros_like(probs)
@@ -150,7 +150,7 @@ class A2CAgent(BaseAgent):
     def act(self, state_input):
         # Use the network to predict the next action to take, using the model
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
-        action = np.random.choice(self.action_space, p=action_dist[0][0])
+        action = np.random.choice(self.action_space, p=action_dist[0, :])
         print(action)
         return action
 
