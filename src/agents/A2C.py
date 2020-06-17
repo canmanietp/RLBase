@@ -123,7 +123,7 @@ class A2CAgent(BaseAgent):
         self.actions.append(action)
         self.actions_onehot.append(action_onehot)
         q_value = self.model_critic.predict([state], steps=1)
-        self.values.append(q_value)
+        self.values.append(q_value[0])
         self.masks.append(not done)
         self.rewards.append(reward)
         self.actions_probs.append(action_dist)
@@ -191,7 +191,7 @@ class A2CAgent(BaseAgent):
             # add last value
             q_value = self.model_critic.predict([state], steps=1)
             print("q value2", q_value, q_value[0][0])
-            self.values.append(q_value[0][0])
+            self.values.append(q_value[0])
             self.replay()
 
         if done:
