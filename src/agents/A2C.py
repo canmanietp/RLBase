@@ -75,8 +75,8 @@ class A2CAgent(BaseAgent):
         self.values = []
         self.masks = []
         self.rewards = []
-        self.next_states = []
-        self.memory = deque(maxlen=self.params.MEMORY_SIZE)
+        # self.next_states = []
+        # self.memory = deque(maxlen=self.params.MEMORY_SIZE)
 
         self.step_count = 0
 
@@ -161,6 +161,7 @@ class A2CAgent(BaseAgent):
         # Use the network to predict the next action to take, using the model
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action = np.random.choice(self.action_space, p=action_dist[0][0])
+        print(self.step_count, action)
         return action
 
     def decay(self, decay_rate):
@@ -169,14 +170,19 @@ class A2CAgent(BaseAgent):
 
     def replay(self):
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
-        print(np.squeeze(returns, axis=1).shape)
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, np.squeeze(advantages, axis=1), np.reshape(self.rewards, newshape=(-1, 1, 1)), np.squeeze(self.values[:-1], axis=1)],
             [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8, callbacks=[self.tensor_board])
         critic_loss = self.model_critic.fit([self.states], [np.squeeze(returns, axis=1)], shuffle=True, epochs=8,
                                        verbose=False, callbacks=[self.tensor_board])
 
-        print(actor_loss, critic_loss)
+        self.states = []
+        self.actions = []
+        self.actions_onehot = []
+        self.actions_probs = []
+        self.values = []
+        self.masks = []
+        self.rewards = []
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
