@@ -161,8 +161,8 @@ class A2CAgent(BaseAgent):
     def replay(self):
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
         # print("replay", returns, advantages)
-        print(self.actions, self.actions_onehot)
-        print(advantages.shape, np.reshape(self.rewards, newshape=(-1, 1, 1)).shape, len(self.values[:-1]), np.reshape(self.actions_onehot, newshape=(-1, self.action_space)).shape)
+        print(np.reshape(self.rewards, newshape=(-1, 1)).shape)
+        print(np.reshape(self.rewards, newshape=(-1, 1, 1)).shape)
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, advantages, np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
             [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8)
