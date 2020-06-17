@@ -82,7 +82,6 @@ class A2CAgent(BaseAgent):
 
         self.tensor_board = TensorBoard(log_dir='./logs')
 
-
     def get_model_actor(self, input_dims, output_dims):
         state_input = Input(shape=input_dims)
         oldpolicy_probs = Input(shape=(1, output_dims,))
@@ -191,7 +190,7 @@ class A2CAgent(BaseAgent):
 
         self.step_count += 1
 
-        if self.step_count % 100 == 0:
+        if self.step_count % 1000 == 0:
             # add last value
             q_value = self.model_critic.predict([state_input], steps=1)
             self.values.append(q_value)
