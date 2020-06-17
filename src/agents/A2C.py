@@ -26,7 +26,7 @@ def get_advantages(values, masks, rewards):
     for i in reversed(range(len(rewards))):
         delta = rewards[i] + gamma * values[i + 1][0] * masks[i] - values[i][0]
         gae = delta + gamma * lmbda * masks[i] * gae
-        returns.insert(0, gae + values[i])
+        returns.insert(0, gae + values[i][0])
 
     adv = np.array(returns) - values[:-1]
     return returns, (adv - np.mean(adv)) / (np.std(adv) + 1e-10)
