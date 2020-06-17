@@ -159,8 +159,8 @@ class A2CAgent(BaseAgent):
         # Use the network to predict the next action to take, using the model
         print('act', state.shape)
         action_dist = self.model_actor.predict([state, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
-        print("action dist", action_dist, action_dist[0])
-        action = np.random.choice(self.action_space, p=action_dist[0, :])
+        print("action dist", action_dist, action_dist[0], action_dist[0][0])
+        action = np.random.choice(self.action_space, p=action_dist[0][0])
         return action
 
     def decay(self, decay_rate):
