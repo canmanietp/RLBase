@@ -8,6 +8,7 @@ from keras.layers import Input, Dense, Flatten
 from keras.optimizers import Adam, RMSprop
 from keras import backend as K
 
+from keras.callbacks import TensorBoard
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Flatten
 from keras.models import Model
 from keras.optimizers import Adam
@@ -79,6 +80,9 @@ class A2CAgent(BaseAgent):
 
         self.step_count = 0
 
+        self.tensor_board = TensorBoard(log_dir='./logs')
+
+
     def get_model_actor(self, input_dims, output_dims):
         state_input = Input(shape=input_dims)
         oldpolicy_probs = Input(shape=(1, output_dims,))
@@ -88,7 +92,6 @@ class A2CAgent(BaseAgent):
 
         # Classification block
         x = Dense(512, activation='relu', name='fc1')(state_input)
-        x.add(Flatten())
         x = Dense(256, activation='relu', name='fc2')(x)
         out_actions = Dense(self.action_space, activation='softmax', name='predictions')(x)
 
@@ -107,7 +110,6 @@ class A2CAgent(BaseAgent):
 
         # Classification block
         x = Dense(512, activation='relu', name='fc1')(state_input)
-        x.add(Flatten())
         x = Dense(256, activation='relu', name='fc2')(x)
         out_actions = Dense(1, activation='tanh')(x)
 
@@ -169,9 +171,9 @@ class A2CAgent(BaseAgent):
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, np.squeeze(advantages, axis=1), np.reshape(self.rewards, newshape=(-1, 1, 1)), np.squeeze(self.values[:-1], axis=1)],
-            [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8)
+            [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8, callbacks=[self.tensor_board])
         critic_loss = self.model_critic.fit([self.states], [np.reshape(returns, newshape=(-1, 1))], shuffle=True, epochs=8,
-                                       verbose=False)
+                                       verbose=False, callbacks=[self.tensor_board])
 
         print(actor_loss, critic_loss)
 
