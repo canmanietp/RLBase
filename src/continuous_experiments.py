@@ -16,7 +16,7 @@ sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 from agents.DQN import DQNAgent
 from agents.DQNLiA import DQNLiAAgent
 from agents.DQNVP import DQNVPAgent
-from agents.ACTCR import ACTCRAgent
+from agents.A2C import A2CAgent
 from learning_parameters import ContinuousParameters
 from helpers import plotting
 
@@ -60,7 +60,7 @@ def get_params_waterworld():
 
 
 def get_params_pong():
-    memory_size = 300000
+    memory_size = 1000000
     batch_size = 32
     init_epsilon = 0.3
     epsilon_min = 0.01
@@ -298,8 +298,8 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
                 agents.append(DQNLiAAgent(env, copy.copy(params)))
             elif alg == 'DQNVP':
                 agents.append(DQNVPAgent(env, copy.copy(params)))
-            elif alg == 'ACTCR':
-                agents.append(ACTCRAgent(env, copy.copy(params)))
+            elif alg == 'A2C':
+                agents.append(A2CAgent(env, copy.copy(params)))
             else:
                 print("Unknown algorithm - {}".format(alg))
 

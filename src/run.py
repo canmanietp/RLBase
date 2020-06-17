@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     alg_strings = '\t'.join(alg_names)
 
-    if 'DQN' in alg_strings or 'ACTCR' in alg_strings:
+    if 'DQN' in alg_strings or 'A2C' in alg_strings:
         import continuous_experiments
         continuous_experiments.run_continuous_experiment(num_trials, env_name, alg_names, verbose, render)
     else:

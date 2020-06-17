@@ -26,7 +26,7 @@ class DQNAgent(BaseAgent):
 
     def step(self, action):
         if 'AtariARIWrapper' in str(self.env):
-            next_state, reward, done, next_state_info = self.env.step(action)
+            raw_state, reward, done, next_state_info = self.env.step(action)
             next_state = self.info_into_state(next_state_info, None)
         elif 'PLE' in str(self.env):
             act = self.env.getActionSet()[action]
