@@ -58,7 +58,7 @@ class A2CAgent(BaseAgent):
         self.env = env
         self.action_space = params.action_space
         self.params = params
-        self.input_shape = np.array((params.REPEAT_N_FRAMES, int(params.observation_space / params.REPEAT_N_FRAMES)))
+        self.input_shape = np.array(params.REPEAT_N_FRAMES, int(params.observation_space / params.REPEAT_N_FRAMES))
         self.model_actor = self.get_model_actor(self.input_shape, self.action_space)
         self.model_critic = self.get_model_critic(self.input_shape)
         self.current_state = None
@@ -123,7 +123,7 @@ class A2CAgent(BaseAgent):
         self.actions.append(action)
         self.actions_onehot.append(action_onehot)
         q_value = self.model_critic.predict([state], steps=1)
-        self.values.append(q_value[0])
+        self.values.append(q_value)
         self.masks.append(not done)
         self.rewards.append(reward)
         self.actions_probs.append(action_dist)
@@ -190,8 +190,7 @@ class A2CAgent(BaseAgent):
         if self.step_count % 25 == 0:
             # add last value
             q_value = self.model_critic.predict([state], steps=1)
-            print("q value2", q_value, q_value[0][0])
-            self.values.append(q_value[0])
+            self.values.append(q_value)
             self.replay()
 
         if done:
