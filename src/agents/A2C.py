@@ -158,7 +158,6 @@ class A2CAgent(BaseAgent):
         # Use the network to predict the next action to take, using the model
         print('act', state.shape)
         action_dist = self.model_actor.predict([state, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
-        print("action dist", action_dist, action_dist[0], action_dist[0][0])
         action = np.random.choice(self.action_space, p=action_dist[0][0])
         return action
 
@@ -167,6 +166,7 @@ class A2CAgent(BaseAgent):
             self.params.EPSILON *= decay_rate
 
     def replay(self):
+        print("replay", self.values, self.masks, self.rewards)
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, advantages, np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
