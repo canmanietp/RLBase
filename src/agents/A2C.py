@@ -23,8 +23,7 @@ def get_advantages(values, masks, rewards):
     returns = []
     gae = 0
     for i in reversed(range(len(rewards))):
-        print("get advantages loop", values[0], values[i])
-        delta = rewards[i] + gamma * values[i + 1][0][0] * masks[i] - values[i][0][0]
+        delta = rewards[i] + gamma * values[i + 1] * masks[i] - values[i]
         gae = delta + gamma * lmbda * masks[i] * gae
         returns.insert(0, gae + values[i])
 
@@ -187,6 +186,9 @@ class A2CAgent(BaseAgent):
         self.step_count += 1
 
         if self.step_count % 25 == 0:
+            # add last value
+            q_value = self.model_critic.predict(state, steps=1)
+            self.values.append(q_value)
             self.replay()
 
         if done:
