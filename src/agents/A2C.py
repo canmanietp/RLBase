@@ -126,7 +126,7 @@ class A2CAgent(BaseAgent):
         self.values.append(q_value)
         self.masks.append(not done)
         self.rewards.append(reward)
-        self.actions_probs.append(action_dist[0][0])
+        self.actions_probs.append(action_dist[0])
 
     def step(self, action):
         if 'AtariARIWrapper' in str(self.env):
