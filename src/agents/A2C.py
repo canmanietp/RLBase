@@ -167,7 +167,7 @@ class A2CAgent(BaseAgent):
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
         reshaped_ad = []
         for a in advantages:
-            reshaped_ad.append(a[0])
+            reshaped_ad.append(a[0][0])
         print(reshaped_ad)
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, reshaped_ad, np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
