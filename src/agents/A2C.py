@@ -1,3 +1,4 @@
+# Most A2C code from: https://github.com/ChintanTrivedi/rl-bot-football/blob/master/train.py
 from agents.base import BaseAgent
 import numpy as np
 from collections import deque
@@ -189,6 +190,7 @@ class A2CAgent(BaseAgent):
         if self.step_count % 25 == 0:
             # add last value
             q_value = self.model_critic.predict(state, steps=1)
+            print("q value", q_value)
             self.values.append(q_value)
             self.replay()
 
