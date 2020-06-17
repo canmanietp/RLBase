@@ -102,7 +102,7 @@ class A2CAgent(BaseAgent):
             advantages=advantages,
             rewards=rewards,
             values=values)])
-        # model.summary()
+        model.summary()
         return model
 
     def get_model_critic(self, input_dims):
@@ -115,7 +115,7 @@ class A2CAgent(BaseAgent):
 
         model = Model(inputs=[state_input], outputs=[out_actions])
         model.compile(optimizer=Adam(lr=self.params.LEARNING_RATE), loss='mse')
-        # model.summary()
+        model.summary()
         return model
 
     def remember(self, state, action, reward, done):
