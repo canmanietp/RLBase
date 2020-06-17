@@ -143,7 +143,7 @@ class A2CAgent(BaseAgent):
             next_state, reward, done, next_state_info = self.env.step(action)
 
         state = np.reshape(self.last_n_states, self.input_shape)
-        print('step', state_input.shape)
+        print('step', state.shape)
 
         self.current_state = next_state
 
