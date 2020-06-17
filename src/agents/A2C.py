@@ -28,7 +28,7 @@ def get_advantages(values, masks, rewards):
         gae = delta + gamma * lmbda * masks[i] * gae
         returns.insert(0, gae + values[i])
 
-    adv = np.array(returns) - values[:-1][0]
+    adv = np.array(returns) - values[:-1]
     return returns, (adv - np.mean(adv)) / (np.std(adv) + 1e-10)
 
 
@@ -93,7 +93,7 @@ class A2CAgent(BaseAgent):
 
         model = Model(inputs=[state_input, oldpolicy_probs, advantages, rewards, values],
                       outputs=[out_actions])
-        model.compile(optimizer=Adam(lr=1e-4), loss=[ppo_loss(
+        model.compile(optimizer=Adam(lr=self.params.LEARNING_RATE), loss=[ppo_loss(
             oldpolicy_probs=oldpolicy_probs,
             advantages=advantages,
             rewards=rewards,
@@ -110,7 +110,7 @@ class A2CAgent(BaseAgent):
         out_actions = Dense(1, activation='tanh')(x)
 
         model = Model(inputs=[state_input], outputs=[out_actions])
-        model.compile(optimizer=Adam(lr=1e-4), loss='mse')
+        model.compile(optimizer=Adam(lr=self.params.LEARNING_RATE), loss='mse')
         # model.summary()
         return model
 
@@ -165,7 +165,7 @@ class A2CAgent(BaseAgent):
 
     def replay(self):
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
-        print("replay", returns, advantages)
+        print("replay", returns, advantages[:, 0])
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, advantages, np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
             [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8)
