@@ -147,7 +147,7 @@ class A2CAgent(BaseAgent):
 
         self.current_state = next_state
 
-        self.remember(state_input, action, reward, done)
+        self.remember(state, action, reward, done)
         return next_state, reward, done
 
     def act(self, state):
