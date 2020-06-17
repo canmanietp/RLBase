@@ -168,7 +168,10 @@ class A2CAgent(BaseAgent):
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, np.squeeze(advantages, axis=1), np.reshape(self.rewards, newshape=(-1, 1, 1)), np.squeeze(self.values[:-1], axis=1)],
             [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8)
-        critic_loss = self.model_critic.fit([self.states], [np.reshape(returns, newshape=(-1, 1))], shuffle=True, epochs=8,
+        state_inputs = []
+        for s in self.states:
+            state_inputs.append(K.expand_dims(s, 0))
+        critic_loss = self.model_critic.fit([state_inputs], [np.reshape(returns, newshape=(-1, 1))], shuffle=True, epochs=8,
                                        verbose=False)
 
         print(actor_loss, critic_loss)
