@@ -114,15 +114,14 @@ class A2CAgent(BaseAgent):
         return model
 
     def remember(self, state, action, reward, done):
-        state_input = K.expand_dims(state, 0)
-        print('remember', state_input.shape)
-        action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
+        print('remember', state.shape)
+        action_dist = self.model_actor.predict([state, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action_onehot = np.zeros(self.action_space)
         action_onehot[action] = 1
         self.states.append(state)
         self.actions.append(action)
         self.actions_onehot.append(action_onehot)
-        q_value = self.model_critic.predict([state_input], steps=1)
+        q_value = self.model_critic.predict([state], steps=1)
         self.values.append(q_value)
         self.masks.append(not done)
         self.rewards.append(reward)
