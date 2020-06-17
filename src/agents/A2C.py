@@ -23,7 +23,7 @@ def get_advantages(values, masks, rewards):
     returns = []
     gae = 0
     for i in reversed(range(len(rewards))):
-        delta = rewards[i] + gamma * values[i + 1][0][0] * masks[i] - values[i][0][0]
+        delta = rewards[i] + gamma * values[i + 1] * masks[i] - values[i]
         gae = delta + gamma * lmbda * masks[i] * gae
         returns.insert(0, gae + values[i])
 
@@ -168,6 +168,7 @@ class A2CAgent(BaseAgent):
     def replay(self):
         print("replay", self.values, self.masks, self.rewards)
         returns, advantages = get_advantages(self.values, self.masks, self.rewards)
+        print(returns, advantages)
         actor_loss = self.model_actor.fit(
             [self.states, self.actions_probs, advantages, np.reshape(self.rewards, newshape=(-1, 1, 1)), self.values[:-1]],
             [(np.reshape(self.actions_onehot, newshape=(-1, self.action_space)))], verbose=False, shuffle=True, epochs=8)
