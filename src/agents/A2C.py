@@ -58,7 +58,7 @@ class A2CAgent(BaseAgent):
         self.env = env
         self.action_space = params.action_space
         self.params = params
-        self.input_shape = np.array((params.REPEAT_N_FRAMES, int(params.observation_space / params.REPEAT_N_FRAMES)))
+        self.input_shape = np.array((1, self.params.observation_space))
         self.model_actor = self.get_model_actor(self.input_shape, self.action_space)
         self.model_critic = self.get_model_critic(self.input_shape)
         self.current_state = None
@@ -126,7 +126,7 @@ class A2CAgent(BaseAgent):
         self.values.append(q_value)
         self.masks.append(not done)
         self.rewards.append(reward)
-        self.actions_probs.append(action_dist[0])
+        self.actions_probs.append(action_dist)
 
     def step(self, action):
         if 'AtariARIWrapper' in str(self.env):
@@ -141,16 +141,22 @@ class A2CAgent(BaseAgent):
         else:
             next_state, reward, done, next_state_info = self.env.step(action)
 
-        state = np.reshape(self.last_n_states, self.input_shape)
+        state = np.reshape(self.last_n_states, [1, self.params.observation_space])
+        temp = copy.copy(self.last_n_states[int(self.params.observation_space/self.params.REPEAT_N_FRAMES):])
+        temp = np.append(temp, next_state)
+        next_last_n_states = temp
+
         self.remember(state, action, reward, done)
 
         self.current_state = next_state
+        self.last_n_states = next_last_n_states
+
         return next_state, reward, done
 
     def act(self, state_input):
         # Use the network to predict the next action to take, using the model
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
-        action = np.random.choice(self.action_space, p=action_dist[0][0])
+        action = np.random.choice(self.action_space, p=action_dist[0:, ])
         print(action)
         return action
 
@@ -171,7 +177,7 @@ class A2CAgent(BaseAgent):
         print(actor_loss, critic_loss)
 
     def do_step(self):
-        state = np.reshape(self.last_n_states, self.input_shape)
+        state = np.reshape(self.last_n_states, [1, self.params.observation_space])
         state_input = K.expand_dims(state, 0)
         action = self.act(state_input)
         next_state, reward, done = self.step(action)
