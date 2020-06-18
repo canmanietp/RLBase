@@ -265,10 +265,6 @@ def get_params(env_name, alg=None):
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
         env = AtariARIWrapper(gym.make('PongDeterministic-v4'))
         params = get_params_pong()
-    elif env_name == 'breakout':
-        from envs.atariari.benchmark.wrapper import AtariARIWrapper
-        env = AtariARIWrapper(gym.make('Breakout-v0'))
-        params = get_params_breakout()
     elif env_name == 'waterworld':
         sys.path.append('envs/PyGame-Learning-Environment/')
         from ple.games.waterworld import WaterWorld
@@ -342,7 +338,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
                 if verbose:
                     print(
                         "{} Episode {}, reward={}, exploration={}".format(datetime.datetime.now().strftime("%H:%M:%S"),
-                                                                          i, ep_reward, agent.params.EPSILON))
+                                                                          i + 1, ep_reward, agent.params.EPSILON))
             agent.env.close()
             csvfile.close()
             run_time = time.time() - t0

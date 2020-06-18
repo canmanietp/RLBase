@@ -90,8 +90,8 @@ class A2CAgent(BaseAgent):
         values = Input(shape=(1, 1,))
 
         # Classification block
-        x = Dense(32, activation='relu', name='fc1')(state_input)
-        x = Dense(8, activation='relu', name='fc2')(x)
+        x = Dense(256, activation='relu', name='fc1')(state_input)
+        x = Dense(64, activation='relu', name='fc2')(x)
         out_actions = Dense(self.action_space, activation='softmax', name='predictions')(x)
 
         model = Model(inputs=[state_input, oldpolicy_probs, advantages, rewards, values],
@@ -108,8 +108,8 @@ class A2CAgent(BaseAgent):
         state_input = Input(shape=input_dims)
 
         # Classification block
-        x = Dense(32, activation='relu', name='fc1')(state_input)
-        x = Dense(8, activation='relu', name='fc2')(x)
+        x = Dense(256, activation='relu', name='fc1')(state_input)
+        x = Dense(64, activation='relu', name='fc2')(x)
         out_actions = Dense(1, activation='tanh')(x)
 
         model = Model(inputs=[state_input], outputs=[out_actions])
@@ -166,7 +166,6 @@ class A2CAgent(BaseAgent):
         self.actions.append(action)
         self.actions_onehot.append(action_onehot)
         self.actions_probs.append(action_dist[0])
-        print(self.step_count, action)
         return action
 
     def decay(self, decay_rate):
