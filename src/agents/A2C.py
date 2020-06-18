@@ -90,7 +90,7 @@ class A2CAgent(BaseAgent):
         values = Input(shape=(1, 1,))
 
         # Classification block
-        x = Dense(256, activation='relu', name='fc1')(state_input)
+        x = Dense(128, activation='relu', name='fc1')(state_input)
         x = Dense(64, activation='relu', name='fc2')(x)
         out_actions = Dense(self.action_space, activation='softmax', name='predictions')(x)
 
@@ -108,7 +108,7 @@ class A2CAgent(BaseAgent):
         state_input = Input(shape=input_dims)
 
         # Classification block
-        x = Dense(256, activation='relu', name='fc1')(state_input)
+        x = Dense(128, activation='relu', name='fc1')(state_input)
         x = Dense(64, activation='relu', name='fc2')(x)
         out_actions = Dense(1, activation='tanh')(x)
 
