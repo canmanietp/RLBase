@@ -16,7 +16,7 @@ from keras import backend as K
 
 clipping_val = 0.2
 critic_discount = 0.5
-entropy_beta = 0.001
+entropy_beta = 0.01
 gamma = 0.99
 lmbda = 0.95
 
