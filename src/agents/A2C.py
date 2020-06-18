@@ -119,17 +119,18 @@ class A2CAgent(BaseAgent):
 
     def remember(self, state, action, reward, done):
         state_input = K.expand_dims(state, 0)
-        action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
-        action_onehot = np.zeros(self.action_space)
-        action_onehot[action] = 1
         self.states.append(state)
-        self.actions.append(action)
-        self.actions_onehot.append(action_onehot)
+
+        # action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
+        # action_onehot = np.zeros(self.action_space)
+        # action_onehot[action] = 1
+        # self.actions.append(action)
+        # self.actions_onehot.append(action_onehot)
+
         q_value = self.model_critic.predict([state_input], steps=1)
         self.values.append(q_value)
         self.masks.append(not done)
         self.rewards.append(reward)
-        self.actions_probs.append(action_dist[0])
 
     def step(self, action):
         if 'AtariARIWrapper' in str(self.env):
@@ -160,7 +161,11 @@ class A2CAgent(BaseAgent):
         # Use the network to predict the next action to take, using the model
         action_dist = self.model_actor.predict([state_input, self.dummy_n, self.dummy_1, self.dummy_1, self.dummy_1], steps=1)
         action = np.random.choice(self.action_space, p=action_dist[0][0])
-        print(self.step_count, action)
+        action_onehot = np.zeros(self.action_space)
+        action_onehot[action] = 1
+        self.actions.append(action)
+        self.actions_onehot.append(action_onehot)
+        self.actions_probs.append(action_dist[0])
         return action
 
     def decay(self, decay_rate):
