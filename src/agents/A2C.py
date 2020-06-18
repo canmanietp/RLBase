@@ -166,6 +166,7 @@ class A2CAgent(BaseAgent):
         self.actions.append(action)
         self.actions_onehot.append(action_onehot)
         self.actions_probs.append(action_dist[0])
+        print(self.step_count, action)
         return action
 
     def decay(self, decay_rate):
