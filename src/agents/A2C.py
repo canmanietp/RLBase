@@ -201,7 +201,7 @@ class A2CAgent(BaseAgent):
             self.decay(self.params.DECAY_RATE)
             # add last value
 
-        if self.step_count % self.params.RETRAIN_STEPS == 0:
+        if self.step_count % self.params.retrain_steps == 0:
             q_value = self.model_critic.predict([state_input], steps=1)
             self.values.append(q_value)
             self.replay()
