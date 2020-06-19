@@ -84,17 +84,16 @@ class QLiAAgent(QAgent):
         # ia = ab_index
         # ab = self.sub_agents[ia]
 
-        self.next_abstraction = self.sarsa_update(state, ab_index, reward, next_state, done)
-
         for ia, ab in enumerate(self.sub_agents):
             # if ia == ab_index or self.sa_visits[state][ia] < 15:
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
+            # lr = self.params.ALPHA / (1 + (1 - int(ia == ab_index))*np.sum(ab.sa_visits[abs_state]))
+            # ab.params.ALPHA = lr
+            ab.update(abs_state, action, reward, abs_next_state, done)
 
-            if ia == self.next_abstraction:
-                self.next_action = ab.sarsa_update(abs_state, action, reward, abs_next_state, done)
-            else:
-                ab.sarsa_update(abs_state, action, reward, abs_next_state, done)
+            if ia == ab_index:
+                self.update(state, ab_index, reward, next_state, done)
 
         # self.env.local_reward(state, action, self.params.sub_spaces[ia])
 
