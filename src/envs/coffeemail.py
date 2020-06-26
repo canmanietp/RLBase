@@ -138,7 +138,6 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
                                                         reward += 20
                                                         new_am = 0
                                                         new_rm = 0
-
                                                 if r_loc == self.B_loc:
                                                     if bc and rc:
                                                         reward += 20

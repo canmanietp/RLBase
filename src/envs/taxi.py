@@ -131,11 +131,11 @@ class TaxiEnv(discrete.DiscreteEnv):
         row, col, pass_idx, dest_idx = list(self.decode(state))
         if seen_state_vars == [0, 1, 2]:
             if pass_idx < 4 and action == 4 and ([row, col] == self.locs[pass_idx]):
-                return 10
+                return 1
             elif action in [4, 5]:
-                return -10
-            else:
                 return -1
+            else:
+                return 0
         if seen_state_vars == [0, 1, 3]:
             if pass_idx == 4 and action == 5 and ([row, col] == self.locs[dest_idx]):
                 return 10

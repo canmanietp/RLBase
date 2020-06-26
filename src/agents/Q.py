@@ -11,19 +11,30 @@ class QAgent(BaseAgent):
         self.name = 'Q'
         self.params = copy.copy(params)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
+        self.sa_next_state = [[[] for a in range(self.action_space)] for os in range(self.observation_space)]
+        self.sa_reward = [[[] for a in range(self.action_space)] for os in range(self.observation_space)]
 
         self.max_steps = 1
         self.steps = 0
 
     def greedy_action(self, state):
-        qv = self.Q_table[state]
+        if self.inadmissible_actions[state] != []:
+            admissible_actions = [x for x in range(self.action_space) if x not in self.inadmissible_actions[state]]
+        else:
+            admissible_actions = None
+        if admissible_actions:
+            qv = self.Q_table[state][admissible_actions]
+            val_choice = np.random.choice(np.flatnonzero(qv == qv.max()))
+            return admissible_actions[val_choice]
+        else:
+            qv = self.Q_table[state]
         return np.random.choice(np.flatnonzero(qv == qv.max()))
 
     def e_greedy_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
-            return self.random_action()
+            return self.random_action(state)
         if all([x == 0 for x in self.Q_table[state]]):
-            return self.random_action()
+            return self.random_action(state)
         return self.greedy_action(state)
 
     def decay(self, decay_rate):

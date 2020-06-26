@@ -123,7 +123,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
     def reset(self):
         taxi_row = np.random.randint(5)
         taxi_col = np.random.randint(5)
-        pass_loc = np.random.randint(5)
+        pass_loc = np.random.randint(4)
         dest_loc = np.random.randint(4)
         fuel = np.random.randint(6, 13)
         self.s = self.encode(taxi_row, taxi_col, pass_loc, dest_loc, fuel)

@@ -9,6 +9,7 @@ class BaseAgent:
         self.observation_space = env.observation_space.n
         self.action_space = env.action_space.n
         self.sa_visits = np.zeros([self.observation_space, self.action_space])
+        self.inadmissible_actions = [[] for os in range(self.observation_space)]
         self.current_state = self.reset()
 
     def reset(self):
@@ -26,7 +27,13 @@ class BaseAgent:
             self.current_state = self.env.reset()
         return self.current_state
 
-    def random_action(self):
+    def random_action(self, state=None):
+        if state is not None and self.inadmissible_actions[state] != []:
+            admissible_actions = [x for x in range(self.action_space) if x not in self.inadmissible_actions[state]]
+        else:
+            admissible_actions = None
+        if admissible_actions is not None:
+            return np.random.choice(admissible_actions)
         return np.random.randint(self.action_space)
 
     def get_state(self):

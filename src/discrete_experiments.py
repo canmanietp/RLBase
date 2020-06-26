@@ -23,6 +23,7 @@ from agents.QVA import QVAAgent
 from agents.MaxQ import MaxQAgent
 from agents.QLiA_T import QLiA_TAgent
 from agents.QLiA_batch import QLiA_batchAgent
+from agents.QLiA_sig import QLiA_sigAgent
 from agents.QAMS import QAMSAgent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
@@ -46,18 +47,18 @@ def get_params_coffee():
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 def get_params_coffeemail(alg):
-    init_alpha = 0.1
-    alpha_min = 0.1
+    init_alpha = 0.2
+    alpha_min = 0.2
     init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
     discount = 0.99
     decay_rate = 0.99
-    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
-        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]  # [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
-    elif alg == 'QLiA_T':
-        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
+    if alg in ['QAMS', 'QLiA_sig', 'QLiA_batch']:
+        sub_spaces = [[0, 1, 2, 4, 5, 6, 7], [0, 1, 3, 4, 5, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]  # [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
+    elif alg == 'QLiA':
+        sub_spaces = [[0, 1, 2, 4, 5, 6, 7], [0, 1, 3, 4, 5, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     elif alg in ['QVP', 'QVA']:
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     else:
@@ -119,13 +120,13 @@ def get_params_taxifuel(alg):
     epsilon_min = 0.001
     init_phi = 0.5
     phi_min = 0.001
-    discount = 0.95
+    discount = 0.99
     decay_rate = 0.99
     sub_spaces = None
     options = None
     if alg in ['QAMS']:
         sub_spaces = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3, 4]]  #  [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
-    elif alg in ['QLiA', 'QVP', 'QLiA_batch']:
+    elif alg in ['QLiA', 'QVP', 'QLiA_sig', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'QVA':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
@@ -134,15 +135,16 @@ def get_params_taxifuel(alg):
         # get 10, put 11, refuel 12, root 13
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
+
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 90001
+    num_episodes = 80001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 def get_params_taxilarge(alg):
-    init_alpha = 0.1
-    alpha_min = 0.1
+    init_alpha = 0.5
+    alpha_min = 0.05
     init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.3
@@ -195,17 +197,17 @@ def get_params_noisytaxi(alg):
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 def get_params_taxi(alg):
-    init_alpha = 0.1
-    alpha_min = 0.1
     init_epsilon = 0.5
     epsilon_min = 0.001
     init_phi = 0.5
-    phi_min = 0.01
+    phi_min = 0.001
     discount = 0.95
     decay_rate = 0.99
     sub_spaces = None
     options = None
-    if alg in ['QAMS', 'QLiA', 'QVA']:
+    if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA']:
+        init_alpha = 0.3
+        alpha_min = 0.3
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QLiA_T':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
@@ -218,6 +220,8 @@ def get_params_taxi(alg):
     #     init_epsilon = 0.2
     #     epsilon_min = 0.01
     else:
+        init_alpha = 0.3
+        alpha_min = 0.3
         sub_spaces = []
     size_state_vars = [5, 5, 5, 4]
     num_episodes = 1000
@@ -321,6 +325,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 agents.append(QLiA_TAgent(env, params))
             elif alg == 'QLiA_batch':
                 agents.append(QLiA_batchAgent(env, params))
+            elif alg == 'QLiA_sig':
+                agents.append(QLiA_sigAgent(env, params))
             elif alg == 'QAMS':
                 agents.append(QAMSAgent(env, params))
             else:
@@ -357,6 +363,12 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 if verbose:
                     print("{} Episode {}, episode reward={}, Last 100 average={}".format(datetime.datetime.now().strftime("%H:%M:%S"), i, ep_reward, np.mean(episode_rewards[j][-100:])))
                 agent.decay(agent.params.DECAY_RATE)
+
+                if j % 1000 == 0:
+                    plt.plot(plotting.moving_average(episode_rewards[j], int(params.num_episodes / 10)),
+                             label=agent.name)
+                    plt.legend([a.name for a in agents], loc='lower right')
+                    plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
@@ -364,35 +376,6 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             plt.plot(plotting.moving_average(episode_rewards[j], int(params.num_episodes / 10)), label=agent.name)
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
-
-            # from helpers import sensitivity
-            #
-            # for s in range(agent.observation_space):
-            #     sensitivities = sensitivity.do_sensitivity_analysis_single_state(agent, agent.ranges, s, agent.state_variables)
-            #     least_influence = int(np.argmax(sensitivities))
-            #
-            #     state = list(agent.env.decode(s))
-            #     print("Least influence for state: ", state, sensitivities, least_influence)
-            # state = agent.env.encode(1, 1, 1, 3)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 2, 3)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 3, 3)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 4, 3)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 1, 0)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 1, 1)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 1, 2)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 4, 0)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 4, 1)
-            # print("Q values for state: ", state, agent.Q_table[state])
-            # state = agent.env.encode(1, 1, 4, 2)
-            # print("Q values for state: ", state, agent.Q_table[state])
 
         trial_rewards.append(episode_rewards)
         trial_times.append(times_to_run)

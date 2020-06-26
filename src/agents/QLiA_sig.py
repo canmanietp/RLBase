@@ -5,12 +5,12 @@ from agents.Q import QMiniAgent
 from learning_parameters import DiscreteParameters
 import numpy as np
 import copy
+from scipy.stats import ranksums
 
-
-class QLiAAgent(QAgent):
+class QLiA_sigAgent(QAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
-        self.name = 'LiA'
+        self.name = 'LiA_sig'
         self.sub_agents = []
         self.params = params
 
@@ -22,19 +22,12 @@ class QLiAAgent(QAgent):
             ab_params = copy.copy(self.params)
             ab_params.EPSILON = params.PHI
             ab_params.EPSILON_MIN = params.PHI_MIN
-            self.sub_agents.append(QMiniAgent(self.env, ab_params, ss , self.env.action_space.n))
+            self.sub_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
 
         self.action_space = len(params.sub_spaces)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
         self.state_decodings = self.sweep_state_decodings()
-
-        self.last_ab = None
-        self.last_state = None
-        self.next_abstraction = None
-        self.next_action = None
-
-        self.PSI = 0.9
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -64,35 +57,58 @@ class QLiAAgent(QAgent):
         for ab in self.sub_agents:
             ab.decay(decay_rate)
 
-        self.PSI *= 0.999
-
     def e_greedy_LIA_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
-            ab_index = self.random_action()
-            action = self.sub_agents[ab_index].random_action()
+            ab_index = self.random_action(state)
+            action = self.sub_agents[ab_index].random_action(state)
         else:
+            state_vars = self.state_decodings[state]
             ab_index = self.greedy_action(state)
             abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
-            if ab_index != len(self.sub_agents) - 1:
-                new_q = self.PSI*self.sub_agents[ab_index].Q_table[abs_state] + (1 - self.PSI) * self.sub_agents[-1].Q_table[state]
-                action = np.argmax(new_q)
-            else:
-                action = self.sub_agents[ab_index].greedy_action(abs_state)
+            action = self.sub_agents[ab_index].greedy_action(abs_state)
+        # conduct tests
+        # sample1 = self.sub_agents[ab_index].sa_next_state[abs_state][action]
+        # sample2 = [self.encode_abs_state(self.state_decodings[ns], self.params.sub_spaces[ab_index]) for ns in self.sa_next_state[state][action]]
+        # rs_ns = ranksums(sample1, sample2)
         return ab_index, action
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):
         state_vars = self.state_decodings[state]
         next_state_vars = self.state_decodings[next_state]
+        full_agent_index = len(self.sub_agents) - 1
+        reward_sample2 = self.sub_agents[full_agent_index].sa_reward[state][action]
 
         for ia, ab in enumerate(self.sub_agents):
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-            # lr = self.params.ALPHA / (1 + (1 - int(ia == ab_index))*np.sum(ab.sa_visits[abs_state]))
-            # ab.params.ALPHA = lr
-            ab.update(abs_state, action, reward, abs_next_state, done)
 
-        if ab_index is not None:
-            self.update(state, ab_index, reward, next_state, done)
+            if ia not in self.inadmissible_actions[state]:
+                if ia != full_agent_index:
+                    reward_sample1 = self.sub_agents[ia].sa_reward[abs_state][action]
+                    rs_rewards = ranksums(reward_sample1, reward_sample2)
+                    # ns_sample1 = self.sub_agents[ia].sa_next_state[abs_state][action]
+                    # ns_sample2 = [self.encode_abs_state(self.state_decodings[ns], self.params.sub_spaces[ia]) for
+                    #               ns in self.sub_agents[full_agent_index].sa_next_state[state][action]]
+                    # rs_ns = ranksums(ns_sample1, ns_sample2)
+                    if rs_rewards.pvalue < 0.05:  # and len(reward_sample2) > 5 # or rs_ns.pvalue < 0.05:
+                        if ia == ab_index:
+                            # Don't allow this abstraction to be chosen in this state
+                            # print(state_vars, ia, action, ns_sample1, ns_sample2)
+                            self.inadmissible_actions[state].append(ia)
+                            ab.inadmissible_actions[abs_state].append(action)
+                            print(state_vars, ia, action, rs_rewards.pvalue, reward_sample1, reward_sample2)
+                    else:
+                        ab.update(abs_state, action, reward, abs_next_state, done)
+                else:
+                    ab.update(abs_state, action, reward, abs_next_state, done)
+
+            if ia == ab_index:
+                ab.sa_next_state[abs_state][action].append(abs_next_state)
+                ab.sa_reward[abs_state][action].append(reward)
+
+        self.update(state, ab_index, reward, next_state, done)
+        self.sa_next_state[state][ab_index].append(next_state)
+        self.sa_reward[state][ab_index].append(reward)
 
         # self.env.local_reward(state, action, self.params.sub_spaces[ia])
 
@@ -103,11 +119,7 @@ class QLiAAgent(QAgent):
         if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
             done = True
         self.update_LIA(state, ab_index, action, reward, next_state, done)
-        self.last_state = state
         self.current_state = next_state
-        if done:
-            self.last_ab = None
-            self.last_state = None
         self.steps += 1
         return reward, done
 
