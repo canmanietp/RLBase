@@ -24,8 +24,7 @@ class QLiAAgent(QAgent):
             ab_params.EPSILON_MIN = params.PHI_MIN
             self.sub_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
 
-        self.true_agent = QMiniAgent(self.env, copy.copy(params), self.observation_space, self.env.action_space.n)
-        self.action_space = len(params.sub_spaces) + 1
+        self.action_space = len(params.sub_spaces)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
         self.state_decodings = self.sweep_state_decodings()
@@ -34,8 +33,6 @@ class QLiAAgent(QAgent):
         self.last_state = None
         self.next_abstraction = None
         self.next_action = None
-
-        self.PSI = 0.9
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -68,25 +65,11 @@ class QLiAAgent(QAgent):
     def e_greedy_LIA_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
             ab_index = self.random_action()
-            action = self.true_agent.random_action()
+            action = self.sub_agents[0].random_action()
         else:
-            # state_vars = self.state_decodings[state]
-            # max_val = float("-inf")
-            # max_ab = -1
-            # for ia, ab in enumerate(self.sub_agents):
-            #     abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
-            #     if max(ab.Q_table[abs_state]) > max_val:
-            #         max_val = max(ab.Q_table[abs_state])
-            #         max_ab = ia
             ab_index = self.greedy_action(state)
-            if ab_index != len(self.sub_agents):
-                abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
-                action = self.sub_agents[ab_index].greedy_action(abs_state)
-                # best_val = max(self.sub_agents[ab_index].Q_table[abs_state])
-                # advantage = best_val - self.true_agent.Q_table[state]
-                # action = np.argmax(advantage)
-            else:
-                action = self.true_agent.greedy_action(state)
+            abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
+            action = self.sub_agents[ab_index].greedy_action(abs_state)
         return ab_index, action
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):

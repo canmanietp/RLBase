@@ -83,9 +83,6 @@ class DQNLiAAgent(DQNAgent):
         next_state, reward, done = self.step_LiA(abstraction, action)
         self.step_count += 1
         self.lia_replay()
-        # for ab in self.sub_agents:
-        #     ab.replay()
-
         if done:
             self.decay(self.params.DECAY_RATE)
             for ab in self.sub_agents:
@@ -96,6 +93,7 @@ class DQNLiAAgent(DQNAgent):
         if len(self.memory) < self.params.BATCH_SIZE:
             return
         minibatch = random.sample(self.memory, self.params.BATCH_SIZE)
+
         states, values = [], []
         for state, action, reward, next_state, done in minibatch:
             q_update = reward

@@ -56,7 +56,10 @@ class DQNAgent(BaseAgent):
             self.params.EPSILON *= decay_rate
 
     def greedy_action(self, state):
-        q_values = self.model.predict(state)
+        if len(state) == 1:
+            q_values = self.model.predict(state)
+        else:
+            q_values = self.model.predict([*state])
         return np.argmax(q_values[0])
 
     def e_greedy_action(self, state):

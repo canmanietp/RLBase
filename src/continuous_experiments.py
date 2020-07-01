@@ -2,8 +2,8 @@ import gym
 import numpy as np
 import pandas as pd
 import time, sys, os, datetime, copy, csv
-from keras.models import Sequential
-from keras.layers import Dense
+from keras.models import Sequential, Input, Model
+from keras.layers import Dense, Concatenate
 from keras.optimizers import Adam
 import tensorflow as tf
 # from silence_tensorflow import silence_tensorflow
@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 from agents.DQN import DQNAgent
-from agents.DQNLiA import DQNLiAAgent
+from agents.DQNLiA_alt import DQNLiAAgent
 from agents.DQNVP import DQNVPAgent
 from agents.A2C import A2CAgent
 from learning_parameters import ContinuousParameters
@@ -24,7 +24,7 @@ os.putenv('SDL_VIDEODRIVER', 'fbcon')
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-def get_params_pong():
+def get_params_pong(alg):
     memory_size = 1000000
     batch_size = 32
     init_epsilon = 0.5
@@ -39,47 +39,81 @@ def get_params_pong():
     observation_space = 8*repeat_n_frames
     action_space = 6
     learning_rate = 0.000025
-    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
-    # --- Regular DQN model (input: full state, output: action)
-    model = Sequential()
-    model.add(Dense(512, input_dim=observation_space, activation='relu'))
-    model.add(Dense(256, activation='relu'))
-    model.add(Dense(128, activation='relu'))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(16, activation='relu'))
-    model.add(Dense(action_space, activation='linear'))
-    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_spaces = []
+    sub_models = []
+    meta_model = None
+    if alg == 'DQN':
+        # --- Regular DQN model (input: full state, output: action)
+        model = Sequential()
+        model.add(Dense(512, input_dim=observation_space, activation='relu'))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(32, activation='relu'))
+        model.add(Dense(16, activation='relu'))
+        model.add(Dense(action_space, activation='linear'))
+        model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    elif alg == 'DQNLiA':
+        # --- DQN LiA model (input: two vectors (full state, abs state), output: action)
+        input_layers = []
+        sub_spaces = [[5, 3, 21], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]  # [5, 13, 21], idea is to add this as well
+        for ss in sub_spaces:
+            input_layers.append(Input(shape=(len(ss),)))
+        input_layers.append(Input(shape=(observation_space,)))  # Add the true state as last input
+        w = Dense(32, activation="relu")(input_layers[0])
+        w = Dense(16, activation="relu")(w)
+        w = Dense(8, activation="relu")(w)
+        w = Model(inputs=input_layers[0], outputs=w)
+        x = Dense(256, activation="relu")(input_layers[1])
+        x = Dense(128, activation="relu")(x)
+        x = Dense(64, activation="relu")(x)
+        x = Dense(32, activation="relu")(x)
+        x = Model(inputs=input_layers[1], outputs=x)
+        y = Dense(512, activation="relu")(input_layers[2])
+        y = Dense(256, activation="relu")(y)
+        y = Dense(128, activation="relu")(y)
+        y = Dense(64, activation="relu")(y)
+        y = Dense(32, activation="relu")(y)
+        y = Model(inputs=input_layers[2], outputs=y)
+        combined = Concatenate()([w.output, x.output, y.output])
+        z = Dense(64, activation="relu")(combined)
+        z = Dense(32, activation="relu")(z)
+        z = Dense(16, activation="relu")(z)
+        # z = Dense(len(input_layers), activation="relu")(combined)
+        z = Dense(action_space, activation="linear")(z)
+        model = Model(inputs=input_layers, outputs=z)
+        model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    else:
+        model = None
     # --- Meta DQN model (input: full state, output: abstraction)
-    meta_model = Sequential()
-    meta_model.add(Dense(512, input_dim=observation_space, activation='relu'))
-    meta_model.add(Dense(256, activation='relu'))
-    meta_model.add(Dense(128, activation='relu'))
-    meta_model.add(Dense(64, activation='relu'))
-    meta_model.add(Dense(32, activation='relu'))
-    meta_model.add(Dense(16, activation='relu'))
-    meta_model.add(Dense(len(sub_spaces), activation='linear'))
-    meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    # --- Submodel 1 (input: subspace1, output: action)
-    sub_model = Sequential()
-    sub_model.add(Dense(256, input_dim=len(sub_spaces[0]), activation='relu'))
-    sub_model.add(Dense(128, activation='relu'))
-    sub_model.add(Dense(64, activation='relu'))
-    sub_model.add(Dense(32, activation='relu'))
-    sub_model.add(Dense(16, activation='relu'))
-    sub_model.add(Dense(action_space, activation='linear'))
-    sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate*5))
-    # --- Submodel 2 (input: subspace2, output:action)
-    sub_model2 = Sequential()
-    sub_model2.add(Dense(512, input_dim=len(sub_spaces[1]), activation='relu'))
-    sub_model2.add(Dense(256, activation='relu'))
-    sub_model2.add(Dense(128, activation='relu'))
-    sub_model2.add(Dense(64, activation='relu'))
-    sub_model2.add(Dense(32, activation='relu'))
-    sub_model2.add(Dense(16, activation='relu'))
-    sub_model2.add(Dense(action_space, activation='linear'))
-    sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_models = [sub_model, sub_model2]
+    # meta_model = Sequential()
+    # meta_model.add(Dense(512, input_dim=observation_space, activation='relu'))
+    # meta_model.add(Dense(256, activation='relu'))
+    # meta_model.add(Dense(128, activation='relu'))
+    # meta_model.add(Dense(64, activation='relu'))
+    # meta_model.add(Dense(32, activation='relu'))
+    # meta_model.add(Dense(16, activation='relu'))
+    # meta_model.add(Dense(len(sub_spaces), activation='linear'))
+    # meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    # # --- Submodel 1 (input: subspace1, output: action)
+    # sub_model = Sequential()
+    # sub_model.add(Dense(256, input_dim=len(sub_spaces[0]), activation='relu'))
+    # sub_model.add(Dense(128, activation='relu'))
+    # sub_model.add(Dense(64, activation='relu'))
+    # sub_model.add(Dense(32, activation='relu'))
+    # sub_model.add(Dense(16, activation='relu'))
+    # sub_model.add(Dense(action_space, activation='linear'))
+    # sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate*5))
+    # # --- Submodel 2 (input: subspace2, output:action)
+    # sub_model2 = Sequential()
+    # sub_model2.add(Dense(512, input_dim=len(sub_spaces[1]), activation='relu'))
+    # sub_model2.add(Dense(256, activation='relu'))
+    # sub_model2.add(Dense(128, activation='relu'))
+    # sub_model2.add(Dense(64, activation='relu'))
+    # sub_model2.add(Dense(32, activation='relu'))
+    # sub_model2.add(Dense(16, activation='relu'))
+    # sub_model2.add(Dense(action_space, activation='linear'))
+    # sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, repeat_n_frames=repeat_n_frames, memory_size=memory_size,
                                 batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon,
                                 epsilon_min=epsilon_min,
@@ -232,7 +266,7 @@ def get_params(env_name, alg=None):
     elif env_name == 'pong':
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
         env = AtariARIWrapper(gym.make('PongDeterministic-v4'))
-        params = get_params_pong()
+        params = get_params_pong(alg)
     else:
         print("Error: Unknown environment")
         return
@@ -252,6 +286,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
     for t in range(num_trials):
         agents = []
         for alg in algs:
+            env, params = get_params(env_name, alg)
             if alg == 'DQN':
                 agents.append(DQNAgent(env, copy.copy(params)))
             elif alg == 'DQNLiA':
