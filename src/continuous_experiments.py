@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 from agents.DQN import DQNAgent
-from agents.DQNLiA_alt import DQNLiAAgent
+from agents.DQNLiA import DQNLiAAgent
 from agents.DQNVP import DQNVPAgent
 from agents.A2C import A2CAgent
 from learning_parameters import ContinuousParameters
