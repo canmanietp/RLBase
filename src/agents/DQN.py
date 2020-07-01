@@ -37,7 +37,6 @@ class DQNAgent(BaseAgent):
         else:
             next_state, reward, done, next_state_info = self.env.step(action)
 
-        # next_last_two_states = np.concatenate((self.current_state, next_state))
         temp = copy.copy(self.last_n_states[int(self.params.observation_space/self.params.REPEAT_N_FRAMES):])
         temp = np.append(temp, next_state)
         next_last_n_states = temp
@@ -46,7 +45,6 @@ class DQNAgent(BaseAgent):
                           np.reshape(next_last_n_states, [1, self.params.observation_space]), done)
 
         self.current_state = next_state
-        # self.last_two_states = next_last_two_states
         self.last_n_states = next_last_n_states
         return next_state, reward, done
 
@@ -57,11 +55,14 @@ class DQNAgent(BaseAgent):
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate
 
+    def greedy_action(self, state):
+        q_values = self.model.predict(state)
+        return np.argmax(q_values[0])
+
     def e_greedy_action(self, state):
         if random.uniform(0, 1) < self.params.EPSILON:
             return self.random_action()
-        q_values = self.model.predict(state)
-        return np.argmax(q_values[0])
+        return self.greedy_action(state)
 
     def boltzmann_action(self, state):
         q_values = self.model.predict(state)
@@ -94,21 +95,12 @@ class DQNAgent(BaseAgent):
 
     def do_step(self):
         state = np.reshape(self.last_n_states, [1, self.params.observation_space])
-        if self.step_count % 2 == 0:
-            action = self.boltzmann_action(state)
-            self.last_action = action
-        else:
-            action = self.last_action
+        action = self.e_greedy_action(state)
         next_state, reward, done = self.step(action)
         self.step_count += 1
         self.replay()
         if done:
             self.decay(self.params.DECAY_RATE)
-            # for il, layers in enumerate(self.model.layers):
-            #     if il == 2:
-            #         print("layer: {}".format(il))
-            #         weights = layers.get_weights()
-            #         print(weights)
         return reward, done
 
 

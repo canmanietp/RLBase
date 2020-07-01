@@ -24,60 +24,26 @@ os.putenv('SDL_VIDEODRIVER', 'fbcon')
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-def get_params_waterworld():
-    memory_size = 50000
+def get_params_pong():
+    memory_size = 1000000
     batch_size = 32
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
     phi_min = 0.01
-    discount = 0.9
-    decay_rate = 0.99
-    num_episodes = 500
-    retrain_steps = 150
-    observation_space = 13
-    action_space = 4
-    learning_rate = 0.00001
-    sub_spaces = []
-    sub_models = []
-    meta_model = []
-    model = Sequential()
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
-    model.add(Dense(64, input_dim=observation_space, activation='relu'))
-    model.add(Dense(action_space, activation='linear'))
-    model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, memory_size=memory_size,
-                                batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon,
-                                epsilon_min=epsilon_min,
-                                discount=discount, decay=decay_rate, observation_space=observation_space,
-                                action_space=action_space,
-                                num_episodes=num_episodes, retrain_steps=retrain_steps, phi=init_phi, phi_min=phi_min,
-                                sub_spaces=sub_spaces)
-
-
-def get_params_pong():
-    memory_size = 1000000
-    batch_size = 32
-    init_epsilon = 0.3
-    epsilon_min = 0.01
-    init_phi = 0.3
-    phi_min = 0.01
     discount = 0.99
     decay_rate = 0.995
-    num_episodes = 1000
+    num_episodes = 500
     retrain_steps = 50
     repeat_n_frames = 4
     observation_space = 8*repeat_n_frames
     action_space = 6
     learning_rate = 0.000025
-    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
+    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
     # --- Regular DQN model (input: full state, output: action)
     model = Sequential()
-    model.add(Dense(256, input_dim=observation_space, activation='relu'))
+    model.add(Dense(512, input_dim=observation_space, activation='relu'))
+    model.add(Dense(256, activation='relu'))
     model.add(Dense(128, activation='relu'))
     model.add(Dense(64, activation='relu'))
     model.add(Dense(32, activation='relu'))
@@ -86,7 +52,8 @@ def get_params_pong():
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     # --- Meta DQN model (input: full state, output: abstraction)
     meta_model = Sequential()
-    meta_model.add(Dense(256, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(512, input_dim=observation_space, activation='relu'))
+    meta_model.add(Dense(256, activation='relu'))
     meta_model.add(Dense(128, activation='relu'))
     meta_model.add(Dense(64, activation='relu'))
     meta_model.add(Dense(32, activation='relu'))
@@ -101,10 +68,11 @@ def get_params_pong():
     sub_model.add(Dense(32, activation='relu'))
     sub_model.add(Dense(16, activation='relu'))
     sub_model.add(Dense(action_space, activation='linear'))
-    sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate*5))
     # --- Submodel 2 (input: subspace2, output:action)
     sub_model2 = Sequential()
-    sub_model2.add(Dense(256, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(512, input_dim=len(sub_spaces[1]), activation='relu'))
+    sub_model2.add(Dense(256, activation='relu'))
     sub_model2.add(Dense(128, activation='relu'))
     sub_model2.add(Dense(64, activation='relu'))
     sub_model2.add(Dense(32, activation='relu'))
@@ -265,14 +233,6 @@ def get_params(env_name, alg=None):
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
         env = AtariARIWrapper(gym.make('PongDeterministic-v4'))
         params = get_params_pong()
-    elif env_name == 'waterworld':
-        sys.path.append('envs/PyGame-Learning-Environment/')
-        from ple.games.waterworld import WaterWorld
-        from ple.ple import PLE
-        _pygame = WaterWorld()
-        env = PLE(_pygame, fps=30, display_screen=True, force_fps=False)
-        params = get_params_waterworld()
-        return env, params
     else:
         print("Error: Unknown environment")
         return
