@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --partition=general
 #SBATCH --qos=long
-#SBATCH --time=24:00:00:00
+#SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:6
 #SBATCH --mem=4096
