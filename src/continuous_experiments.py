@@ -42,18 +42,18 @@ def get_params_pong(alg):
     sub_spaces = []
     sub_models = []
     meta_model = None
-    # if alg == 'DQN':
-    #     # --- Regular DQN model (input: full state, output: action)
-    #     model = Sequential()
-    #     model.add(Dense(512, input_dim=observation_space, activation='relu'))
-    #     model.add(Dense(256, activation='relu'))
-    #     model.add(Dense(128, activation='relu'))
-    #     model.add(Dense(64, activation='relu'))
-    #     model.add(Dense(32, activation='relu'))
-    #     model.add(Dense(16, activation='relu'))
-    #     model.add(Dense(action_space, activation='linear'))
-    #     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    if alg == 'DQNLiA':
+    if alg == 'DQN':
+        # --- Regular DQN model (input: full state, output: action)
+        model = Sequential()
+        model.add(Dense(512, input_dim=observation_space, activation='relu'))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(32, activation='relu'))
+        model.add(Dense(16, activation='relu'))
+        model.add(Dense(action_space, activation='linear'))
+        model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    elif alg == 'DQNLiA':
         # --- DQN LiA model (input: two vectors (full state, abs state), output: action)
         input_layers = []
         sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]  # [5, 13, 21], idea is to add this as well
@@ -86,6 +86,7 @@ def get_params_pong(alg):
         model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     else:
         model = None
+    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]  # [5, 13, 21], idea is to add this as well [5, 13, 21, 29],
     # --- Meta DQN model (input: full state, output: abstraction)
     meta_model = Sequential()
     meta_model.add(Dense(512, input_dim=observation_space, activation='relu'))
@@ -115,6 +116,7 @@ def get_params_pong(alg):
     sub_model2.add(Dense(16, activation='relu'))
     sub_model2.add(Dense(action_space, activation='linear'))
     sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    sub_models = [sub_model, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, repeat_n_frames=repeat_n_frames, memory_size=memory_size,
                                 batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon,
                                 epsilon_min=epsilon_min,
