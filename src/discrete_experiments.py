@@ -132,9 +132,9 @@ def get_params_taxifuel(alg):
     options = None
     if alg in ['QAMS']:
         sub_spaces = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3, 4]]  # [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
-    elif alg in ['QLiA', 'QVP', 'QLiA_sig', 'QLiA_batch']:
-        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
-    elif alg == 'QVA':
+    elif alg in ['QLiA', 'QVP', 'QLiA_batch']:
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
+    elif alg == 'QLiA_sig':
         sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
@@ -143,7 +143,7 @@ def get_params_taxifuel(alg):
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
 
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 55001
+    num_episodes = 105001
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)

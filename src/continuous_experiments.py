@@ -59,10 +59,10 @@ def get_params_pong(alg):
         sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
         for ss in sub_spaces:
             input_layers.append(Input(shape=(len(ss),)))
-        w = Dense(64, activation="relu")(input_layers[0])
+        w = Dense(256, activation="relu")(input_layers[0])
+        w = Dense(128, activation="relu")(w)
+        w = Dense(64, activation="relu")(w)
         w = Dense(32, activation="relu")(w)
-        w = Dense(16, activation="relu")(w)
-        w = Dense(8, activation="relu")(w)
         w = Model(inputs=input_layers[0], outputs=w)
         x = Dense(256, activation="relu")(input_layers[1])
         x = Dense(128, activation="relu")(x)

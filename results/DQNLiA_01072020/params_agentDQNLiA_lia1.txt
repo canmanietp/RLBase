@@ -1,0 +1,11 @@
+Environment: <AtariARIWrapper<TimeLimit<AtariEnv<PongDeterministic-v4>>>>
+Number of trials: 1
+Number of episodes: 500
+Running times: []
+init_learning_rate=2.5e-05
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.99
+sub_spaces=[[5, 3, 21], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]

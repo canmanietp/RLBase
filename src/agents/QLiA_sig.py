@@ -95,6 +95,8 @@ class QLiA_sigAgent(QAgent):
                             # Don't allow this abstraction to be chosen in this state
                             # print(state_vars, ia, action, ns_sample1, ns_sample2)
                             self.inadmissible_actions[state].append(ia)
+                            # MAKE IT A SINK STATE ???
+                            # self.Q_table[state] = np.zeros(self.action_space)
                             ab.inadmissible_actions[abs_state].append(action)
                             print(state_vars, ia, action, rs_rewards.pvalue, reward_sample1, reward_sample2)
                     else:
