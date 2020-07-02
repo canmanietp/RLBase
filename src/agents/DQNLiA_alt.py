@@ -23,7 +23,6 @@ class DQNLiAAgent(DQNAgent):
         ground_state = np.array(state)
         for ss in self.sub_spaces:
             input_state.append(np.reshape(ground_state[0][ss], [1, len(ss)]))
-        input_state.append(ground_state)
         return input_state
 
     def do_step(self):
@@ -42,7 +41,7 @@ class DQNLiAAgent(DQNAgent):
             return
         minibatch = random.sample(self.memory, self.params.BATCH_SIZE)
         values = []
-        states = [[] for ss in range(len(self.sub_spaces)+1)]
+        states = [[] for ss in range(len(self.sub_spaces))]
         for ground_state, action, reward, ground_next_state, done in minibatch:
             input_state = self.state_into_inputs(ground_state)
             state = [*input_state]
@@ -57,7 +56,6 @@ class DQNLiAAgent(DQNAgent):
             # Filtering out states and targets for training
             for isx, ss in enumerate(self.sub_spaces):
                 states[isx].append(state[isx][0])
-            states[isx+1].append(state[isx+1][0])
             values.append(q_values[0])
 
         self.until_retrain += 1

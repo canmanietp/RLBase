@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 from agents.DQN import DQNAgent
-from agents.DQNLiA import DQNLiAAgent
+from agents.DQNLiA_alt import DQNLiAAgent
 from agents.DQNVP import DQNVPAgent
 from agents.A2C import A2CAgent
 from learning_parameters import ContinuousParameters
@@ -56,10 +56,9 @@ def get_params_pong(alg):
     elif alg == 'DQNLiA':
         # --- DQN LiA model (input: two vectors (full state, abs state), output: action)
         input_layers = []
-        sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]  # [5, 13, 21], idea is to add this as well
+        sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
         for ss in sub_spaces:
             input_layers.append(Input(shape=(len(ss),)))
-        input_layers.append(Input(shape=(observation_space,)))  # Add the true state as last input
         w = Dense(64, activation="relu")(input_layers[0])
         w = Dense(32, activation="relu")(w)
         w = Dense(16, activation="relu")(w)
@@ -80,43 +79,43 @@ def get_params_pong(alg):
         z = Dense(64, activation="relu")(combined)
         z = Dense(32, activation="relu")(z)
         z = Dense(16, activation="relu")(z)
-        # z = Dense(len(input_layers), activation="relu")(combined)
         z = Dense(action_space, activation="linear")(z)
         model = Model(inputs=input_layers, outputs=z)
         model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     else:
         model = None
-    sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]  # [5, 13, 21], idea is to add this as well [5, 13, 21, 29],
-    # --- Meta DQN model (input: full state, output: abstraction)
-    meta_model = Sequential()
-    meta_model.add(Dense(512, input_dim=observation_space, activation='relu'))
-    meta_model.add(Dense(256, activation='relu'))
-    meta_model.add(Dense(128, activation='relu'))
-    meta_model.add(Dense(64, activation='relu'))
-    meta_model.add(Dense(32, activation='relu'))
-    meta_model.add(Dense(16, activation='relu'))
-    meta_model.add(Dense(len(sub_spaces), activation='linear'))
-    meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    # # --- Submodel 1 (input: subspace1, output: action)
-    sub_model = Sequential()
-    sub_model.add(Dense(256, input_dim=len(sub_spaces[0]), activation='relu'))
-    sub_model.add(Dense(128, activation='relu'))
-    sub_model.add(Dense(64, activation='relu'))
-    sub_model.add(Dense(32, activation='relu'))
-    sub_model.add(Dense(16, activation='relu'))
-    sub_model.add(Dense(action_space, activation='linear'))
-    sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate*5))
-    # --- Submodel 2 (input: subspace2, output:action)
-    sub_model2 = Sequential()
-    sub_model2.add(Dense(512, input_dim=len(sub_spaces[1]), activation='relu'))
-    sub_model2.add(Dense(256, activation='relu'))
-    sub_model2.add(Dense(128, activation='relu'))
-    sub_model2.add(Dense(64, activation='relu'))
-    sub_model2.add(Dense(32, activation='relu'))
-    sub_model2.add(Dense(16, activation='relu'))
-    sub_model2.add(Dense(action_space, activation='linear'))
-    sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
-    sub_models = [sub_model, sub_model2]
+    # if alg == "oldLiA":
+    #     sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]  # [5, 13, 21], idea is to add this as well [5, 13, 21, 29],
+    #     # --- Meta DQN model (input: full state, output: abstraction)
+    #     meta_model = Sequential()
+    #     meta_model.add(Dense(512, input_dim=observation_space, activation='relu'))
+    #     meta_model.add(Dense(256, activation='relu'))
+    #     meta_model.add(Dense(128, activation='relu'))
+    #     meta_model.add(Dense(64, activation='relu'))
+    #     meta_model.add(Dense(32, activation='relu'))
+    #     meta_model.add(Dense(16, activation='relu'))
+    #     meta_model.add(Dense(len(sub_spaces), activation='linear'))
+    #     meta_model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    #     # # --- Submodel 1 (input: subspace1, output: action)
+    #     sub_model = Sequential()
+    #     sub_model.add(Dense(256, input_dim=len(sub_spaces[0]), activation='relu'))
+    #     sub_model.add(Dense(128, activation='relu'))
+    #     sub_model.add(Dense(64, activation='relu'))
+    #     sub_model.add(Dense(32, activation='relu'))
+    #     sub_model.add(Dense(16, activation='relu'))
+    #     sub_model.add(Dense(action_space, activation='linear'))
+    #     sub_model.compile(loss='mse', optimizer=Adam(lr=learning_rate*5))
+    #     # --- Submodel 2 (input: subspace2, output:action)
+    #     sub_model2 = Sequential()
+    #     sub_model2.add(Dense(512, input_dim=len(sub_spaces[1]), activation='relu'))
+    #     sub_model2.add(Dense(256, activation='relu'))
+    #     sub_model2.add(Dense(128, activation='relu'))
+    #     sub_model2.add(Dense(64, activation='relu'))
+    #     sub_model2.add(Dense(32, activation='relu'))
+    #     sub_model2.add(Dense(16, activation='relu'))
+    #     sub_model2.add(Dense(action_space, activation='linear'))
+    #     sub_model2.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+    #     sub_models = [sub_model, sub_model2]
     return ContinuousParameters(init_model=model, meta_model=meta_model, sub_models=sub_models, repeat_n_frames=repeat_n_frames, memory_size=memory_size,
                                 batch_size=batch_size, learning_rate=learning_rate, epsilon=init_epsilon,
                                 epsilon_min=epsilon_min,
