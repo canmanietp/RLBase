@@ -280,7 +280,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name)
-    average_every = int(params.num_episodes / 10)
+    average_every = int(params.num_episodes / 10) if params.num_episodes > 10 else 1
 
     trial_rewards = []
     trial_times = []
@@ -358,6 +358,9 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
     plt.savefig('{}/final'.format(exp_dir))
 
     for ia, alg in enumerate(algs):
+        stringlist = []
+        params.INIT_MODEL.summary(print_fn=lambda x: stringlist.append(x))
+        short_model_summary = "\n".join(stringlist)
         env, params = get_params(env_name, alg)
         file = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
         file.write("Environment: {}\n"
@@ -370,11 +373,12 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
                    "init_phi={}\n"
                    "phi_min={}\n"
                    "discount={}\n"
-                   "sub_spaces={}".format(env, num_trials,
+                   "sub_spaces={}\n"
+                   "model={}".format(env, num_trials,
                                           params.num_episodes, trial_times, params.LEARNING_RATE,
                                           params.EPSILON, params.EPSILON_MIN,
                                           params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                          params.sub_spaces))
+                                          params.sub_spaces, short_model_summary))
 
         file.close()
 
