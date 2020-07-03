@@ -1,9 +1,9 @@
 #!/bin/sh
 #SBATCH --partition=general
 #SBATCH --qos=long
-#SBATCH --time=3-00:00:00
+#SBATCH --time=4-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:6
+#SBATCH --gres=gpu:8
 #SBATCH --mem=4096
 #SBATCH --mail-type=END
 module use /opt/insy/modulefiles

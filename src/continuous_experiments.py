@@ -24,7 +24,7 @@ os.putenv('SDL_VIDEODRIVER', 'fbcon')
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-def get_params_pong(alg):
+def get_params_pong(scenario=None, alg='DQN'):
     memory_size = 1000000
     batch_size = 32
     init_epsilon = 0.5
@@ -54,34 +54,99 @@ def get_params_pong(alg):
         model.add(Dense(action_space, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     elif alg == 'DQNLiA':
-        # --- DQN LiA model (input: two vectors (full state, abs state), output: action)
-        input_layers = []
-        sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
-        for ss in sub_spaces:
-            input_layers.append(Input(shape=(len(ss),)))
-        w = Dense(256, activation="relu")(input_layers[0])
-        w = Dense(128, activation="relu")(w)
-        w = Dense(64, activation="relu")(w)
-        w = Dense(32, activation="relu")(w)
-        w = Model(inputs=input_layers[0], outputs=w)
-        x = Dense(256, activation="relu")(input_layers[1])
-        x = Dense(128, activation="relu")(x)
-        x = Dense(64, activation="relu")(x)
-        x = Dense(32, activation="relu")(x)
-        x = Model(inputs=input_layers[1], outputs=x)
-        y = Dense(512, activation="relu")(input_layers[2])
-        y = Dense(256, activation="relu")(y)
-        y = Dense(128, activation="relu")(y)
-        y = Dense(64, activation="relu")(y)
-        y = Dense(32, activation="relu")(y)
-        y = Model(inputs=input_layers[2], outputs=y)
-        combined = Concatenate()([w.output, x.output, y.output])
-        z = Dense(64, activation="relu")(combined)
-        z = Dense(32, activation="relu")(z)
-        z = Dense(16, activation="relu")(z)
-        z = Dense(action_space, activation="linear")(z)
-        model = Model(inputs=input_layers, outputs=z)
-        model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+        # --- DQN LiA model (input: two+ vectors (full state, abs state), output: action)
+        if scenario == 0:
+            sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]
+            model = Sequential()
+            model.add(Dense(512, input_dim=len(sub_spaces[0]), activation='relu'))
+            model.add(Dense(256, activation='relu'))
+            model.add(Dense(128, activation='relu'))
+            model.add(Dense(64, activation='relu'))
+            model.add(Dense(32, activation='relu'))
+            model.add(Dense(64, activation='relu'))
+            model.add(Dense(32, activation='relu'))
+            model.add(Dense(16, activation='relu'))
+            model.add(Dense(action_space, activation='linear'))
+            model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+        elif scenario == 1:
+            input_dims = []
+            sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
+            for ss in sub_spaces:
+                input_dims.append(Input(shape=(len(ss),)))
+            x = Dense(256, activation="relu")(input_dims[0])
+            x = Dense(128, activation="relu")(x)
+            x = Dense(64, activation="relu")(x)
+            x = Dense(32, activation="relu")(x)
+            x = Model(inputs=input_dims[0], outputs=x)
+            y = Dense(512, activation="relu")(input_dims[1])
+            y = Dense(256, activation="relu")(y)
+            y = Dense(128, activation="relu")(y)
+            y = Dense(64, activation="relu")(y)
+            y = Dense(32, activation="relu")(y)
+            y = Model(inputs=input_dims[1], outputs=y)
+            combined = Concatenate()([x.output, y.output])
+            z = Dense(64, activation="relu")(combined)
+            z = Dense(32, activation="relu")(z)
+            z = Dense(16, activation="relu")(z)
+            z = Dense(action_space, activation="linear")(z)
+            model = Model(inputs=input_dims, outputs=z)
+            model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+        elif scenario == 2:
+            input_dims = []
+            sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
+            for ss in sub_spaces:
+                input_dims.append(Input(shape=(len(ss),)))
+            w = Dense(256, activation="relu")(input_dims[0])
+            w = Dense(128, activation="relu")(w)
+            w = Dense(64, activation="relu")(w)
+            w = Dense(32, activation="relu")(w)
+            w = Model(inputs=input_dims[0], outputs=w)
+            x = Dense(256, activation="relu")(input_dims[1])
+            x = Dense(128, activation="relu")(x)
+            x = Dense(64, activation="relu")(x)
+            x = Dense(32, activation="relu")(x)
+            x = Model(inputs=input_dims[1], outputs=x)
+            y = Dense(512, activation="relu")(input_dims[2])
+            y = Dense(256, activation="relu")(y)
+            y = Dense(128, activation="relu")(y)
+            y = Dense(64, activation="relu")(y)
+            y = Dense(32, activation="relu")(y)
+            y = Model(inputs=input_dims[2], outputs=y)
+            combined = Concatenate()([w.output, x.output, y.output])
+            z = Dense(64, activation="relu")(combined)
+            z = Dense(32, activation="relu")(z)
+            z = Dense(16, activation="relu")(z)
+            z = Dense(action_space, activation="linear")(z)
+            model = Model(inputs=input_dims, outputs=z)
+            model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
+        else:
+            input_dims = []
+            sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
+            for ss in sub_spaces:
+                input_dims.append(Input(shape=(len(ss),)))
+            w = Dense(256, activation="relu")(input_dims[0])
+            w = Dense(128, activation="relu")(w)
+            w = Dense(64, activation="relu")(w)
+            w = Dense(32, activation="relu")(w)
+            w = Model(inputs=input_dims[0], outputs=w)
+            x = Dense(256, activation="relu")(input_dims[1])
+            x = Dense(128, activation="relu")(x)
+            x = Dense(64, activation="relu")(x)
+            x = Dense(32, activation="relu")(x)
+            x = Model(inputs=input_dims[1], outputs=x)
+            y = Dense(512, activation="relu")(input_dims[2])
+            y = Dense(256, activation="relu")(y)
+            y = Dense(128, activation="relu")(y)
+            y = Dense(64, activation="relu")(y)
+            y = Dense(32, activation="relu")(y)
+            y = Model(inputs=input_dims[2], outputs=y)
+            combined = Concatenate()([w.output, x.output, y.output])
+            z = Dense(64, activation="relu")(combined)
+            z = Dense(32, activation="relu")(z)
+            z = Dense(16, activation="relu")(z)
+            z = Dense(action_space, activation="linear")(z)
+            model = Model(inputs=input_dims, outputs=z)
+            model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     else:
         model = None
     # if alg == "oldLiA":
@@ -252,7 +317,7 @@ def get_params_cartpole():
                                 sub_spaces=sub_spaces)
 
 
-def get_params(env_name, alg=None):
+def get_params(env_name, scenario=None, alg=None):
     if env_name == 'cartpole':
         from envs.cartpole import CartPoleEnv
         env = CartPoleEnv()
@@ -268,18 +333,18 @@ def get_params(env_name, alg=None):
     elif env_name == 'pong':
         from envs.atariari.benchmark.wrapper import AtariARIWrapper
         env = AtariARIWrapper(gym.make('PongDeterministic-v4'))
-        params = get_params_pong(alg)
+        params = get_params_pong(scenario, alg)
     else:
         print("Error: Unknown environment")
         return
     return env, params
 
 
-def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=False):
+def run_continuous_experiment(num_trials, env_name, algs, scenario=None, verbose=False, render=False):
     date_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
-    env, params = get_params(env_name)
+    env, params = get_params(env_name, scenario)
     average_every = int(params.num_episodes / 10) if params.num_episodes > 10 else 1
 
     trial_rewards = []
@@ -288,7 +353,7 @@ def run_continuous_experiment(num_trials, env_name, algs, verbose=False, render=
     for t in range(num_trials):
         agents = []
         for alg in algs:
-            env, params = get_params(env_name, alg)
+            env, params = get_params(env_name, scenario, alg)
             if alg == 'DQN':
                 agents.append(DQNAgent(env, copy.copy(params)))
             elif alg == 'DQNLiA':
