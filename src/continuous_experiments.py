@@ -33,7 +33,7 @@ def get_params_pong(scenario=None, alg='DQN'):
     phi_min = 0.01
     discount = 0.99
     decay_rate = 0.995
-    num_episodes = 500
+    num_episodes = 600
     retrain_steps = 50
     repeat_n_frames = 4
     observation_space = 8*repeat_n_frames
@@ -56,7 +56,7 @@ def get_params_pong(scenario=None, alg='DQN'):
     elif alg == 'DQNLiA':
         # --- DQN LiA model (input: two+ vectors (full state, abs state), output: action)
         if scenario == 0:
-            sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29]]
+            sub_spaces = [range(observation_space)]
             model = Sequential()
             model.add(Dense(512, input_dim=len(sub_spaces[0]), activation='relu'))
             model.add(Dense(256, activation='relu'))
