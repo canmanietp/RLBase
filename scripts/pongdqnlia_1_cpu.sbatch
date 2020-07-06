@@ -12,5 +12,5 @@ module load cuda/10.0 cudnn/10.0-7.3.0.29
 cd ..
 cd src
 
-srun python3 run.py --algorithms 'DQNLiA' --env=pong --scenario=0 --verbose=True --num_trials=3
+srun python3 run.py --algorithms 'DQNLiA' --env=pong --scenario=1 --verbose=True --num_trials=3
 srun hostname

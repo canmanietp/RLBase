@@ -3,7 +3,7 @@
 #SBATCH --qos=long
 #SBATCH --time=4-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:8
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=4096
 #SBATCH --mail-type=END
 module use /opt/insy/modulefiles

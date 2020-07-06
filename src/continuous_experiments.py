@@ -33,7 +33,7 @@ def get_params_pong(scenario=None, alg='DQN'):
     phi_min = 0.01
     discount = 0.99
     decay_rate = 0.995
-    num_episodes = 600
+    num_episodes = 900
     retrain_steps = 50
     repeat_n_frames = 4
     observation_space = 8*repeat_n_frames
