@@ -64,14 +64,3 @@ class DQNLiAAgent(DQNAgent):
             self.target_model.set_weights(self.model.get_weights())
 
         self.model.fit(x=[*states], y=np.array(values), verbose=0)
-
-    def pseudo_count(self, state):
-        count = [0. for a in list(range(self.action_space))]
-        if len(self.memory) > 1000:
-            minibatch = random.sample(self.memory, 1000)
-            for s, a, _, _, _ in minibatch:
-                norm = 0.
-                for p, sd in enumerate(state[0]):
-                    norm += abs(sd - s[0][p])
-                count[a] += max(0., 1. - (norm / 0.1))
-        return count

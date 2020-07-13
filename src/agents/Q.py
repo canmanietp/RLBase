@@ -18,7 +18,7 @@ class QAgent(BaseAgent):
         self.steps = 0
 
     def greedy_action(self, state):
-        if self.inadmissible_actions[state] != []:
+        if self.inadmissible_actions[state]:
             admissible_actions = [x for x in range(self.action_space) if x not in self.inadmissible_actions[state]]
         else:
             admissible_actions = None

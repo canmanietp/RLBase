@@ -7,30 +7,108 @@ import numpy as np
 import copy
 
 
+class Bandit:
+    bandit_count = 0
+
+    def __init__(self, action_space, alpha, discount):
+        self.action_space = action_space
+        self.Q_table = np.zeros(action_space)
+        self.action_visits = np.zeros(action_space)
+        Bandit.bandit_count += 1
+        self.ALPHA = alpha
+        self.DISCOUNT = discount
+
+    def random_action(self):
+        return np.random.randint(self.action_space)
+
+    def greedy_action(self):
+        qv = self.Q_table
+        return np.random.choice(np.flatnonzero(qv == max(qv)))
+
+    def update(self, action, reward, next_value, done):
+        self.Q_table[action] += self.ALPHA * (reward + (not done) * self.DISCOUNT * next_value - self.Q_table[action])
+        # (1 / (self.action_visits[action] + 1))
+        self.action_visits[action] += 1
+
+
 class QLiA_altAgent(QAgent):
     def __init__(self, env, params):
         super().__init__(env, params)
-        self.name = 'LiA_alt'
-        self.sub_agents = []
+        self.name = 'QLiA_alt'
         self.params = params
 
-        for ab in params.sub_spaces:
-            ss = 1
-            for var in ab:
-                ss *= params.size_state_vars[var]
-
-            ab_params = copy.copy(self.params)
-            ab_params.EPSILON = params.PHI
-            ab_params.EPSILON_MIN = params.PHI_MIN
-            self.sub_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
-
-        self.action_space = self.env.action_space.n + len(params.sub_spaces)
+        self.action_space = len(params.sub_spaces)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
-        self.sa_visits = np.zeros([self.observation_space, self.action_space])
-
         self.state_decodings = self.sweep_state_decodings()
 
-        self.next_abstraction, self.next_action, self.next_raw_action = None, None, None
+        self.state_bandit_map = {}  # state: bandit
+        self.next_bandit, self.next_action = None, None
+        # self.init_bandits()
+        self.bandits = self.init_bandits()
+
+    def init_bandits(self):
+        bandits = []
+        bandit_count = 0
+        for s in range(self.observation_space):
+            if s not in self.state_bandit_map:
+                state_vars = self.state_decodings[s]
+                if state_vars[1] == 1 and state_vars[2] == 4 and state_vars[3] == 0:
+                    x = 0
+                # elif state_vars[0] == 0 and state_vars[2] == 4:
+                #     x = 1
+                # elif state_vars[2] == 4:
+                #     x = 2
+                # elif (state_vars[0] == 3 and state_vars[1] == 2) or (state_vars[0] == 3 and state_vars[1] == 1):
+                #     x = 3
+                else:
+                    x = 4
+                abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[x])
+                for _s in range(self.observation_space):
+                    _state_vars = self.state_decodings[_s]
+                    abs_s = self.encode_abs_state(_state_vars, self.params.sub_spaces[x])
+                    if abs_s == abs_state:
+                        if _s in self.state_bandit_map:
+                            self.state_bandit_map[s] = self.state_bandit_map[_s]
+                            break
+                if s not in self.state_bandit_map:
+                    self.state_bandit_map[s] = Bandit(self.env.action_space.n, self.params.ALPHA, self.params.DISCOUNT)
+                    bandit_count += 1
+                    print("bandy", bandit_count)
+        return bandits
+
+    # def init_bandits(self):
+    #     for s in range(self.observation_space):
+    #         state_vars = self.state_decodings[s]
+    #         bandits = [[] for b in self.params.sub_spaces]
+    #         for isx, ss, in enumerate(self.params.sub_spaces):
+    #             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[isx])
+    #             for _s in range(self.observation_space):
+    #                 _state_vars = self.state_decodings[_s]
+    #                 abs_s = self.encode_abs_state(_state_vars, self.params.sub_spaces[isx])
+    #                 if abs_s == abs_state:
+    #                     if _s in self.state_bandit_map:
+    #                         bandits[isx] = self.state_bandit_map[_s][isx]
+    #                         break
+    #             if not bandits[isx]:
+    #                 bandits[isx] = Bandit(self.env.action_space.n, 0.3, 0.95)
+    #         self.state_bandit_map[s] = bandits
+
+    def add_state_to_bandit_map(self, state):
+        if state not in self.state_bandit_map:
+            state_vars = self.state_decodings[state]
+            bandits = [[] for b in self.params.sub_spaces]
+            for isx, ss in enumerate(self.params.sub_spaces):
+                abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[isx])
+                for _s in range(self.observation_space):
+                    _state_vars = self.state_decodings[_s]
+                    _abs_state = self.encode_abs_state(_state_vars, self.params.sub_spaces[isx])
+                    if _abs_state == abs_state:
+                        if _s in self.state_bandit_map:
+                            bandits[isx] = self.state_bandit_map[_s][isx]
+                            break
+                    if not bandits[isx]:
+                        bandits[isx] = Bandit(self.env.action_space.n, self.params.ALPHA, self.params.DISCOUNT)
+            self.state_bandit_map[state] = bandits
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -57,58 +135,38 @@ class QLiA_altAgent(QAgent):
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate
 
-        for ab in self.sub_agents:
-            ab.decay(decay_rate)
+    def e_greedy_bandit_action(self, state):
+        # self.add_state_to_bandit_map(state)
 
-    def e_greedy_LIA_action(self, state):
+        if self.next_bandit is not None:
+            return self.next_bandit, self.next_action
+        bandit = None
         if random.uniform(0, 1) < self.params.EPSILON:
-            raw_action = self.random_action()
-            if raw_action >= self.env.action_space.n:
-                ab_index = raw_action - self.env.action_space.n
-                action = self.sub_agents[ab_index].random_action()
-                self.sa_visits[state][raw_action] += 1
-            else:
-                ab_index = None
-                action = raw_action
+            # bandit = self.random_action()
+            action = self.state_bandit_map[state].random_action()
+
         else:
-            raw_action = self.greedy_action(state)
-            if raw_action >= self.env.action_space.n:
-                ab_index = raw_action - self.env.action_space.n
-                abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
-                action = self.sub_agents[ab_index].greedy_action(abs_state)
-                self.sa_visits[state][raw_action] += 1
-            else:
-                ab_index = None
-                action = raw_action
-        return ab_index, action, raw_action
+            # bandit = self.greedy_action(state)
+            action = self.state_bandit_map[state].greedy_action()
+        return bandit, action
 
-    def update_LIA(self, state, ab_index, action, raw_action, reward, next_state, done):
-        state_vars = self.state_decodings[state]
-        next_state_vars = self.state_decodings[next_state]
-
-        for ia, ab in enumerate(self.sub_agents):
-            abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
-            abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-            # lr = self.params.ALPHA / (1 + (1 - int(ia == ab_index))*np.sum(ab.sa_visits[abs_state]))
-            # ab.params.ALPHA = lr
-            ab.update(abs_state, action, reward, abs_next_state, done)
-            if ia == ab_index:
-                ab.sa_visits[abs_state][action] += 1
-
-        self.update(state, raw_action, reward, next_state, done)
+    def update_LIA(self, state, bandit, action, reward, next_state, done):
+        # self.next_bandit, self.next_action = None, None
+        # self.next_bandit, self.next_action = self.e_greedy_bandit_action(state)
+        # self.add_state_to_bandit_map(next_state)
+        next_val = max(self.state_bandit_map[next_state].Q_table)if not done else 0  # self.state_bandit_map[next_state][self.next_bandit].Q_table[self.next_action]
+        self.state_bandit_map[state].update(action, reward, next_val, done)
+        # print(state_vars, self.true_agent.Q_table[state], self.state_bandit_map[state].Q_table, action)
+        # print(state_vars, self.state_bandit_map[state].Q_table, self.state_bandit_map[next_state].Q_table)
+        # self.update(state, bandit, reward, next_state, done)
 
     def do_step(self):
         state = self.current_state
-        ab_index, action, raw_action = self.e_greedy_LIA_action(state)
+        bandit, action = self.e_greedy_bandit_action(state)
         next_state, reward, done = self.step(action)
         if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
             done = True
-        self.update_LIA(state, ab_index, action, raw_action, reward, next_state, done)
-        self.last_state = state
+        self.update_LIA(state, bandit, action, reward, next_state, done)
         self.current_state = next_state
-        if done:
-            self.last_ab = None
-            self.last_state = None
         self.steps += 1
         return reward, done
-

@@ -60,13 +60,13 @@ def get_params_coffeemail(alg):
         sub_spaces = [[0, 1, 2, 4, 5, 6, 7], [0, 1, 3, 4, 5, 6, 7],
                       [0, 1, 2, 3, 4, 5, 6, 7]]  # [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7]]
     elif alg == 'QLiA':
-        sub_spaces = [[0, 1, 2, 4, 5, 6, 7], [0, 1, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     elif alg in ['QVP', 'QVA']:
         sub_spaces = [[0, 1, 2, 4, 5, 6, 7], [0, 1, 3, 4, 5, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     else:
         sub_spaces = []
     size_state_vars = [7, 7, 2, 2, 2, 2, 2, 2]
-    num_episodes = 2000
+    num_episodes = 3000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -135,7 +135,7 @@ def get_params_taxifuel(alg):
     elif alg in ['QLiA', 'QVP', 'QLiA_batch']:
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
     elif alg == 'QLiA_alt':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 4]]
+        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
     elif alg == 'MaxQ':
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
         # get 10, put 11, refuel 12, root 13
@@ -143,7 +143,7 @@ def get_params_taxifuel(alg):
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
 
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 155001
+    num_episodes = 60000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -219,7 +219,7 @@ def get_params_taxi(alg):
     if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA']:
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QLiA_alt':
-        sub_spaces = [[0, 1, 2]]
+        sub_spaces = [[1, 2, 3], [0, 2, 3], [0, 1, 2], [2], [0, 1, 2, 3]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':

@@ -12,7 +12,7 @@ class QLiAAgent(QAgent):
         super().__init__(env, params)
         self.name = 'LiA'
         self.sub_agents = []
-        self.params = params
+        self.params = copy.copy(params)
 
         for ab in params.sub_spaces:
             ss = 1
@@ -24,6 +24,7 @@ class QLiAAgent(QAgent):
             ab_params.EPSILON_MIN = params.PHI_MIN
             self.sub_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
 
+        self.true_agent = QMiniAgent(self.env, params, self.observation_space, self.action_space)
         self.action_space = len(params.sub_spaces)
         self.Q_table = np.zeros([self.observation_space, self.action_space])
 
@@ -63,28 +64,41 @@ class QLiAAgent(QAgent):
             ab.decay(decay_rate)
 
     def e_greedy_LIA_action(self, state):
-        if random.uniform(0, 1) < self.params.EPSILON:
-            ab_index = self.random_action()
-            action = self.sub_agents[0].random_action()
-        else:
-            ab_index = self.greedy_action(state)
+        if self.next_abstraction:
+            ab_index = self.next_abstraction
             abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
             action = self.sub_agents[ab_index].greedy_action(abs_state)
+        else:
+            if random.uniform(0, 1) < self.params.EPSILON:
+                ab_index = self.random_action()
+                action = self.sub_agents[0].random_action()
+            else:
+                ab_index = self.greedy_action(state)
+                abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
+                action = self.sub_agents[ab_index].greedy_action(abs_state)
         return ab_index, action
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):
         state_vars = self.state_decodings[state]
         next_state_vars = self.state_decodings[next_state]
 
+        # self.next_abstraction = self.e_greedy_action(next_state)
+        # next_abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[self.next_abstraction])
+        #
+        # next_max_value = max(self.sub_agents[self.next_abstraction].Q_table[next_abs_next_state])
+
         for ia, ab in enumerate(self.sub_agents):
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
             abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-            lr = self.params.ALPHA / (1 + (1 - int(ia == ab_index))*np.sum(ab.sa_visits[abs_state]))
-            ab.params.ALPHA = lr
-            ab.update(abs_state, action, reward, abs_next_state, done)
+            # lr = self.params.ALPHA / (1 + (1 - int(ia == ab_index))*np.sum(ab.sa_visits[abs_state]))
+            # ab.params.ALPHA = lr
+            # ab.update(abs_state, action, reward, abs_next_state, done)
+
+            td_error = reward + (not done) * ab.params.DISCOUNT * max(self.true_agent.Q_table[next_state]) - ab.Q_table[abs_state][action]
+            ab.Q_table[abs_state][action] += ab.params.ALPHA * td_error
 
         self.update(state, ab_index, reward, next_state, done)
-        # self.true_agent.update(state, action, reward, next_state, done)
+        self.true_agent.update(state, action, reward, next_state, done)
 
         # self.env.local_reward(state, action, self.params.sub_spaces[ia])
 

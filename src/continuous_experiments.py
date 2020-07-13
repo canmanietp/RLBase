@@ -32,7 +32,7 @@ def get_params_pong(scenario=None, alg='DQN'):
     init_phi = 0.5
     phi_min = 0.01
     discount = 0.99
-    decay_rate = 0.995
+    decay_rate = 0.99
     num_episodes = 900
     retrain_steps = 50
     repeat_n_frames = 4
@@ -56,13 +56,11 @@ def get_params_pong(scenario=None, alg='DQN'):
     elif alg == 'DQNLiA':
         # --- DQN LiA model (input: two+ vectors (full state, abs state), output: action)
         if scenario == 0:
-            sub_spaces = [range(observation_space)]
+            sub_spaces = [[0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
             model = Sequential()
             model.add(Dense(512, input_dim=len(sub_spaces[0]), activation='relu'))
             model.add(Dense(256, activation='relu'))
             model.add(Dense(128, activation='relu'))
-            model.add(Dense(64, activation='relu'))
-            model.add(Dense(32, activation='relu'))
             model.add(Dense(64, activation='relu'))
             model.add(Dense(32, activation='relu'))
             model.add(Dense(16, activation='relu'))
@@ -70,7 +68,7 @@ def get_params_pong(scenario=None, alg='DQN'):
             model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
         elif scenario == 1:
             input_dims = []
-            sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
+            sub_spaces = [[0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
             for ss in sub_spaces:
                 input_dims.append(Input(shape=(len(ss),)))
             x = Dense(256, activation="relu")(input_dims[0])
@@ -93,7 +91,7 @@ def get_params_pong(scenario=None, alg='DQN'):
             model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
         elif scenario == 2:
             input_dims = []
-            sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
+            sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
             for ss in sub_spaces:
                 input_dims.append(Input(shape=(len(ss),)))
             w = Dense(256, activation="relu")(input_dims[0])
@@ -121,7 +119,7 @@ def get_params_pong(scenario=None, alg='DQN'):
             model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
         else:
             input_dims = []
-            sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], range(observation_space)]
+            sub_spaces = [[5, 13, 21, 29], [0, 4, 5, 8, 12, 13, 16, 20, 21, 24, 28, 29], [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29]]
             for ss in sub_spaces:
                 input_dims.append(Input(shape=(len(ss),)))
             w = Dense(256, activation="relu")(input_dims[0])
