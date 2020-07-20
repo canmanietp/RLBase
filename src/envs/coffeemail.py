@@ -78,9 +78,9 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         self.num_rows = 7
         self.num_columns = 7
 
-        self.state_desc = ['x', 'y', 'rc', 'rm', 'ac', 'bc', 'am', 'bm']
+        self.state_desc = ['x', 'y', 'rcm', 'ac', 'bc', 'am', 'bm']
 
-        num_states = self.num_rows * self.num_columns * 2**6
+        num_states = self.num_rows * self.num_columns * 3 * 2 ** 4
         max_row = self.num_rows - 1
         max_col = self.num_columns - 1
         initial_state_distrib = np.zeros(num_states)
@@ -89,73 +89,77 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
                      for action in range(num_actions)} for state in range(num_states)}
         for x in range(self.num_rows):
             for y in range(self.num_columns):
-                for rc in range(2):  # robot has coffee
-                    for rm in range(2):  # robot has mail
-                        for ac in range(2):  # A wants coffee
-                            for bc in range(2):  # B wants coffee
-                                for am in range(2):  # A wants mail
-                                    for bm in range(2):  # B wants mail
-                                        state = self.encode(x, y, rc, rm, ac, bc, am, bm)
-                                        initial_state_distrib[state] += 1
-                                        for action in range(num_actions):
-                                            # defaults
-                                            new_x, new_y, new_rc, new_rm, new_ac, new_bc, new_am, new_bm = x, y, rc, rm, ac, bc, am, bm
-                                            reward = 0  # default reward when there is no pickup/dropoff
-                                            done = False
-                                            r_loc = (x, y)
+                for rcm in range(3):  # robot has coffee or mail
+                    for ac in range(2):  # A wants coffee
+                        for bc in range(2):  # B wants coffee
+                            for am in range(2):  # A wants mail
+                                for bm in range(2):  # B wants mail
+                                    state = self.encode(x, y, rcm, ac, bc, am, bm)
+                                    initial_state_distrib[state] += 1
+                                    for action in range(num_actions):
+                                        # defaults
+                                        new_x, new_y, new_rcm, new_ac, new_bc, new_am, new_bm = x, y, rcm, ac, bc, am, bm
+                                        reward = 0  # default reward when there is no pickup/dropoff
+                                        done = False
+                                        r_loc = (x, y)
 
-                                            if ac and bc:
-                                                reward += -2
-                                            elif ac or bc:
-                                                reward += -1
-                                            if am and bm:
-                                                reward += -1
-                                            elif am or bm:
-                                                reward += -0.5
+                                        # if ac and bc:
+                                        #     reward += -2
+                                        # elif ac or bc:
+                                        #     reward += -1
+                                        # if am and bm:
+                                        #     reward += -1
+                                        # elif am or bm:
+                                        #     reward += -0.5
+                                        reward = -1
 
-                                            if action == 0 and self.desc[x, y] != b"_":  # down
-                                                new_x = min(x + 1, max_row)
-                                            elif action == 1 and self.desc[x, y - 1] != b"_":  # up
-                                                new_x = max(x - 1, 0)
-                                            if action == 2 and self.desc[1 + x, 2 * y + 2] == b":":  # right
-                                                new_y = min(y + 1, max_col)
-                                            elif action == 3 and self.desc[1 + x, 2 * y] == b":":  # left
-                                                new_y = max(y - 1, 0)
-                                            elif action == 4:  # take
-                                                if r_loc == self.c_loc:
-                                                    if not rc:
-                                                        new_rc = 1
-                                                elif r_loc == self.m_loc:
-                                                    if not rm:
-                                                        new_rm = 1
-                                            elif action == 5:  # give
-                                                if r_loc == self.A_loc:
-                                                    if ac and rc:
-                                                        reward += 20
+                                        if action == 0 and self.desc[x, y] != b"_":  # down
+                                            new_x = min(x + 1, max_row)
+                                        elif action == 1 and self.desc[x, y - 1] != b"_":  # up
+                                            new_x = max(x - 1, 0)
+                                        if action == 2 and self.desc[1 + x, 2 * y + 2] == b":":  # right
+                                            new_y = min(y + 1, max_col)
+                                        elif action == 3 and self.desc[1 + x, 2 * y] == b":":  # left
+                                            new_y = max(y - 1, 0)
+                                        elif action == 4:  # take
+                                            if r_loc == self.c_loc:
+                                                if rcm == 0:
+                                                    new_rcm = 1
+                                            elif r_loc == self.m_loc:
+                                                if rcm == 0:
+                                                    new_rcm = 2
+                                        elif action == 5:  # give
+                                            if r_loc == self.A_loc:
+                                                if ac:
+                                                    if rcm == 1:
+                                                        reward = 20
                                                         new_ac = 0
-                                                        new_rc = 0
-                                                    if am and rm:
-                                                        reward += 20
+                                                    new_rcm = 0
+                                                if am:
+                                                    if rcm == 2:
+                                                        reward = 20
                                                         new_am = 0
-                                                        new_rm = 0
-                                                if r_loc == self.B_loc:
-                                                    if bc and rc:
-                                                        reward += 20
+                                                    new_rcm = 0
+                                            if r_loc == self.B_loc:
+                                                if bc:
+                                                    if rcm == 1:
+                                                        reward = 20
                                                         new_bc = 0
-                                                        new_rc = 0
-                                                    if bm and rm:
-                                                        reward += 20
+                                                    new_rcm = 0
+                                                if bm:
+                                                    if rcm == 2:
+                                                        reward = 20
                                                         new_bm = 0
-                                                        new_rm = 0
-                                            # elif action == 6:  # do nothing
+                                                    new_rcm = 0
+                                        # elif action == 6:  # do nothing
 
-                                            if new_ac == new_bc == new_am == new_bm == 0:
-                                                done = True
+                                        if new_ac == new_bc == new_am == new_bm == 0:
+                                            done = True
 
-                                            new_state = self.encode(
-                                                new_x, new_y, new_rc, new_rm, new_ac, new_bc, new_am, new_bm)
-                                            P[state][action].append(
-                                                (1.0, new_state, reward, done))
+                                        new_state = self.encode(
+                                            new_x, new_y, new_rcm, new_ac, new_bc, new_am, new_bm)
+                                        P[state][action].append(
+                                            (1.0, new_state, reward, done))
         initial_state_distrib /= initial_state_distrib.sum()
         discrete.DiscreteEnv.__init__(
             self, num_states, num_actions, P, initial_state_distrib)
@@ -163,26 +167,22 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
     def reset(self):
         x = np.random.randint(0, self.num_rows)
         y = np.random.randint(0, self.num_columns)
-        rc = 0
-        rm = 0
+        rcm = 0
         ac = np.random.randint(0, 2)
-        bc = not ac  # np.random.randint(0, 2)
+        bc = np.random.randint(0, 2)
         am = np.random.randint(0, 2)
-        bm = not am  # np.random.randint(0, 2)
-        self.s = self.encode(x, y, rc, rm, ac, bc, am, bm)
+        bm = np.random.randint(0, 2)
+        self.s = self.encode(x, y, rcm, ac, bc, am, bm)
         self.lastaction = None
         return self.s
 
-
-    def encode(self, x, y, rc, rm, ac, bc, am, bm):
+    def encode(self, x, y, rcm, ac, bc, am, bm):
         # (5) 5, 2, 2, 2, 2, 2, 2
         i = x
         i *= self.num_columns
         i += y
-        i *= 2
-        i += rc
-        i *= 2
-        i += rm
+        i *= 3
+        i += rcm
         i *= 2
         i += ac
         i *= 2
@@ -203,10 +203,8 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         i = i // 2
         out.append(i % 2)
         i = i // 2
-        out.append(i % 2)
-        i = i // 2
-        out.append(i % 2)
-        i = i // 2
+        out.append(i % 3)
+        i = i // 3
         out.append(i % self.num_columns)
         i = i // self.num_columns
         out.append(i)
@@ -220,7 +218,9 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         out = [[c.decode('utf-8') for c in line] for line in out]
         taxi_row, taxi_col, pass_idx, dest_idx = self.decode(self.s)
 
-        def ul(x): return "_" if x == " " else x
+        def ul(x):
+            return "_" if x == " " else x
+
         if pass_idx < 4:
             out[1 + taxi_row][2 * taxi_col + 1] = utils.colorize(
                 out[1 + taxi_row][2 * taxi_col + 1], 'yellow', highlight=True)
@@ -235,7 +235,8 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
         outfile.write("\n".join(["".join(row) for row in out]) + "\n")
         if self.lastaction is not None:
             outfile.write("  ({})\n".format(["South", "North", "East", "West", "Pickup", "Dropoff"][self.lastaction]))
-        else: outfile.write("\n")
+        else:
+            outfile.write("\n")
 
         # No need to return anything for human
         if mode != 'human':

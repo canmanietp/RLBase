@@ -29,7 +29,8 @@ class QLiA_batchAgent(QAgent):
 
         self.batch = []
         self.steps_to_interval = 0
-        self.batch_interval = 100
+        self.batch_interval = 1000
+        self.next_abstraction = None
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -53,18 +54,17 @@ class QLiA_batchAgent(QAgent):
     def decay(self, decay_rate):
         if self.params.ALPHA > self.params.ALPHA_MIN:
             self.params.ALPHA *= decay_rate
-        if self.params.EPSILON > self.params.EPSILON_MIN:
-            self.params.EPSILON *= decay_rate
 
-        for ab in self.sub_agents:
-            ab.decay(decay_rate)
 
-    def e_greedy_LIA_action(self, state):
-        ab_index = self.e_greedy_action(state)
-        if ab_index == len(self.sub_agents):
-            return self.sub_agents[ab_index].e_greedy_action(state)
+    def LIA_action(self, state):
+        if self.next_abstraction:
+            ab_index = self.next_abstraction
+        else:
+            ab_index = self.greedy_action(state)
+
         abs_state = self.encode_abs_state(self.state_decodings[state], self.params.sub_spaces[ab_index])
-        return ab_index, self.sub_agents[ab_index].e_greedy_action(abs_state)
+        action = self.sub_agents[ab_index].e_greedy_action(abs_state)
+        return ab_index, action
 
     def remember(self, state, action, reward, next_state, done):
         self.batch.append([state, action, reward, next_state, done])
@@ -72,29 +72,50 @@ class QLiA_batchAgent(QAgent):
     def batch_update(self):
         for s, a, r, ns, done in self.batch:
             self.update(s, a, r, ns, done)
-        self.batch = []
-        self.steps_to_interval = 0
+            if done:
+                self.decay(0.9)
 
     def update_LIA(self, state, ab_index, action, reward, next_state, done):
         state_vars = self.state_decodings[state]
         next_state_vars = self.state_decodings[next_state]
 
+        print(state_vars, ab_index, action)
+
+        self.next_abstraction = self.e_greedy_action(next_state)
+        next_abs_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[self.next_abstraction])
         for ia, ab in enumerate(self.sub_agents):
             abs_state = self.encode_abs_state(state_vars, self.params.sub_spaces[ia])
-            abs_next_state = self.encode_abs_state(next_state_vars, self.params.sub_spaces[ia])
-            ab.update(abs_state, action, reward, abs_next_state, done)
-            # self.env.local_reward(state, action, self.params.sub_spaces[ia])
-
+            td_error = reward + (not done) * self.params.DISCOUNT * max(self.sub_agents[self.next_abstraction].Q_table[next_abs_state]) - ab.Q_table[abs_state][action]
+            ab.Q_table[abs_state][action] += self.params.ALPHA * td_error
+            if done:
+                ab.decay(self.params.DECAY_RATE)
         self.remember(state, ab_index, reward, next_state, done)
 
         if self.steps_to_interval > self.batch_interval:
+            print("batch updating ...")
             self.batch_update()
+            self.batch = []
+            self.steps_to_interval = 0
+            self.sub_agents = []
+            for ab in self.params.sub_spaces:
+                ss = 1
+                for var in ab:
+                    ss *= self.params.size_state_vars[var]
+
+                ab_params = copy.copy(self.params)
+                ab_params.EPSILON = 0.3
+                ab_params.EPSILON_MIN = self.params.EPSILON_MIN
+                self.sub_agents.append(QMiniAgent(self.env, ab_params, ss, self.env.action_space.n))
+            print("continuing.")
+            if self.params.EPSILON > self.params.EPSILON_MIN:
+                self.params.EPSILON *= self.params.DECAY_RATE
 
     def do_step(self):
         state = self.current_state
-        ab_index, action = self.e_greedy_LIA_action(state)
+        ab_index, action = self.LIA_action(state)
         next_state, reward, done = self.step(action)
         self.update_LIA(state, ab_index, action, reward, next_state, done)
-        self.steps_to_interval += 1
+        if done:
+            self.steps_to_interval += 1
         return reward, done
 

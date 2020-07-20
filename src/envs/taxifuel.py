@@ -111,7 +111,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
                                     else:
                                         reward = -10
 
-                                if new_fuel <= 0 and pass_idx < 4:
+                                if new_fuel <= 0:
                                     reward = -20
                                     done = True
 

@@ -70,7 +70,7 @@ class TaxiEnv(discrete.DiscreteEnv):
     def __init__(self):
         self.desc = np.asarray(MAP, dtype='c')
 
-        self.locs = locs = [(0,0), (0,4), (4,0), (4,3)]
+        self.locs = locs = [(0, 0), (0, 4), (4, 0), (4, 3)]
 
         num_states = 500
         num_rows = 5
@@ -91,7 +91,7 @@ class TaxiEnv(discrete.DiscreteEnv):
                         for action in range(num_actions):
                             # defaults
                             new_row, new_col, new_pass_idx = row, col, pass_idx
-                            reward = -1 # default reward when there is no pickup/dropoff
+                            reward = -1  # default reward when there is no pickup/dropoff
                             done = False
                             taxi_loc = (row, col)
 
@@ -106,7 +106,7 @@ class TaxiEnv(discrete.DiscreteEnv):
                             elif action == 4:  # pickup
                                 if (pass_idx < 4 and taxi_loc == locs[pass_idx]):
                                     new_pass_idx = 4
-                                else: # passenger not at location
+                                else:  # passenger not at location
                                     reward = -10
                             elif action == 5:  # dropoff
                                 if (taxi_loc == locs[dest_idx]) and pass_idx == 4:
@@ -115,7 +115,7 @@ class TaxiEnv(discrete.DiscreteEnv):
                                     reward = 20
                                 elif (taxi_loc in locs) and pass_idx == 4:
                                     new_pass_idx = locs.index(taxi_loc)
-                                else: # dropoff at wrong location
+                                else:  # dropoff at wrong location
                                     reward = -10
                             new_state = self.encode(
                                 new_row, new_col, new_pass_idx, dest_idx)
@@ -179,7 +179,9 @@ class TaxiEnv(discrete.DiscreteEnv):
         out = [[c.decode('utf-8') for c in line] for line in out]
         taxi_row, taxi_col, pass_idx, dest_idx = self.decode(self.s)
 
-        def ul(x): return "_" if x == " " else x
+        def ul(x):
+            return "_" if x == " " else x
+
         if pass_idx < 4:
             out[1 + taxi_row][2 * taxi_col + 1] = utils.colorize(
                 out[1 + taxi_row][2 * taxi_col + 1], 'yellow', highlight=True)
@@ -194,7 +196,8 @@ class TaxiEnv(discrete.DiscreteEnv):
         outfile.write("\n".join(["".join(row) for row in out]) + "\n")
         if self.lastaction is not None:
             outfile.write("  ({})\n".format(["South", "North", "East", "West", "Pickup", "Dropoff"][self.lastaction]))
-        else: outfile.write("\n")
+        else:
+            outfile.write("\n")
 
         # No need to return anything for human
         if mode != 'human':
