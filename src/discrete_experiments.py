@@ -221,7 +221,7 @@ def get_params_taxi(alg):
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 2000
+    num_episodes = 5000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -365,16 +365,6 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
 
                 if agent.name != 'QLiA_batch':
                     agent.decay(agent.params.DECAY_RATE)
-
-                if agent.name == 'QLiA_alt':
-                    learned_bandits = []
-                    for s in range(agent.observation_space):
-                        if np.sum(agent.sabs_visits[s]) > 0:
-                            learned_bandits.append([s, agent.smart_bandit_choice(s, eps=0.0)])
-                        else:
-                            learned_bandits.append([s, -1])
-                    df = pd.DataFrame(np.array(learned_bandits))
-                    df.to_csv('{}/learned_bandits_{}.csv'.format(exp_dir, str(env)), header=None, index=None)
 
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
