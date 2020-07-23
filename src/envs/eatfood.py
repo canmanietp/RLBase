@@ -94,20 +94,13 @@ class EatFoodEnv(discrete.DiscreteEnv):
         isd /= isd.sum()
         discrete.DiscreteEnv.__init__(self, nS, nA, P, isd)
 
-    def reset(self):
-        self.s = categorical_sample(self.isd, self.np_random)
-        self.seed()
-        self.lastaction = None
-        self.step_count = 0
-        return self.s
-
     def step(self, a):
         transitions = self.P[self.s][a]
         i = categorical_sample([t[0] for t in transitions], self.np_random)
         p, s, r, d = transitions[i]
 
         # Food appears in random location if eaten
-        if r == 1: # dangerously hardcoded here, change value if reward changes
+        if r == 10:  # dangerously hardcoded here, change value if reward changes
             rabrow, rabcol, food_idx, wolf_idx = self.decode(s)
             s = self.encode(rabrow, rabcol, np.random.randint(nR * nC), wolf_idx)
 
@@ -120,8 +113,6 @@ class EatFoodEnv(discrete.DiscreteEnv):
 
         self.s = s
         self.lastaction = a
-        self.step_count += 1
-
         return s, r, d, {"prob": p}
 
     def encode(self, rabrow, rabcol, food_idx, wolf_idx):

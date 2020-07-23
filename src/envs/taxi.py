@@ -27,32 +27,32 @@ class TaxiEnv(discrete.DiscreteEnv):
 
     Observations: 
     There are 500 discrete states since there are 25 taxi positions, 5 possible locations of the passenger (including the case when the passenger is in the taxi), and 4 destination locations. 
-    
+
     Passenger locations:
     - 0: R(ed)
     - 1: G(reen)
     - 2: Y(ellow)
     - 3: B(lue)
     - 4: in taxi
-    
+
     Destinations:
     - 0: R(ed)
     - 1: G(reen)
     - 2: Y(ellow)
     - 3: B(lue)
-        
+
     Actions:
     There are 6 discrete deterministic actions:
     - 0: move south
     - 1: move north
-    - 2: move east 
-    - 3: move west 
+    - 2: move east
+    - 3: move west
     - 4: pickup passenger
     - 5: dropoff passenger
-    
-    Rewards: 
+
+    Rewards:
     There is a reward of -1 for each action and an additional reward of +20 for delivering the passenger. There is a reward of -10 for executing actions "pickup" and "dropoff" illegally.
-    
+
 
     Rendering:
     - blue: passenger
@@ -60,7 +60,7 @@ class TaxiEnv(discrete.DiscreteEnv):
     - yellow: empty taxi
     - green: full taxi
     - other letters (R, G, Y and B): locations for passengers and destinations
-    
+
 
     state space is represented by:
         (taxi_row, taxi_col, passenger_location, destination)

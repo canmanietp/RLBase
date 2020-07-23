@@ -89,7 +89,7 @@ class CoffeeMailEnv(discrete.DiscreteEnv):
                      for action in range(num_actions)} for state in range(num_states)}
         for x in range(self.num_rows):
             for y in range(self.num_columns):
-                for rcm in range(3):  # robot has coffee or mail
+                for rcm in range(3):  # robot has nothing or coffee or mail
                     for ac in range(2):  # A wants coffee
                         for bc in range(2):  # B wants coffee
                             for am in range(2):  # A wants mail

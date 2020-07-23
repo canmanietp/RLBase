@@ -16,13 +16,15 @@ class MaxQAgent(BaseAgent):
         self.C = np.zeros((num_options, self.observation_space, num_options))
         self.C_2 = np.zeros((num_options, self.observation_space, num_options))
 
-        if 'NoisyTaxiEnv' in str(self.sa_visits):
+        if 'NoisyTaxiEnv' in str(self.env):
             self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx
         elif 'TaxiFuelEnv' in str(self.env):
             self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx (NO DESTINATION OR FUEL)
             self.V.append(np.zeros((num_options, 5 * 5 * 5 * 4)))  # taxi row, taxi col, passidx, fuel (NO FUEL)
         elif 'TaxiEnv' in str(self.env):
-            self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx
+            self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx (no destination)
+        elif 'TaxiLargeEnv' in str(self.env):
+            self.V.append(np.zeros((num_options, 10 * 10 * 10)))  # taxi row, taxi col, passidx (no destination)
 
         self.done = False
         self.r_sum = 0
@@ -51,10 +53,17 @@ class MaxQAgent(BaseAgent):
     def abstraction_from_option(self, option, state):
         decoded_state = list(self.env.decode(state))
 
-        if option in [7, 9, 10, 12]:  # gotoS 7, gotoF 9, get 10, refuel 12 (doesn't need destination or fuel)
-            return 1, decoded_state[0] * (5 * 5) + decoded_state[1] * (5) + decoded_state[2]
-        elif option in [7, 8, 9, 10, 11, 12]:  # gotoS 7, gotoD 8, gotoF 9, get 10, put 11 (doesn't need fuel level)
-            return 2, decoded_state[0] * (5 * 5 * 4) + decoded_state[1] * (5 * 4) + decoded_state[2] * 4 + decoded_state[3]
+        if 'TaxiFuelEnv' in str(self.env):
+            if option in [7, 9, 10, 12]:  # gotoS 7, gotoF 9, get 10, refuel 12 (doesn't need destination or fuel)
+                return 1, decoded_state[0] * (5 * 5) + decoded_state[1] * (5) + decoded_state[2]
+            elif option in [7, 8, 9, 10, 11, 12]:  # gotoS 7, gotoD 8, gotoF 9, get 10, put 11 (doesn't need fuel level)
+                return 2, decoded_state[0] * (5 * 5 * 4) + decoded_state[1] * (5 * 4) + decoded_state[2] * 4 + decoded_state[3]
+        elif 'TaxiEnv' in str(self.env):
+            if option in [6, 8]:  # gotoS 6, get 8 (doesn't need destination)
+                return 1, decoded_state[0] * (5 * 5) + decoded_state[1] * (5) + decoded_state[2]
+        elif 'TaxiLargeEnv' in str(self.env):
+            if option in [6, 8]:  # gotoS 6, get 8 (doesn't need destination)
+                return 1, decoded_state[0] * (10 * 10) + decoded_state[1] * (10) + decoded_state[2]
         return 0, state
 
     def is_terminal(self, a, done, state=None):
@@ -77,6 +86,15 @@ class MaxQAgent(BaseAgent):
                 return decoded_state[2] >= 4 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[3]]
             elif a == 6:  # gotoS
                 return decoded_state[2] < 4 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[2]]
+        elif 'TaxiLargeEnv' in str(self.env):
+            if a == 9:  # put
+                return decoded_state[2] < 8
+            elif a == 8:  # get
+                return decoded_state[2] >= 8
+            elif a == 7:  # gotoD
+                return decoded_state[2] >= 8 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[3]]
+            elif a == 6:  # gotoS
+                return decoded_state[2] < 8 and (decoded_state[0], decoded_state[1]) == self.env.locs[decoded_state[2]]
         elif 'TaxiFuelEnv' in str(self.env):
             if a == 12:  # refuel
                 return decoded_state[4] >= 13
@@ -133,9 +151,10 @@ class MaxQAgent(BaseAgent):
             self.V[0][i, state] += self.params.ALPHA * (r - self.V[0][i, state])
             decoded_state = list(self.env.decode(state))
             abs1 = decoded_state[0] * (5 * 5) + decoded_state[1] * (5) + decoded_state[2]
-            abs2 = decoded_state[0] * (5 * 5 * 4) + decoded_state[1] * (5 * 4) + decoded_state[2] * 4 + decoded_state[3]
             self.V[1][i, abs1] += self.params.ALPHA * (r - self.V[1][i, abs1])
-            self.V[2][i, abs2] += self.params.ALPHA * (r - self.V[2][i, abs2])
+            if 'TaxiFuel' in str(self.env):
+                abs2 = decoded_state[0] * (5 * 5 * 4) + decoded_state[1] * (5 * 4) + decoded_state[2] * 4 + decoded_state[3]
+                self.V[2][i, abs2] += self.params.ALPHA * (r - self.V[2][i, abs2])
             return [state]
         elif i <= self.root:
             while not self.is_terminal(i, self.done):  # a is new action num
