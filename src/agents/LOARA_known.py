@@ -33,6 +33,9 @@ class Bandit:
             action = np.random.choice(np.flatnonzero(qv == max(qv)))
         return action
 
+    def decay(self, decay_rate):
+        self.ALPHA *= decay_rate
+
     def update(self, action, reward):
         self.Q_table[action] += self.ALPHA * (reward - self.Q_table[action])
         self.action_visits[action] += 1
@@ -48,7 +51,6 @@ class LOARA_K_Agent(QAgent):
 
         self.state_bandit_map, self.abs_state_bandit_map, self.bandit_list = self.init_bandits()
         self.next_bandit, self.next_action = None, None
-        self.bandit_list = []
 
     def init_bandits(self):
         state_bandit_map = {}
@@ -90,20 +92,29 @@ class LOARA_K_Agent(QAgent):
     def decay(self, decay_rate):
         if self.params.ALPHA > self.params.ALPHA_MIN:
             self.params.ALPHA *= decay_rate
+            for b in self.bandit_list:
+                b.decay(decay_rate)
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate
-
-        for b in self.bandit_list:
-            if b.ALPHA > self.params.ALPHA_MIN:
-                b.ALPHA *= decay_rate
 
     def heuristic_bandit_choice(self, state):
         state_vars = self.state_decodings[state]
         if 'TaxiFuel' in str(self.env):
-            if state_vars[2] < 4 and state_vars[4] > 12: # don't have passenger and have enough fuel to get passenger and to destination
+            if state_vars[2] < 4 and state_vars[4] > 12:  # don't have passenger and have enough fuel to get any
+                # passenger to any destination
                 return self.params.sub_spaces.index([0, 1, 2])
-            elif state_vars[2] == 4 and state_vars[4] > 8:
+            elif state_vars[2] == 4 and state_vars[4] > 8:  # have passenger and have enough fuel to get to any
+                # destination
                 return self.params.sub_spaces.index([0, 1, 2, 3])
+            elif state_vars[2] == 4 and (state_vars[3] == 0 or state_vars[3] == 2) and state_vars[1] == 0 and state_vars[4] > 4:
+                return self.params.sub_spaces.index([0, 1, 2, 3])
+            elif state_vars[2] == 4 and (state_vars[3] == 1 or state_vars[3] == 3) and state_vars[1] >= 3 and  state_vars[4] > 4:
+                return self.params.sub_spaces.index([0, 1, 2, 3])
+            else:
+                return len(self.params.sub_spaces) - 1
+        elif 'TaxiLarge' in str(self.env):
+            if state_vars[2] < 4:
+                return self.params.sub_spaces.index([0, 1, 2])
             else:
                 return len(self.params.sub_spaces) - 1
         elif 'Taxi' in str(self.env):
@@ -118,12 +129,16 @@ class LOARA_K_Agent(QAgent):
             else:
                 return len(self.params.sub_spaces) - 1
         elif 'CoffeeMail' in str(self.env):
-            if state_vars[3] == 1 or state_vars[4] == 1:
-                return self.params.sub_spaces.index([0, 1, 2, 3, 4])
-            elif state_vars[5] == 1 or state_vars[6] == 1:
-                return self.params.sub_spaces.index([0, 1, 2, 5, 6])
-            else:
-                return len(self.params.sub_spaces) - 1
+            # [0, 1, 2, 4, 6], [0, 1, 3, 5, 7],
+            if state_vars[4] == 1 or state_vars[5] == 1:
+                # if state_vars[5] != 1:
+                #     return self.params.sub_spaces.index([0, 1, 2, 4])
+                # if state_vars[4] != 1:
+                #     return self.params.sub_spaces.index([0, 1, 3, 5])
+                return self.params.sub_spaces.index([0, 1, 2, 4, 6])
+            elif state_vars[6] == 1 or state_vars[7] == 1:
+                return self.params.sub_spaces.index([0, 1, 3, 5, 7])
+            return len(self.params.sub_spaces) - 1
         elif 'Coffee' in str(self.env):
             if state_vars[2] == 0:
                 return self.params.sub_spaces.index([0, 1, 2])
@@ -135,7 +150,7 @@ class LOARA_K_Agent(QAgent):
 
     def e_greedy_bandit_action(self, state):
         if self.next_bandit is None:
-            bandit_index = np.random.randint(len(self.params.sub_spaces))
+            bandit_index = self.heuristic_bandit_choice(state)
         else:
             bandit_index = self.next_bandit
         if self.next_action is None:
@@ -154,8 +169,6 @@ class LOARA_K_Agent(QAgent):
         val = max(self.state_bandit_map[next_state][self.next_bandit].Q_table)
         next_val = (not done) * val
         self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * next_val)
-        if bandit_index != len(self.params.sub_spaces) - 1:
-            self.state_bandit_map[state][-1].update(action, reward + self.params.DISCOUNT * max(self.state_bandit_map[next_state][self.next_bandit].Q_table))  # next_val)
 
     def do_step(self):
         state = self.current_state
@@ -166,4 +179,6 @@ class LOARA_K_Agent(QAgent):
         self.update_LIA(state, bandit_index, action, reward, next_state, done)
         self.current_state = next_state
         self.steps += 1
+        self.next_bandit = None
+        self.next_action = None
         return reward, done

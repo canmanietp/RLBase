@@ -1,0 +1,17 @@
+Environment: <CoffeeMailEnv instance>
+Algorithm : Q
+Position: 0
+Number of trials: 5
+Number of episodes: 3000
+Running times: [8.74567962 9.27328658 8.81312323 9.83843112 9.33059263]
+init_alpha=0.5
+alpha_min=0.05
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.99
+decay=0.995
+sub_spaces=[]
+options=None
+size_state_vars=[7, 7, 2, 2, 2, 2, 2, 2]

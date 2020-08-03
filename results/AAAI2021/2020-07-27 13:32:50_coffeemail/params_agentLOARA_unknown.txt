@@ -1,0 +1,17 @@
+Environment: <CoffeeMailEnv instance>
+Algorithm : LOARA_unknown
+Position: 1
+Number of trials: 5
+Number of episodes: 3000
+Running times: [18.9086709  20.04051781 17.80622029 21.77339792 23.28072214]
+init_alpha=0.5
+alpha_min=0.05
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.99
+decay=0.995
+sub_spaces=[[0, 1], [0, 1, 2], [0, 1, 2, 4, 6], [0, 1, 3, 5, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
+options=None
+size_state_vars=[7, 7, 2, 2, 2, 2, 2, 2]

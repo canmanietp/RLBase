@@ -1,0 +1,17 @@
+Environment: <CoffeeMailEnv instance>
+Algorithm : MaxQ
+Position: 3
+Number of trials: 5
+Number of episodes: 3000
+Running times: [25.66829252 29.27043033 28.71224308 27.45114112 27.74012208]
+init_alpha=0.5
+alpha_min=0.05
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.99
+decay=0.995
+sub_spaces=[]
+options=[set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3}, {8, 5}, {9, 5}, {8, 5}, {9, 5}, {4, 7}, {10, 4}, {11, 12, 15}, {16, 13, 14}, {17, 18, 6}]
+size_state_vars=[7, 7, 2, 2, 2, 2, 2, 2]

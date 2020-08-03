@@ -6,7 +6,7 @@ import time, os, datetime
 from envs.taxi import TaxiEnv
 from envs.taxilarge import TaxiLargeEnv
 from envs.taxifuel import TaxiFuelEnv
-# from envs.taxi_stochastic import TaxiStochasticEnv
+from envs.taxi_stochastic import TaxiStochasticEnv
 from envs.noisy_taxi import NoisyTaxiEnv
 from envs.eatfood import EatFoodEnv
 from envs.rm_office import OfficeEnv
@@ -35,7 +35,7 @@ from helpers import sensitivity
 
 def get_params_coffee():
     init_alpha = 0.3
-    alpha_min = 0.3
+    alpha_min = 0.1
     init_epsilon = 0.3
     epsilon_min = 0.001
     init_phi = 0.3
@@ -44,7 +44,7 @@ def get_params_coffee():
     decay_rate = 0.99
     sub_spaces = [[0, 1, 2], [0, 1, 2, 3, 4]]
     size_state_vars = [5, 5, 2, 2, 2]
-    num_episodes = 500
+    num_episodes = 400
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -54,44 +54,55 @@ def get_params_coffeemail(alg):
     init_alpha = 0.3
     alpha_min = 0.3
     init_epsilon = 0.5
-    epsilon_min = 0.001
+    epsilon_min = 0.01
     init_phi = 0.5
-    phi_min = 0.001
+    phi_min = 0.01
     discount = 0.99
-    decay_rate = 0.99
-    if alg in ['QLiA', 'QLiA_alt', 'LOARA_unknown', 'LOARA_known']:
-        sub_spaces = [[0, 1, 2, 3, 4], [0, 1, 2, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
-    else:
+    decay_rate = 0.995
+    options = None
+    sub_spaces = []
+    if alg in ['QLiA', 'QLiA_alt', 'LOARA_known']:
+        sub_spaces = [[0, 1, 2, 4, 6], [0, 1, 3, 5, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
+    elif alg in ['LOARA_unknown']:
+        sub_spaces = [[0, 1], [0, 1, 2], [0, 1, 2, 4, 6], [0, 1, 3, 5, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
+    elif alg in ['MaxQ']:
+        # 0 south, 1 north, 2 east, 3 west, 4 take, 5 give, 6 do nothing,
+        # 7 go to mail, 8 go to A, 9 go to B, 10 go to coffee,
+        # 11 deliver mail to A, 12, deliver mail to B, 13 deliver coffee to A, 14 deliver coffee to B
+        # 15 get mail, 16 get coffee, # 17 get and deliver mail, 18 get and deliver coffee, 19 root
         sub_spaces = []
-    size_state_vars = [7, 7, 3, 2, 2, 2, 2]
+        options = [set(), set(), set(), set(), set(), set(), set(),
+                   {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
+                   {8, 5}, {9, 5}, {8, 5}, {9, 5},
+                   {7, 4}, {10, 4}, {15, 11, 12}, {16, 13, 14}, {17, 18, 6}, ]
+    size_state_vars = [7, 7, 2, 2, 2, 2, 2, 2]
     num_episodes = 3000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
-                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_office(alg):
     init_alpha = 0.5
-    alpha_min = 0.1
-    init_epsilon = 0.3
+    alpha_min = 0.05
+    init_epsilon = 0.5
     epsilon_min = 0.001
-    init_phi = 0.3
+    init_phi = 0.5
     phi_min = 0.001
     discount = 0.95
-    decay_rate = 0.99
+    decay_rate = 0.995
     if alg in ['QAMS', 'QLiA_T']:
         sub_spaces = [[0, 1, 2, 3, 4, 5]]
-    elif alg in ['QLiA', 'QVA', 'QLiA_alt']:
+    elif alg in ['QLiA', 'QVA', 'QLiA_alt', 'LOARA_unknown']:
         init_alpha = 0.5
         alpha_min = 0.1
-        sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 4, 5],
-                      [0, 1, 2, 3, 4, 5]]  # [[1, 2, 3, 4, 5], [0, 2, 3, 4, 5], [0, 1, 2, 4, 5]]  #
+        sub_spaces = [[0, 1], [0, 1, 2, 3], [0, 1, 4, 5], [0, 1, 2, 3, 4, 5]]  # [[1, 2, 3, 4, 5], [0, 2, 3, 4, 5], [0, 1, 2, 4, 5]]  #
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 4, 5]]
     else:
         sub_spaces = []
     size_state_vars = [9, 12, 2, 2, 2, 2]
-    num_episodes = 6000
+    num_episodes = 3000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
@@ -121,7 +132,7 @@ def get_params_eatfood(alg):
 
 def get_params_taxifuel(alg):
     init_alpha = 0.5
-    alpha_min = 0.05
+    alpha_min = 0.1
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
@@ -130,39 +141,42 @@ def get_params_taxifuel(alg):
     decay_rate = 0.995
     sub_spaces = None
     options = None
-    if alg in ['QAMS']:
-        sub_spaces = [[0, 1, 3, 4], [0, 1, 2, 4], [0, 1, 2, 3, 4]]  # [[0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3, 4]]
-    elif alg in ['QVP', 'QLiA_batch']:
-        sub_spaces = [[0, 1, 2, 4], [0, 1, 2, 3, 4]]
-    elif alg in ['LOARA_unknown', 'QLiA', 'LOARA_known']:
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
+    # if alg in ['Q']:
+    #     alpha_min = 0.3
+    if alg in ['LOARA_unknown']:
+        sub_spaces = [[0, 1, 2, 3], [0, 1, 2], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
+    if alg in ['QLiA', 'LOARA_known']:
+        sub_spaces = [[0, 1], [0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
+        # if alg in ['LOARA_known']:
+        #     alpha_min = 0.3
     elif alg == 'MaxQ':
+        # alpha_min = 0.3
         # south 0, north 1, east 2, west 3, pickup 4, dropoff 5, fillup 6, gotoSource 7, gotoDestination 8, gotoFuel 9,
         # get 10, put 11, refuel 12, root 13
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 300000
+    num_episodes = 500000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_taxilarge(alg):
-    init_alpha = 0.3
-    alpha_min = 0.3
-    init_epsilon = 0.3
-    epsilon_min = 0.001
-    init_phi = 0.3
-    phi_min = 0.001
-    discount = 0.95
-    decay_rate = 0.999
+    init_alpha = 0.5
+    alpha_min = 0.1
+    init_epsilon = 0.5
+    epsilon_min = 0.01
+    init_phi = 0.5
+    phi_min = 0.01
+    discount = 0.99
+    decay_rate = 0.995
     sub_spaces = None
     options = None
-    if alg in ['QAMS', 'QLiA', 'QVA', 'QLiA_alt']:
+    if alg in ['QAMS', 'QLiA', 'QVA', 'QLiA_alt', 'LOARA_known']:
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]  # [[1, 2, 3], [0, 2, 3], [0, 1, 2, 3]]  #
-    elif alg == 'QLiA_T':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    elif alg in ['QLiA_T', 'LOARA_unknown']:
+        sub_spaces = [[0, 2, 3], [1, 2, 3], [0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
@@ -205,18 +219,18 @@ def get_params_noisytaxi(alg):
 
 
 def get_params_taxi(alg):
-    init_alpha = 0.5
-    alpha_min = 0.1
+    init_alpha = 0.3
+    alpha_min = 0.3
     init_epsilon = 0.5
-    epsilon_min = 0.001
+    epsilon_min = 0.01
     init_phi = 0.5
-    phi_min = 0.001
+    phi_min = 0.01
     discount = 0.95
-    decay_rate = 0.99
+    decay_rate = 0.995
     sub_spaces = None
     options = None
     if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA', 'LOARA_unknown']:
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+        sub_spaces = [[2], [1, 2, 3], [0, 2, 3], [0, 1, 2], [0, 1, 2, 3]]  # [2], [1, 2, 3], [0, 2, 3],
     elif alg in ['LOARA_known', 'QLiA_alt' 'QLiA', 'QLiA_batch']:
         sub_spaces = [[2], [1, 2, 3], [0, 2, 3], [0, 1, 2], [0, 1, 2, 3]]  #
     elif alg == 'QVP':
@@ -225,7 +239,7 @@ def get_params_taxi(alg):
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 1000
+    num_episodes = 500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -398,6 +412,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
         env, params = get_params(env_name, alg)
         file = open('{}/params_agent{}.txt'.format(exp_dir, alg), "w")
         file.write("Environment: {}\n"
+                   "Algorithm : {}\n"
+                   "Position: {}\n"
                    "Number of trials: {}\n"
                    "Number of episodes: {}\n"
                    "Running times: {}\n"
@@ -411,7 +427,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                    "decay={}\n"
                    "sub_spaces={}\n"
                    "options={}\n"
-                   "size_state_vars={}".format(env, num_trials,
+                   "size_state_vars={}".format(env, alg, ia, num_trials,
                                                params.num_episodes, np.array(trial_times)[:, ia], params.ALPHA,
                                                params.ALPHA_MIN,
                                                params.EPSILON, params.EPSILON_MIN,

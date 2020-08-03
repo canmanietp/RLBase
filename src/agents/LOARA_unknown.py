@@ -34,6 +34,9 @@ class Bandit:
             action = np.random.choice(np.flatnonzero(qv == max(qv)))
         return action
 
+    def decay(self, decay_rate):
+        self.ALPHA *= decay_rate
+
     def update(self, action, reward):
         self.Q_table[action] += self.ALPHA * (reward - self.Q_table[action])
         self.action_visits[action] += 1
@@ -47,30 +50,30 @@ class LOARA_UK_Agent(QAgent):
 
         self.state_decodings = self.sweep_state_decodings()
 
-        self.state_bandit_map, self.abs_state_bandit_map, self.bandit_list = self.init_bandits()
+        self.bandit_list = []
+        self.state_bandit_map, self.abs_state_bandit_map = self.init_bandits()
         self.next_bandit, self.next_action = None, None
 
+        self.sb_visits = np.zeros([self.observation_space, len(self.params.sub_spaces)])
         # self.learned_bandits = genfromtxt('helpers/learned_bandits_{}.csv'.format(str(env)), delimiter=',')
-
-        self.bandit_list = []
 
     def init_bandits(self):
         state_bandit_map = {}
         abs_state_bandit_map = [{} for ss in self.params.sub_spaces]
-        bandit_list = []
         for s in range(self.observation_space):
             s_vars = self.state_decodings[s]
             bandits = []
             for ia, abs_vars in enumerate(self.params.sub_spaces):
                 abs_state = self.encode_abs_state(s_vars, abs_vars)
                 if abs_state not in abs_state_bandit_map[ia]:
-                    abs_state_bandit_map[ia][abs_state] = Bandit(self.action_space, self.params.ALPHA, self.params.DISCOUNT)
-                    bandit_list.append(abs_state_bandit_map[ia][abs_state])
+                    abs_state_bandit_map[ia][abs_state] = Bandit(self.action_space, self.params.ALPHA,
+                                                                 self.params.DISCOUNT)
+                    self.bandit_list.append(abs_state_bandit_map[ia][abs_state])
                     bandits.append(abs_state_bandit_map[ia][abs_state])
                 else:
                     bandits.append(abs_state_bandit_map[ia][abs_state])
             state_bandit_map[s] = bandits
-        return state_bandit_map, abs_state_bandit_map, bandit_list
+        return state_bandit_map, abs_state_bandit_map
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -94,23 +97,31 @@ class LOARA_UK_Agent(QAgent):
     def decay(self, decay_rate):
         if self.params.ALPHA > self.params.ALPHA_MIN:
             self.params.ALPHA *= decay_rate
+            for b in self.bandit_list:
+                b.decay(decay_rate)
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate
 
-        for b in self.bandit_list:
-            if b.ALPHA > self.params.ALPHA_MIN:
-                b.ALPHA *= decay_rate
+    def e_greedy_bandit(self, state):
+        if random.uniform(0, 1) < self.params.EPSILON:
+            self.next_action = self.state_bandit_map[state][-1].random_action()
+            return np.random.randint(len(self.params.sub_spaces) - 1), max(self.Q_table[state])
+        bandit_index = int(np.argmax(self.Q_table[state]))
+        self.next_action = self.state_bandit_map[state][bandit_index].random_action()
+        return bandit_index, max(self.Q_table[state])
 
     def smart_bandit_choice(self, state, eps=None):
-        values = [max(b.Q_table) for b in self.state_bandit_map[state]]
+        values = [max(b.Q_table) for ib, b in enumerate(self.state_bandit_map[state])]
         if np.random.uniform(0, 1) < (eps if eps else self.params.EPSILON):
             self.next_action = self.state_bandit_map[state][-1].random_action()
             return np.random.randint(len(self.params.sub_spaces)), max(values)
-        return np.argmax(values), max(values)
+        bandit_index = int(np.argmax(values))
+        self.next_action = self.state_bandit_map[state][bandit_index].greedy_action()
+        return bandit_index, max(values)
 
     def e_greedy_bandit_action(self, state):
         if self.next_bandit is None:
-            bandit_index = np.random.randint(len(self.params.sub_spaces))
+            bandit_index = np.argmax([max(b.Q_table) for b in self.state_bandit_map[state]])
         else:
             bandit_index = self.next_bandit
         if self.next_action is None:
@@ -125,19 +136,28 @@ class LOARA_UK_Agent(QAgent):
         return bandit_index, action
 
     def update_LIA(self, state, bandit_index, action, reward, next_state, done):
-        self.next_bandit, val = self.smart_bandit_choice(next_state)  # self.heuristic_bandit_choice(next_state)
+        self.next_bandit, val = self.smart_bandit_choice(next_state)
         next_val = (not done) * val
-        self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * next_val)
-        if bandit_index != len(self.params.sub_spaces) - 1:
-            self.state_bandit_map[state][-1].update(action, reward + self.params.DISCOUNT * next_val)
+        for ib, b in enumerate(self.state_bandit_map[state]):
+            if ib == len(self.params.sub_spaces) - 1:
+                self.state_bandit_map[state][-1].update(action, reward + self.params.DISCOUNT * max(
+                    self.state_bandit_map[next_state][-1].Q_table))
+            elif set(self.params.sub_spaces[ib]).issubset(set(self.params.sub_spaces[bandit_index])):
+                self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * next_val)
+
+        # self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * next_val)
+        # if bandit_index != len(self.params.sub_spaces) - 1:
+        #     self.state_bandit_map[state][-1].update(action, reward + self.params.DISCOUNT * max(self.state_bandit_map[next_state][-1].Q_table))
 
     def do_step(self):
         state = self.current_state
         bandit_index, action = self.e_greedy_bandit_action(state)
         next_state, reward, done = self.step(action)
+        self.sb_visits[state][bandit_index] += 1
         if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
             done = True
         self.update_LIA(state, bandit_index, action, reward, next_state, done)
-        self.current_state = next_state
         self.steps += 1
+        self.next_action = None
+        self.next_bandit = None
         return reward, done
