@@ -1,0 +1,18 @@
+Environment: <TaxiLargeEnv instance>
+Algorithm : MaxQ
+Position: 0
+Number of trials: 10
+Number of episodes: 5000
+Running times: [75.43788719 80.70936584 80.96507406 81.09526968 81.4106822  81.32023597
+ 80.45304441 80.98630619 80.37798834 81.26746416]
+init_alpha=0.3
+alpha_min=0.3
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.99
+decay=0.999
+sub_spaces=None
+options=[set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}]
+size_state_vars=[10, 10, 9, 8]

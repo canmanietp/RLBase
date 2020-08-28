@@ -13,12 +13,16 @@ from envs.rm_office import OfficeEnv
 from envs.coffeemail import CoffeeMailEnv
 from envs.coffee import CoffeeEnv
 from envs.sysadmin import SysAdminEnv
+from envs.fourstate import FourStateEnv
+from envs.warehouse import WarehouseEnv
 
 from agents.Q import QAgent
 from agents.QLiA import QLiAAgent
 from agents.MaxQ import MaxQAgent
 from agents.LOARA_known import LOARA_K_Agent
 from agents.LOARA_unknown import LOARA_UK_Agent
+from agents.LOARA_transfer import LOARA_T_Agent
+from agents.MergeTree import MergeTree_Agent
 # from agents.QLiA_alt import QLiA_altAgent
 # from agents.QLiA_batch import QLiA_batchAgent
 # from agents.QLiA_sig import QLiA_sigAgent
@@ -31,6 +35,61 @@ from agents.LOARA_unknown import LOARA_UK_Agent
 from learning_parameters import DiscreteParameters
 from helpers import plotting
 from helpers import sensitivity
+
+
+def get_params_warehouse(alg, size):
+    init_alpha = 1.
+    alpha_min = 1.
+    init_epsilon = 0.5
+    epsilon_min = 0.01
+    init_phi = 0.5
+    phi_min = 0.01
+    discount = 0.99
+    decay_rate = 0.999
+    sub_spaces = None
+    options = None
+    if size == 1:
+        if alg in ['LOARA_unknown', 'LOARA_known']:
+            sub_spaces = [[0, 1], [0, 2], [1, 2], [0, 1, 2]]
+        size_state_vars = [3, 3, 3]
+        num_episodes = 5000
+    elif size == 2:
+        if alg in ['LOARA_known']:
+            sub_spaces = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2, 3, 4], [0, 1, 2, 3, 4]]
+        if alg in ['LOARA_unknown']:
+            sub_spaces = [[1, 2, 3, 4], [0, 1, 2, 3, 4]]  # [0, 1], [0, 2], [0, 3], [0, 4],
+        size_state_vars = [5, 3, 3, 3, 3]
+        num_episodes = 10000
+    elif size == 3:
+        if alg in ['LOARA_unknown', 'LOARA_known']:
+            sub_spaces = [[0, 1], [0, 2], [1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
+        size_state_vars = [7, 3, 3, 3, 3, 3, 3]
+        num_episodes = 100000
+    return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                              discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
+
+
+def get_params_fourstate(alg):
+    init_alpha = 0.5
+    alpha_min = 0.01
+    init_epsilon = 0.5
+    epsilon_min = 0.0
+    init_phi = 0.5
+    phi_min = 0.0
+    discount = 0.9
+    decay_rate = 0.995
+    sub_spaces = None
+    options = None
+    if alg in ['LOARA_unknown']:
+        sub_spaces = [[0], [1], [0, 1]]  # [2], [1, 2, 3], [0, 2, 3],
+    elif alg in ['LOARA_known']:
+        sub_spaces = [[0], [1], [0, 1]]  #
+    size_state_vars = [2, 2]
+    num_episodes = 1000
+    return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
+                              discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
+                              phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_coffee():
@@ -51,20 +110,20 @@ def get_params_coffee():
 
 
 def get_params_coffeemail(alg):
-    init_alpha = 0.3
-    alpha_min = 0.3
+    init_alpha = 1.
+    alpha_min = 1.
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
     phi_min = 0.01
     discount = 0.99
-    decay_rate = 0.995
+    decay_rate = 0.999
     options = None
     sub_spaces = []
     if alg in ['QLiA', 'QLiA_alt', 'LOARA_known']:
-        sub_spaces = [[0, 1, 2, 4, 6], [0, 1, 3, 5, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     elif alg in ['LOARA_unknown']:
-        sub_spaces = [[0, 1], [0, 1, 2], [0, 1, 2, 4, 6], [0, 1, 3, 5, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2], [0, 1, 3], [0, 1, 2, 3, 4, 5, 6, 7]]
     elif alg in ['MaxQ']:
         # 0 south, 1 north, 2 east, 3 west, 4 take, 5 give, 6 do nothing,
         # 7 go to mail, 8 go to A, 9 go to B, 10 go to coffee,
@@ -76,7 +135,7 @@ def get_params_coffeemail(alg):
                    {8, 5}, {9, 5}, {8, 5}, {9, 5},
                    {7, 4}, {10, 4}, {15, 11, 12}, {16, 13, 14}, {17, 18, 6}, ]
     size_state_vars = [7, 7, 2, 2, 2, 2, 2, 2]
-    num_episodes = 3000
+    num_episodes = 1500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -96,7 +155,8 @@ def get_params_office(alg):
     elif alg in ['QLiA', 'QVA', 'QLiA_alt', 'LOARA_unknown']:
         init_alpha = 0.5
         alpha_min = 0.1
-        sub_spaces = [[0, 1], [0, 1, 2, 3], [0, 1, 4, 5], [0, 1, 2, 3, 4, 5]]  # [[1, 2, 3, 4, 5], [0, 2, 3, 4, 5], [0, 1, 2, 4, 5]]  #
+        sub_spaces = [[0, 1], [0, 1, 2, 3], [0, 1, 4, 5],
+                      [0, 1, 2, 3, 4, 5]]  # [[1, 2, 3, 4, 5], [0, 2, 3, 4, 5], [0, 1, 2, 4, 5]]  #
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2, 4, 5], [0, 1, 3, 4, 5]]
     else:
@@ -114,37 +174,37 @@ def get_params_eatfood(alg):
     init_epsilon = 0.3
     epsilon_min = 0.1
     init_phi = 0.3
-    phi_min = 0.01
+    phi_min = 0.1
     discount = 0.95
     decay_rate = 0.999
     if alg in ['QAMS', 'QLiA_T']:
         sub_spaces = [[0, 1, 2, 3]]
-    elif alg in ['QLiA', 'QLiA_alt']:
-        sub_spaces = [[0, 1, 2], [0, 1, 3], [0, 1, 2, 3]]
+    elif alg in ['QLiA', 'QLiA_alt', 'LOARA_unknown']:
+        sub_spaces = [[0, 1, 3], [0, 1, 2, 3]]
     else:
         sub_spaces = []
     size_state_vars = [5, 5, 25, 25]
-    num_episodes = 30000
+    num_episodes = 300000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars)
 
 
 def get_params_taxifuel(alg):
-    init_alpha = 0.5
-    alpha_min = 0.1
+    init_alpha = 0.8
+    alpha_min = 0.05
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
     phi_min = 0.01
     discount = 0.99
-    decay_rate = 0.995
+    decay_rate = 0.999
     sub_spaces = None
     options = None
     # if alg in ['Q']:
     #     alpha_min = 0.3
     if alg in ['LOARA_unknown']:
-        sub_spaces = [[0, 1, 2, 3], [0, 1, 2], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
+        sub_spaces = [[0, 1], [0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
     if alg in ['QLiA', 'LOARA_known']:
         sub_spaces = [[0, 1], [0, 1, 2], [0, 1, 2, 3], [0, 1, 2, 4], [0, 1, 2, 3, 4]]
         # if alg in ['LOARA_known']:
@@ -156,15 +216,15 @@ def get_params_taxifuel(alg):
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 500000
+    num_episodes = 200000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_taxilarge(alg):
-    init_alpha = 0.5
-    alpha_min = 0.1
+    init_alpha = 1.
+    alpha_min = 1.
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
@@ -174,53 +234,51 @@ def get_params_taxilarge(alg):
     sub_spaces = None
     options = None
     if alg in ['QAMS', 'QLiA', 'QVA', 'QLiA_alt', 'LOARA_known']:
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]  # [[1, 2, 3], [0, 2, 3], [0, 1, 2, 3]]  #
-    elif alg in ['QLiA_T', 'LOARA_unknown']:
-        sub_spaces = [[0, 2, 3], [1, 2, 3], [0, 1, 2], [0, 1, 2, 3]]
+        sub_spaces = [[0, 1, 2], [1, 2, 3], [0, 1, 2, 3]]  # [[1, 2, 3], [0, 2, 3], [0, 1, 2, 3]]  #
+    elif alg in ['QLiA_T', 'LOARA_unknown', 'LOARA_transfer']:
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [10, 10, 9, 8]
-    num_episodes = 5000
+    num_episodes = 7000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_noisytaxi(alg):
-    init_alpha = 0.2
-    alpha_min = 0.05
+    init_alpha = 1.
+    alpha_min = 0.001
     init_epsilon = 0.5
-    epsilon_min = 0.001
-    init_phi = 0.3
-    phi_min = 0.001
+    epsilon_min = 0.01
+    init_phi = 0.5
+    phi_min = 0.01
     discount = 0.95
     decay_rate = 0.999
-    sub_spaces = None
+    sub_spaces = []
     options = None
-    if alg in ['QAMS', 'QLiA', 'QLiA_batch']:
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
-    elif alg == 'QLiA_T':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
+    if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA', 'LOARA_unknown']:
+        sub_spaces = [[1, 2, 3], [0, 2, 3], [0, 1, 2], [0, 1, 2, 3]]  # [2], [1, 2, 3], [0, 2, 3],
+    elif alg in ['LOARA_known', 'QLiA_alt' 'QLiA', 'QLiA_batch']:
+        sub_spaces = [[2], [1, 2, 3], [0, 2, 3], [0, 1, 2], [0, 1, 2, 3]]  #
     elif alg == 'QVP':
         sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
-    else:
-        sub_spaces = []
     size_state_vars = [5, 5, 5, 4, 5]
-    num_episodes = 1000
+    num_episodes = 4000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
 
 
 def get_params_taxi(alg):
-    init_alpha = 0.3
-    alpha_min = 0.3
+    init_alpha = 1.
+    alpha_min = 1.
     init_epsilon = 0.5
     epsilon_min = 0.01
     init_phi = 0.5
@@ -229,17 +287,15 @@ def get_params_taxi(alg):
     decay_rate = 0.995
     sub_spaces = None
     options = None
-    if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA', 'LOARA_unknown']:
-        sub_spaces = [[2], [1, 2, 3], [0, 2, 3], [0, 1, 2], [0, 1, 2, 3]]  # [2], [1, 2, 3], [0, 2, 3],
+    if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA', 'LOARA_unknown', 'LOARA_transfer']:
+        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]  # [2], [1, 2, 3], [0, 2, 3], [0, 1], [0, 2], [1, 2],
     elif alg in ['LOARA_known', 'QLiA_alt' 'QLiA', 'QLiA_batch']:
         sub_spaces = [[2], [1, 2, 3], [0, 2, 3], [0, 1, 2], [0, 1, 2, 3]]  #
-    elif alg == 'QVP':
-        sub_spaces = [[0, 1, 2], [0, 1, 2, 3]]
     elif alg == 'MaxQ':
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 500
+    num_episodes = 1000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -286,7 +342,7 @@ def get_params(env_name, alg=None):
         env = TaxiFuelEnv()
         params = get_params_taxifuel(alg)
     elif env_name == 'noisytaxi':
-        env = NoisyTaxiEnv()
+        env = TaxiStochasticEnv()  # NoisyTaxiEnv()
         params = get_params_noisytaxi(alg)
     elif env_name == 'eatfood':
         env = EatFoodEnv()
@@ -300,6 +356,18 @@ def get_params(env_name, alg=None):
     elif env_name == 'coffee':
         env = CoffeeEnv()
         params = get_params_coffee()
+    elif env_name == 'fourstate':
+        env = FourStateEnv()
+        params = get_params_fourstate(alg)
+    elif env_name == 'warehouse1':
+        env = WarehouseEnv(1)
+        params = get_params_warehouse(alg, 1)
+    elif env_name == 'warehouse2':
+        env = WarehouseEnv(2)
+        params = get_params_warehouse(alg, 2)
+    elif env_name == 'warehouse3':
+        env = WarehouseEnv(3)
+        params = get_params_warehouse(alg, 3)
     elif env_name == 'sysadmin':
         env = SysAdminEnv(size=8)
         params = get_params_sysadmin(alg)
@@ -332,6 +400,12 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 agents.append(LOARA_K_Agent(env, params))
             elif alg == 'LOARA_unknown':
                 agents.append(LOARA_UK_Agent(env, params))
+            elif alg == 'LOARA_transfer':
+                env, params = get_params(env_name, 'LOARA_unknown')
+                agents.append(LOARA_T_Agent(env, params))
+            elif alg == 'MergeTree':
+                env, params = get_params(env_name, 'LOARA_unknown')
+                agents.append(MergeTree_Agent(env, params))
             else:
                 print("Unknown algorithm - {}".format(alg))
 
@@ -341,6 +415,9 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
         times_to_run = []
 
         plt.figure()
+
+        Qbest = []
+
         print("{} -- Starting Trial {} -- ".format(datetime.datetime.now().strftime("%H:%M:%S"), t + 1))
         for j, agent in enumerate(agents):
             t0 = time.time()
@@ -354,12 +431,18 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
 
                     if j == 0:
                         state = agent.current_state
+                        # state_vars = list(agent.env.decode(state))
+                        # if i < 300:
+                        #     while state_vars[2] == 3:
+                        #         agent.env.reset()
+                        #         state = agent.env.s
+                        #         state_vars = list(agent.env.decode(state))
+                        #     agent.current_state = state
                         starting_states.append(state)
                         decoded_ss.append(list(env.decode(state)))
                     else:
                         state = starting_states[i]  #
                         agent.set_state(state)
-
                 ep_reward = agent.do_episode()
                 episode_rewards[j].append(ep_reward)
 
@@ -370,6 +453,51 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 if agent.name != 'QLiA_batch':
                     agent.decay(agent.params.DECAY_RATE)
 
+            # Q_save = []
+
+            # if agent.name == 'Q':
+            #     # for ps in range(10000):
+            #     #     sos = agent.env.reset()
+            #     #     best_act = np.argmax(agent.Q_table[sos])
+            #     #     Q_save.append([*list(agent.env.decode(sos)), best_act])
+            #     p = 0
+            #     while p < 1000:
+            #         done = False
+            #         agent.env.reset()
+            #         sos = agent.env.s
+            #         timeout = 0
+            #         while not done or timeout < 25:
+            #             sos = agent.env.s
+            #             best_act = np.argmax(agent.Q_table[sos])
+            #             ns, reward, done, info = agent.env.step(best_act)
+            #             # print(p, timeout, [*list(agent.env.decode(sos)), best_act])
+            #             Q_save.append([*list(agent.env.decode(sos)), best_act])
+            #             timeout += 1
+            #             if done:
+            #                 p += 1
+            #
+            # Qs = pd.DataFrame(Q_save)
+            # Qs.to_csv('{}/Q_samples_{}.csv'.format(exp_dir, str(agent.env)), header=None, index=None)
+
+            # # # # # elif agent.name in 'LOARA_unknown':
+            # # # # #     for s in range(agent.observation_space):
+            # # # # #         print(s, agent.state_bandit_map[s][-1].Q_table)
+            # elif agent.name in 'LOARA_known':
+            #     for s in range(agent.observation_space):
+            #         # if list(agent.env.decode(s)) == [4, 1, 1, 0] or list(agent.env.decode(s)) == [4, 1, 1, 2] or list(agent.env.decode(s)) == [4, 1, 1, 3]:
+            #         #     print(list(agent.env.decode(s)),
+            #         #           agent.params.sub_spaces[agent.heuristic_bandit_choice(s)],
+            #         #           agent.state_bandit_map[s][agent.heuristic_bandit_choice(s)].Q_table,
+            #         #           np.argmax(agent.state_bandit_map[s][agent.heuristic_bandit_choice(s)].Q_table) == np.argmax(Qbest[s]),
+            #         #           Qbest[s])  # agent.heuristic_bandit_choice(s)
+            #         # if list(agent.env.decode(s)) == [0, 1, 0, 0, 0] or list(agent.env.decode(s)) == [1, 1, 0, 0, 0] or list(agent.env.decode(s)) == [2, 1, 0, 0, 0]  or list(agent.env.decode(s)) == [3, 1, 0, 0, 0] or list(agent.env.decode(s)) == [4, 1, 0, 0, 0] :
+            #         if np.argmax(agent.state_bandit_map[s][agent.heuristic_bandit_choice(s)].Q_table) != np.argmax(Qbest[s]):
+            #             print(list(agent.env.decode(s)),
+            #                   agent.params.sub_spaces[agent.heuristic_bandit_choice(s)],
+            #                   agent.state_bandit_map[s][-1].Q_table,
+            #                   np.argmax(agent.calc_value_abstract_state(s, agent.heuristic_bandit_choice(s))) == np.argmax(Qbest[s]),
+            #                   Qbest[s])  # agent.heuristic_bandit_choice(s)
+
             run_time = time.time() - t0
             print("{} Finished running in {} seconds".format(datetime.datetime.now().strftime("%H:%M:%S"), run_time))
             times_to_run.append(run_time)
@@ -378,12 +506,28 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             plt.legend([a.name for a in agents], loc='lower right')
             plt.savefig('{}/trial_{}'.format(exp_dir, t + 1))
 
+            if t == num_trials - 1 and agent.name == 'LOARA_unknown':
+                learned_Q = []
+                learned_bandit = []
+                for s in range(agent.observation_space):
+                    qs = []
+                    for b in agent.state_bandit_map[s]:
+                        for q in b.Q_table:
+                            qs.append(q)
+                    learned_Q.append(qs)
+                    band, val = agent.smart_bandit_choice(s, 0.)
+                    learned_bandit.append(band)
+                lq = pd.DataFrame(learned_Q)
+                lb = pd.DataFrame(learned_bandit)
+                lb.to_csv('{}/learned_bandit_{}.csv'.format(exp_dir, str(agent.env)), header=None, index=None)
+                lq.to_csv('{}/learned_bandit_Q_{}.csv'.format(exp_dir, str(agent.env)), header=None, index=None)
+
         trial_rewards.append(episode_rewards)
         trial_times.append(times_to_run)
 
         df = pd.DataFrame(np.transpose(episode_rewards))
         df['Starting states'] = decoded_ss
-        df.to_csv('{}/trial_{}.csv'.format(exp_dir, t + 1), header=None, index=None)
+        df.to_csv('{}/trial_{}_rewards.csv'.format(exp_dir, t + 1), header=None, index=None)
 
     plt.close()
     plt.figure()

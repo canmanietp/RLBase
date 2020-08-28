@@ -1,0 +1,18 @@
+Environment: <TaxiEnv instance>
+Algorithm : LOARA_unknown
+Position: 3
+Number of trials: 10
+Number of episodes: 1000
+Running times: [1.7370441  2.31071568 1.91731596 1.88066554 2.02718973 2.71423197
+ 1.99828553 1.99671221 1.894274   1.87041545]
+init_alpha=0.3
+alpha_min=0.3
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.95
+decay=0.995
+sub_spaces=[[0, 1], [0, 2], [1, 2], [0, 1, 2], [0, 1, 2, 3]]
+options=None
+size_state_vars=[5, 5, 5, 4]

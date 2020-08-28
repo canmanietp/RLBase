@@ -1,0 +1,18 @@
+Environment: <TaxiLargeEnv instance>
+Algorithm : Q
+Position: 1
+Number of trials: 10
+Number of episodes: 5000
+Running times: [26.61640811 28.5404706  28.59822631 29.08288908 28.27088451 28.70329738
+ 28.7003119  28.33216619 28.72642851 29.26736236]
+init_alpha=0.3
+alpha_min=0.3
+init_epsilon=0.5
+epsilon_min=0.01
+init_phi=0.5
+phi_min=0.01
+discount=0.99
+decay=0.999
+sub_spaces=None
+options=None
+size_state_vars=[10, 10, 9, 8]

@@ -60,6 +60,7 @@ class QAgent(BaseAgent):
         if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
             done = True
         self.update(state, action, reward, next_state, done)
+        # print(list(self.env.decode(state)), action, reward, list(self.env.decode(next_state)), done)
         self.current_state = next_state
         self.steps += 1
         return reward, done

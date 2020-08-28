@@ -48,7 +48,6 @@ class BaseAgent:
 
     def step(self, action):
         next_state, reward, done, _ = self.env.step(action)
-
         self.sa_visits[self.current_state][action] += 1
         self.current_state = next_state
 

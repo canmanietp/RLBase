@@ -38,7 +38,11 @@ class TaxiLargeEnv(discrete.DiscreteEnv):
     - 1: G(reen)
     - 2: Y(ellow)
     - 3: B(lue)
-    - 4: in taxi
+    - 4: W
+    - 5: M
+    - 6: C
+    - 7: P
+    - 8: in taxi
     
     Destinations:
     - 0: R(ed)
@@ -75,7 +79,7 @@ class TaxiLargeEnv(discrete.DiscreteEnv):
     def __init__(self):
         self.desc = np.asarray(MAP, dtype='c')
 
-        self.locs = locs = [(0, 0), (0, 4), (8, 0), (9, 4), (3, 3), (4, 6), (0, 8), (9, 9)]
+        self.locs = locs = [(0, 0), (0, 4), (9, 0), (9, 4), (3, 3), (4, 6), (0, 8), (9, 9)]
 
         self.num_rows = 10
         self.num_columns = 10

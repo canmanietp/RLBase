@@ -18,12 +18,10 @@ class MaxQAgent(BaseAgent):
         self.C = np.zeros((num_options, self.observation_space, num_options))
         self.C_2 = np.zeros((num_options, self.observation_space, num_options))
 
-        if 'NoisyTaxiEnv' in str(self.env):
-            self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx
-        elif 'TaxiFuelEnv' in str(self.env):
+        if 'TaxiFuelEnv' in str(self.env):
             self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx (NO DESTINATION OR FUEL)
             self.V.append(np.zeros((num_options, 5 * 5 * 5 * 4)))  # taxi row, taxi col, passidx, fuel (NO FUEL)
-        elif 'TaxiEnv' in str(self.env):
+        elif 'TaxiEnv' in str(self.env) or 'TaxiStochasticEnv' in str(self.env):
             self.V.append(np.zeros((num_options, 5 * 5 * 5)))  # taxi row, taxi col, passidx (no destination)
         elif 'TaxiLargeEnv' in str(self.env):
             self.V.append(np.zeros((num_options, 10 * 10 * 10)))  # taxi row, taxi col, passidx (no destination)
@@ -68,7 +66,7 @@ class MaxQAgent(BaseAgent):
             elif option in [7, 8, 9, 10, 11, 12]:  # gotoS 7, gotoD 8, gotoF 9, get 10, put 11 (doesn't need fuel level)
                 return 2, decoded_state[0] * (5 * 5 * 4) + decoded_state[1] * (5 * 4) + decoded_state[2] * 4 + \
                        decoded_state[3]
-        elif 'TaxiEnv' in str(self.env):
+        elif 'TaxiEnv' in str(self.env) or 'TaxiStochasticEnv' in str(self.env):
             if option in [6, 8]:  # gotoS 6, get 8 (doesn't need destination)
                 return 1, decoded_state[0] * (5 * 5) + decoded_state[1] * (5) + decoded_state[2]
         elif 'TaxiLargeEnv' in str(self.env):
@@ -100,7 +98,7 @@ class MaxQAgent(BaseAgent):
 
         decoded_state = list(self.env.decode(state))
 
-        if 'TaxiEnv' in str(self.env):
+        if 'TaxiEnv' in str(self.env) or 'TaxiStochasticEnv' in str(self.env):
             if a == 9:  # put
                 return decoded_state[2] < 4
             elif a == 8:  # get
