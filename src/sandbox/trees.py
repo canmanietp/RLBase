@@ -63,7 +63,9 @@ def get_lineage(tree, feature_names):
     return results
 
 
-optimal_actions = genfromtxt('Q_samples_{}.csv'.format('<TaxiEnv instance>'), delimiter=',')
+env = 'TaxiLargeEnv'
+
+optimal_actions = genfromtxt('Q_samples_{}.csv'.format('<{} instance>'.format(env)), delimiter=',')
 FEATURE_NAMES = ["row", "col", "pass", "dest"]
 
 X = pd.DataFrame(optimal_actions[:, 0:4], columns=FEATURE_NAMES)
@@ -82,7 +84,7 @@ for r in results:
         filtered_results.append(r[2:])
         print(r)
 
-filename = 'pickled_tree_rules_{}'.format('<TaxiEnv instance>')
+filename = 'pickled_tree_rules_{}'.format('<{} instance>'.format(env))
 outfile = open(filename,'wb')
 pickle.dump(filtered_results, outfile)
 outfile.close()

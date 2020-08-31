@@ -243,7 +243,7 @@ def get_params_taxilarge(alg):
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [10, 10, 9, 8]
-    num_episodes = 7000
+    num_episodes = 5000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -284,7 +284,7 @@ def get_params_taxi(alg):
     init_phi = 0.5
     phi_min = 0.01
     discount = 0.95
-    decay_rate = 0.995
+    decay_rate = 0.99
     sub_spaces = None
     options = None
     if alg in ['QAMS', 'QLiA', 'QLiA_sig', 'QVA', 'LOARA_unknown', 'LOARA_transfer']:
@@ -453,31 +453,37 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 if agent.name != 'QLiA_batch':
                     agent.decay(agent.params.DECAY_RATE)
 
-            # Q_save = []
+            Q_save = []
 
-            # if agent.name == 'Q':
-            #     # for ps in range(10000):
-            #     #     sos = agent.env.reset()
-            #     #     best_act = np.argmax(agent.Q_table[sos])
-            #     #     Q_save.append([*list(agent.env.decode(sos)), best_act])
-            #     p = 0
-            #     while p < 1000:
-            #         done = False
-            #         agent.env.reset()
-            #         sos = agent.env.s
-            #         timeout = 0
-            #         while not done or timeout < 25:
-            #             sos = agent.env.s
-            #             best_act = np.argmax(agent.Q_table[sos])
-            #             ns, reward, done, info = agent.env.step(best_act)
-            #             # print(p, timeout, [*list(agent.env.decode(sos)), best_act])
-            #             Q_save.append([*list(agent.env.decode(sos)), best_act])
-            #             timeout += 1
-            #             if done:
-            #                 p += 1
-            #
-            # Qs = pd.DataFrame(Q_save)
-            # Qs.to_csv('{}/Q_samples_{}.csv'.format(exp_dir, str(agent.env)), header=None, index=None)
+            if agent.name == 'Q':
+                # for ps in range(10000):
+                #     sos = agent.env.reset()
+                #     sos_decode = list(agent.env.decode(sos))
+                #     if np.sum(agent.sa_visits[sos]) > 0 and sos_decode[2] != sos_decode[3]:
+                #         best_act = np.argmax(agent.Q_table[sos])
+                #         Q_save.append([*list(agent.env.decode(sos)), best_act])
+                p = 0
+                while p < 1000:
+                    done = False
+                    agent.env.reset()
+                    sos = agent.env.s
+                    timeout = 0
+                    while not done:
+                        best_act = np.argmax(agent.Q_table[sos])
+                        ns, reward, done, info = agent.env.step(best_act)
+                        if timeout > 25:
+                            done = True
+                        # print(p, timeout, [*list(agent.env.decode(sos)), best_act], done)
+                        sos_decode = list(agent.env.decode(sos))
+                        if np.sum(agent.sa_visits[sos]) > 0 and sos_decode[2] != sos_decode[3]:
+                            Q_save.append([*list(agent.env.decode(sos)), best_act])
+                        timeout += 1
+                        sos = ns
+                        if done:
+                            p += 1
+
+            Qs = pd.DataFrame(Q_save)
+            Qs.to_csv('{}/Q_samples_{}.csv'.format(exp_dir, str(agent.env)), header=None, index=None)
 
             # # # # # elif agent.name in 'LOARA_unknown':
             # # # # #     for s in range(agent.observation_space):
