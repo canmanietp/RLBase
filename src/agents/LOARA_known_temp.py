@@ -201,21 +201,11 @@ class LOARA_K_Agent(QAgent):
 
     def update_LIA(self, state, bandit_index, action, reward, next_state, done):
         self.next_bandit = self.heuristic_bandit_choice(next_state)
-        if np.random.uniform(0, 1) < self.params.EPSILON:
-            self.next_action = self.state_bandit_map[next_state][-1].random_action()
-        else:
-            test = self.calc_value_abstract_state(next_state, self.next_bandit)
-            self.next_action = np.argmax(test)  # self.state_bandit_map[next_state][-1].e_greedy_action(self.params.EPSILON)
-        # print(self.state_decodings[state], bandit_index, action, reward, done, self.state_decodings[next_state], self.next_bandit, self.next_action, test)
-        # if self.steps > 800:
-        #     quit()
-        # alt_val = self.state_bandit_map[next_state][self.next_bandit].Q_table[self.next_action]
-        # val = max(self.calc_value_abstract_state(next_state, self.next_bandit))
+        self.next_action = self.state_bandit_map[next_state][self.next_bandit].e_greedy_action(self.params.EPSILON)
+        # action_values = [b.Q_table[self.next_action] for ib, b in enumerate(self.state_bandit_map[next_state])]
+        val = max(self.state_bandit_map[next_state][self.next_bandit].Q_table)
 
-        # if bandit_index != len(self.params.sub_spaces) - 1:
-        #     self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * (not done) * alt_val)
-
-        self.state_bandit_map[state][-1].update(action, reward + self.params.DISCOUNT * (not done) * max(self.state_bandit_map[next_state][-1].Q_table))
+        self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * (not done) * val)
 
     def do_step(self):
         state = self.current_state

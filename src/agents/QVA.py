@@ -1,11 +1,9 @@
-import operator
-
 from agents.Q import QAgent
 from agents.Q import QMiniAgent
-from learning_parameters import DiscreteParameters
+from agents.LOARA_known import LOARA_K_Agent
 import numpy as np
-import random
 import copy
+import pickle
 
 
 class QVAAgent(QAgent):
@@ -21,6 +19,9 @@ class QVAAgent(QAgent):
 
         self.saved_abs_lookup = {}
         self.state_decodings = self.sweep_state_decodings()
+
+        infile = open('helpers/state_mapping_{}'.format(str(env)), 'rb')
+        self.state_mapping = pickle.load(infile)
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -44,127 +45,162 @@ class QVAAgent(QAgent):
     def decay(self, decay_rate):
         if self.params.ALPHA > self.params.ALPHA_MIN:
             self.params.ALPHA *= decay_rate
+
         if self.params.EPSILON > self.params.EPSILON_MIN:
             self.params.EPSILON *= decay_rate
+
         if self.params.PHI > self.params.PHI_MIN:
             self.params.PHI *= decay_rate
 
-        self.meta_agent.decay(decay_rate)
+    def heuristic_abstraction_choice(self, state):
+        state_vars = self.state_decodings[state]
+        if 'TaxiFuel' in str(self.env):
+            if state_vars[2] < 4 and state_vars[4] > 12:  # don't have passenger and have enough fuel to get any
+                # passenger to any destination
+                return self.params.sub_spaces.index([0, 1, 2])
+            elif state_vars[2] == 4 and state_vars[4] > 8:  # have passenger and have enough fuel to get to any
+                # destination
+                return self.params.sub_spaces.index([0, 1, 2, 3])
+            elif state_vars[2] == 4 and (state_vars[3] == 0 or state_vars[3] == 2) and state_vars[1] == 0 and state_vars[4] > 4:
+                return self.params.sub_spaces.index([0, 1, 2, 3])
+            elif state_vars[2] == 4 and (state_vars[3] == 1 or state_vars[3] == 3) and state_vars[1] >= 3 and  state_vars[4] > 4:
+                return self.params.sub_spaces.index([0, 1, 2, 3])
+            else:
+                return len(self.params.sub_spaces) - 1
+        elif 'TaxiLarge' in str(self.env):
+            if state_vars[1] == 9 and state_vars[2] == 8 and state_vars[3] == 7:
+                return self.params.sub_spaces.index([1, 2, 3])
+            elif state_vars[1] == 8 and state_vars[2] == 8 and state_vars[3] == 6:
+                return self.params.sub_spaces.index([1, 2, 3])
+            elif state_vars[1] == 0 and state_vars[2] == 8 and (state_vars[3] == 0 or state_vars[3] == 2):
+                return self.params.sub_spaces.index([1, 2, 3])
+            elif state_vars[1] == 4 and state_vars[2] == 8 and (state_vars[3] == 1 or state_vars[3] == 3):
+                return self.params.sub_spaces.index([1, 2, 3])
+            if state_vars[2] < 8:
+                return self.params.sub_spaces.index([0, 1, 2])
+            else:
+                return len(self.params.sub_spaces) - 1
+        elif 'Taxi' in str(self.env):
+            if state_vars[0] == 4 and state_vars[1] == 1 or state_vars[0] == 4 and state_vars[1] == 2:
+                return self.params.sub_spaces.index([2])
+            if state_vars[0] == 3 and state_vars[2] == 4 and state_vars[3] == 0:
+                return self.params.sub_spaces.index([0, 2, 3])
+            elif state_vars[1] == 4 and state_vars[2] == 4 and state_vars[3] != 1:
+                return self.params.sub_spaces.index([1, 2, 3])
+            elif state_vars[2] < 4:
+                return self.params.sub_spaces.index([0, 1, 2])
+            else:
+                return len(self.params.sub_spaces) - 1
+        elif 'CoffeeMail' in str(self.env):
+            # [0, 1, 2, 4, 6], [0, 1, 3, 5, 7],
+            if state_vars[4] == 1 or state_vars[5] == 1:
+                # if state_vars[5] == 0:
+                #     return self.params.sub_spaces.index([0, 1, 2, 4])
+                # if state_vars[4] == 0:
+                #     return self.params.sub_spaces.index([0, 1, 3, 5])
+                return self.params.sub_spaces.index([0, 1, 2, 3, 4, 5])
+            elif state_vars[6] == 0 or state_vars[7] == 0:
+                return self.params.sub_spaces.index([0, 1, 2, 3, 6, 7])
+            return len(self.params.sub_spaces) - 1
+        elif 'Coffee' in str(self.env):
+            if state_vars[2] == 0:
+                return self.params.sub_spaces.index([0, 1, 2])
+            else:
+                return len(self.params.sub_spaces) - 1
+        elif 'FourState' in str(self.env):
+            if state_vars[0] == 0:
+                return self.params.sub_spaces.index([0])
+            else:
+                return len(self.params.sub_spaces) - 1
+        elif 'Warehouse' in str(self.env):
+            if state_vars[0] < len(self.env.locs) - 1 and state_vars[state_vars[0] + 1] > 0:
+                # print(state_vars, [0, state_vars[0] + 1])
+                return self.params.sub_spaces.index([0, state_vars[0] + 1])
+            if np.sum(state_vars[1:]) <= 1:
+                return self.params.sub_spaces.index([*range(1, self.env.num_products + 1)])
+            return len(self.params.sub_spaces) - 1
+        else:
+            print("ERROR: UNKNOWN HEURISTIC FOR CHOOSING ABSTRACTION")
+            quit()
 
     def legacy_action(self, state):
-        ab_index = self.meta_agent.e_greedy_action(state)
+        ab_index = self.heuristic_abstraction_choice(state)
+        action = self.e_greedy_action(state)
 
-        if random.uniform(0, 1) < self.params.PHI:
-            return ab_index, self.random_action()
+        abstraction = self.params.sub_spaces[ab_index]
+        update_states = []
+        merge_values = []
+        merge_visits = []
+
+        if state not in self.saved_abs_lookup:
+            self.saved_abs_lookup[state] = {}
+
+        if ab_index not in self.saved_abs_lookup[state]:
+            state_vars = self.state_decodings[state]
+            for st in range(self.observation_space):
+                st_vars = self.state_decodings[st]
+                is_valid = True
+
+                for av in abstraction:
+                    if not state_vars[av] == st_vars[av]:
+                        is_valid = False
+                        break
+
+                if is_valid:
+                    update_states.append(st)
+                    merge_values.append(self.Q_table[st])
+                    merge_visits.append(self.sa_visits[st])
+
+            if not merge_visits:
+                update_states.append(state)
+                merge_values.append(self.Q_table[state])
+                merge_visits.append(self.sa_visits[state])
+
+            self.saved_abs_lookup[state][ab_index] = update_states
         else:
-            abstraction = self.params.sub_spaces[ab_index]
-            update_states = []
-            merge_values = []
-            merge_visits = []
+            for us in self.saved_abs_lookup[state][ab_index]:
+                update_states.append(us)
+                merge_values.append(self.Q_table[us])
+                merge_visits.append(self.sa_visits[us])
 
-            if state not in self.saved_abs_lookup:
-                self.saved_abs_lookup[state] = {}
+        if len(update_states) == 1:
+            return 0, action, 0
+        else:
+            no = 0
+            all = 0
 
-            if ab_index not in self.saved_abs_lookup[state]:
-                state_vars = self.state_decodings[state]
-                for st in range(self.observation_space):
-                    st_vars = self.state_decodings[st]
-                    is_valid = True
+            for im, mv in enumerate(merge_values):
+                if self.sa_visits[update_states[im]][action] > 0:
+                    if np.argmax(mv) != action:
+                        no += 1
+                    all += 1
 
-                    for av in abstraction:
-                        if not state_vars[av] == st_vars[av]:
-                            is_valid = False
-                            break
+            percent_agreeance = no / all if all > 0 else 0
 
-                    if is_valid:
-                        update_states.append(st)
-                        merge_values.append(self.Q_table[st])
-                        merge_visits.append(self.sa_visits[st])
+            return percent_agreeance, action, np.sum([mv[action] for mv in merge_visits])
 
-                if not merge_visits:
-                    update_states.append(state)
-                    merge_values.append(self.Q_table[state])
-                    merge_visits.append(self.sa_visits[state])
+    def update_VA(self, state, ab_diff, test, action, reward, next_state, done):
+        # self.meta_agent.update(state, ab_index, reward, next_state, done)
+        # self.update(state, action, reward, next_state, done)
 
-                self.saved_abs_lookup[state][ab_index] = update_states
-            else:
-                for us in self.saved_abs_lookup[state][ab_index]:
-                    update_states.append(us)
-                    merge_values.append(self.Q_table[us])
-                    merge_visits.append(self.sa_visits[us])
+        beta = max([1, 3. / (1 + self.sa_visits[state][action])])
+        # print(self.state_decodings[state], action, beta, ab_diff, beta * ab_diff)
 
-            if len(update_states) == 1:
-                qs = merge_values[0]
-            else:
-                # take best action by summing the ranks?
-                # BAD
-                # ranks_sum = np.zeros(len(merge_values[0]))
-                # for im, m in enumerate(merge_values):
-                #     temp = m.argsort()
-                #     ranks = np.empty_like(temp)
-                #     ranks[temp] = np.arange(len(m))
-                #     ranks_sum = ranks_sum + ranks
-                #
-                # return ab_index, np.argmin(ranks_sum)
-                # -----
-                # VERY BAD
-                # best_acts = []
-                # for im, m in enumerate(merge_values):
-                #     temp = m.argsort()
-                #     ranks = np.empty_like(temp)
-                #     ranks[temp] = np.arange(len(m))
-                #     best_acts.append(np.argmin(ranks))
-                #
-                # return ab_index, max(set(best_acts), key = best_acts.count)
-                # ---------
-                # THIS IS OK
-                # best_acts = []
-                # for im, m in enumerate(merge_values):
-                #     best_act = np.argmax(m)
-                #     best_acts.append(best_act)
-                #
-                # if best_acts == []:
-                #     return ab_index, self.random_action()
-                #
-                # return ab_index, max(set(best_acts), key=best_acts.count)
-                # ----------
-                # qs = np.zeros(self.action_space)
-                # for a in range(self.action_space):
-                #     b = np.array([item[a] for item in merge_visits])
-                #     most_visited = int(np.random.choice(np.flatnonzero(b == b.max())))
-                #     qs[a] = merge_values[most_visited][a]
-                # ---------
-                most_visited = -1
-                most_visits = float("-inf")
-                for im, m in enumerate(merge_visits):  # try visits to best action
-                    if np.sum(m) > most_visits:  # m[np.argmax(merge_values[im])] OR np.sum(m)
-                        most_visited = im
-                        most_visits = np.sum(m)
-                if most_visits == 0:
-                    qs = merge_values[most_visited]
-                else:
-                    return ab_index, self.random_action()
-                # ---------
-                # most_valued = 0
-                # highest_value = 0
-                # for im, m in enumerate(merge_values):
-                #     if np.max(m) > highest_value:  # np.sum(m)
-                #         most_valued = np.argmax(m)  # im
-                #         highest_value = np.max(m)
-                # return ab_index, most_valued
-            return ab_index, np.argmax(qs)
+        adjusted_reward = reward - (abs(reward) * ab_diff * beta)
 
-    def update_VA(self, state, ab_index, action, reward, next_state, done):
-        # p = 400
-        # self.meta_agent.params.ALPHA = self.params.ALPHA / (1 + np.sum(self.sa_visits[state]) / p)
-        self.meta_agent.sarsa_update(state, ab_index, reward, next_state, done)
-        self.sarsa_update(state, action, reward, next_state, done)
+        td_error = adjusted_reward + (not done) * self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action]
+
+        # adjusted_td_error = td_error - beta * ab_diff
+        # print(td_error, ab_diff, adjusted_td_error)
+
+        # print(self.state_decodings[state], action, td_error, adjusted_td_error)
+        self.Q_table[state][action] += self.params.ALPHA * td_error
 
     def do_step(self):
         state = self.current_state
-        ab_index, action = self.legacy_action(state)
+        ab_diff, action, test = self.legacy_action(state)
         next_state, reward, done = self.step(action)
-        self.update_VA(state, ab_index, action, reward, next_state, done)
+        self.update_VA(state, ab_diff, test, action, reward, next_state, done)
         self.current_state = next_state
         if self.steps > self.max_steps:
             done = True

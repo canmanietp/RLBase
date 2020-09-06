@@ -13,15 +13,29 @@ class MergeTree_Agent(QAgent):
 
         infile = open('helpers/pickled_tree_rules_{}'.format(str(env)), 'rb')
         self.tree_rules = pickle.load(infile)
-        self.abstract_states = [SingleStateAgent(self.action_space, self.params.ALPHA, self.params.DISCOUNT) for tr in self.tree_rules]
+        self.abstract_states = [SingleStateAgent(self.action_space, self.params.ALPHA, self.params.DISCOUNT) for tr in
+                                self.tree_rules]
+        self.leaves = [[] for tr in self.tree_rules]
 
-        if 'Taxi' in str(env):
+        if 'TaxiFuel' in str(env):
+            self.var_names = ['row', 'col', 'pass', 'dest', 'fuel']
+        elif 'Taxi' in str(env):
             self.var_names = ['row', 'col', 'pass', 'dest']
+        elif 'Warehouse' in str(env):
+            self.var_names = ['loc']
+            for z in range(len(self.env.locs)):
+                self.var_names.append('{}'.format(z))
 
         self.state_decodings = self.sweep_state_decodings()
         self.abstraction_mapping = self.init_abstraction_mapping()
 
         self.abst_chooser = np.zeros([self.observation_space, 2])
+
+        self.next_action = None
+        self.next_action_chooser = None
+
+        self.raw_Q_table = np.zeros([self.observation_space, self.action_space])
+        self.beta0, self.beta1 = 1., 0.
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -33,7 +47,6 @@ class MergeTree_Agent(QAgent):
         state_abstraction_map = [[False for tr in self.tree_rules] for os in range(self.observation_space)]
         for s in range(self.observation_space):
             s_vars = self.state_decodings[s]
-            # if s_vars[2] != s_vars[3]:  ## Hack to deal with terminal states where optimal action looks like 0 but isn't
             for ir, rules in enumerate(self.tree_rules):
                 valid = True
                 for r in rules:
@@ -46,8 +59,9 @@ class MergeTree_Agent(QAgent):
                     else:
                         print("INVALID TREE RULE")
                         quit()
-                if valid:
+                if valid:  # and s_vars[2] != s_vars[3]:  ## Hack to deal with terminal states where optimal action looks like 0 but isn't
                     state_abstraction_map[s][ir] = True
+                    self.leaves[ir].append(s)
             # if all(not check for check in state_abstraction_map[s]):
             #     pass
             #     # print(s_vars)
@@ -64,58 +78,77 @@ class MergeTree_Agent(QAgent):
             self.params.EPSILON *= decay_rate
 
     def state_value(self, state):
-        merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x][0]
+        merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x]
         if not merged_state:
-            # print("actual values", self.Q_table[state])
-            return None, max(self.Q_table[state])
-        values = [max(self.abstract_states[merged_state].Q_table), max(self.Q_table[state])]
+            return max(self.Q_table[state])
+        values = [max(self.abstract_states[m].Q_table) for m in merged_state]
+        values.append(max(self.Q_table[state]))
         # print(self.state_decodings[state], "actual values", self.Q_table[state], "merged values", self.abstract_states[merged_state].Q_table)
-        return merged_state, max(values)
+        return max(values)
 
     def e_greedy_tree_action(self, state):
-        merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x][0]
-        if not merged_state:
-            return self.e_greedy_action(state), None
+        if self.next_action is not None:
+            return self.next_action, self.next_action_chooser
+
         if np.random.uniform(0, 1) < self.params.EPSILON:
-            action_chooser = np.random.randint(2)
-            # merged_state = np.random.randint(len(self.tree_rules))
-        else:
-            # merged_state = merged_state[0]
-            action_chooser = np.argmax(self.abst_chooser[state])
-        if action_chooser == 0:
-            action = self.abstract_states[merged_state].e_greedy_action(self.params.EPSILON)
-        else:
-            action = self.e_greedy_action(state)
-        # values = [max(self.abstract_states[merged_state].Q_table), max(self.Q_table[state])]
-        # if np.max(values) == values[-1]:
-        #     return self.e_greedy_action(state)
-        # action = self.abstract_states[merged_state].greedy_action()
-        return action, action_chooser
+            return self.random_action()
 
-    def update_LIA(self, state, action, action_chooser, reward, next_state, done):
-        merged_next_state, val = self.state_value(next_state)
-        if merged_next_state:
-            merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x][0]
-            self.abstract_states[merged_state].update(action, reward + self.params.DISCOUNT * (not done) * max(self.abstract_states[merged_next_state].Q_table))
+        merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x]
 
-        if action_chooser is not None:
-            self.abst_chooser[state][action_chooser] += self.params.ALPHA * (reward + self.params.DISCOUNT * (not done) * max(self.abst_chooser[next_state]) - self.abst_chooser[state][action_chooser])
+        if not merged_state:
+            return np.argmax(self.raw_Q_table[state])
 
-            # if action_chooser == 0:
-                # merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x][0]
-                # print("CHOSE MERGED", self.state_decodings[state], self.tree_rules[merged_state], action, reward, done)
-            # else:
-                # print("DIDN'T", self.state_decodings[state], action, reward, done, np.sum(self.sa_visits[state]))
+        highest_val = float("-inf")
+        action = -1
+        for m in merged_state:
+            if max(self.abstract_states[m].Q_table) > highest_val:
+                highest_val = max(self.abstract_states[m].Q_table)
+                action = np.argmax(self.abstract_states[m].Q_table)
 
-        self.Q_table[state][action] += self.params.ALPHA * (reward + self.params.DISCOUNT * (not done) * max(self.Q_table[next_state]) - self.Q_table[state][action])
+        # action = self.abstract_states[merged_state].e_greedy_action(self.params.EPSILON)
+        if max(self.raw_Q_table[state]) > highest_val:
+            return np.argmax(self.raw_Q_table[state])
+
+        return action
+
+    def e_greedy_weighted_action(self, state):
+        if np.random.uniform(0, 1) < self.params.EPSILON:
+            return self.random_action()
+
+        self.beta0 = min([1., 3. / (1 + np.sum(self.sa_visits[state]))])
+        self.beta1 = 1. - self.beta0
+        new_Q = np.zeros(self.action_space)
+        merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x]
+
+        merged_state = [merged_state[0]] if merged_state else merged_state
+
+        for a in range(self.action_space):
+            new_Q[a] = (self.beta0 * max(
+                [self.abstract_states[m].Q_table[a] for m in merged_state]) if merged_state else 0.) + (
+                                   self.beta1 * self.raw_Q_table[state][a])
+
+        return np.argmax(new_Q)
+
+    def update_LIA(self, state, action, reward, next_state, done):
+        merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x]
+        next_val = self.state_value(next_state)
+
+        for m in merged_state:
+            self.abstract_states[m].update(action, reward + self.params.DISCOUNT * (not done) * next_val)
+
+        self.raw_Q_table[state][action] += self.params.ALPHA * (
+                    reward + self.params.DISCOUNT * (not done) * max(self.raw_Q_table[next_state]) -
+                    self.raw_Q_table[state][action])
 
     def do_step(self):
         state = self.current_state
-        action, action_chooser = self.e_greedy_tree_action(state)
+        action = self.e_greedy_weighted_action(state)
         next_state, reward, done = self.step(action)
         if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
             done = True
-        self.update_LIA(state, action, action_chooser, reward, next_state, done)
+        self.update_LIA(state, action, reward, next_state, done)
         self.current_state = next_state
         self.steps += 1
+        if done:
+            self.next_action, self.next_action_chooser = None, None
         return reward, done

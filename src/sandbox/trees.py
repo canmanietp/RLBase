@@ -63,28 +63,50 @@ def get_lineage(tree, feature_names):
     return results
 
 
-env = 'TaxiLargeEnv'
+env = 'TaxiEnv' # WarehouseEnv'
 
 optimal_actions = genfromtxt('Q_samples_{}.csv'.format('<{} instance>'.format(env)), delimiter=',')
-FEATURE_NAMES = ["row", "col", "pass", "dest"]
+FEATURE_NAMES = ["row", "col", "pass", "dest"]  # , "fuel" # ['loc', '0', '1', '2', '3'] #
 
-X = pd.DataFrame(optimal_actions[:, 0:4], columns=FEATURE_NAMES)
+X = pd.DataFrame(optimal_actions[:, 0:len(FEATURE_NAMES)], columns=FEATURE_NAMES)
 
-y = optimal_actions[:, 4]
+y = optimal_actions[:, len(FEATURE_NAMES)]
 
 model = DecisionTreeClassifier()
 model.fit(X,y)
 export_graphviz(model, 'tree.dot', feature_names=FEATURE_NAMES)
 
-results = get_lineage(model, FEATURE_NAMES)
-filtered_results = []
+decision_rules = get_lineage(model, FEATURE_NAMES)
+filtered_rules = []
 
-for r in results:
+for r in decision_rules:
     if r[0] <= 4:
-        filtered_results.append(r[2:])
+        filtered_rules.append(r[2:])
         print(r)
 
 filename = 'pickled_tree_rules_{}'.format('<{} instance>'.format(env))
 outfile = open(filename,'wb')
-pickle.dump(filtered_results, outfile)
+pickle.dump(filtered_rules, outfile)
+outfile.close()
+
+mapping = {}
+
+for state_vars in optimal_actions[:, 0:len(FEATURE_NAMES)]:
+    for ir, rules in enumerate(filtered_rules):
+        valid = True
+        for r in rules:
+            if r[1] == 'r':
+                if state_vars[FEATURE_NAMES.index(r[3])] <= r[2]:
+                    valid = False
+            elif r[1] == 'l':
+                if state_vars[FEATURE_NAMES.index(r[3])] > r[2]:
+                    valid = False
+        if valid:
+            mapping[tuple(state_vars)] = ir
+
+print(mapping)
+
+filename = 'state_mapping_{}'.format('<{} instance>'.format(env))
+outfile = open(filename,'wb')
+pickle.dump(mapping, outfile)
 outfile.close()

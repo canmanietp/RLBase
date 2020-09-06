@@ -97,16 +97,16 @@ class WarehouseEnv(discrete.DiscreteEnv):
         initial_state_distrib /= initial_state_distrib.sum()
         discrete.DiscreteEnv.__init__(self, num_states, num_actions, P, initial_state_distrib)
 
-    def reset(self):
-        loc = np.random.randint(0, len(self.locs))
-        reqs = []
-        for r in range(self.num_products):
-            reqs.append(np.random.randint(0, self.max_order + 1))
-        raw_state = [loc]
-        raw_state.extend(reqs)
-        self.s = self.encode(*raw_state)
-        self.lastaction = None
-        return self.s
+    # def reset(self):
+    #     loc = np.random.randint(0, len(self.locs))
+    #     reqs = []
+    #     for r in range(self.num_products):
+    #         reqs.append(np.random.randint(0, self.max_order + 1))
+    #     raw_state = [loc]
+    #     raw_state.extend(reqs)
+    #     self.s = self.encode(*raw_state)
+    #     self.lastaction = None
+    #     return self.s
 
     def encode(self, location, *args):
         # (location) requests of product A, requests of product B, etc.

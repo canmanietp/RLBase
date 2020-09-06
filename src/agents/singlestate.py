@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from collections import deque
 
@@ -12,7 +14,7 @@ class SingleStateAgent:
         SingleStateAgent.bandit_count += 1
         self.ALPHA = alpha
         self.DISCOUNT = discount
-        self.last_n_rewards = [deque(maxlen=10) for a in range(self.action_space)]
+        self.last_n_rewards = [deque(maxlen=5) for a in range(self.action_space)]
 
     def random_action(self):
         return np.random.randint(self.action_space)
