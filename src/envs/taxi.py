@@ -125,14 +125,14 @@ class TaxiEnv(discrete.DiscreteEnv):
         discrete.DiscreteEnv.__init__(
             self, num_states, num_actions, P, initial_state_distrib)
 
-    def reset(self):
-        taxi_row = np.random.randint(5)
-        taxi_col = np.random.randint(5)
-        pass_loc = np.random.randint(5)
-        dest_loc = np.random.randint(4)
-        self.s = self.encode(taxi_row, taxi_col, pass_loc, dest_loc)
-        self.lastaction = None
-        return self.s
+    # def reset(self):
+    #     taxi_row = np.random.randint(5)
+    #     taxi_col = np.random.randint(5)
+    #     pass_loc = np.random.randint(4)
+    #     dest_loc = np.random.randint(4)
+    #     self.s = self.encode(taxi_row, taxi_col, pass_loc, dest_loc)
+    #     self.lastaction = None
+    #     return self.s
 
     def encode(self, taxi_row, taxi_col, pass_loc, dest_idx):
         # (5) 5, 5, 4

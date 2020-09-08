@@ -43,7 +43,10 @@ class WarehouseEnv(discrete.DiscreteEnv):
 
     def __init__(self, size):
         self.locs = []
-        self.num_products = num_products = size * 2  # size ** 2
+        self.num_products = num_products = size * 2
+
+        # For exponential scaling
+        # size ** 2
         # fill in locations of each product
         # for i in range(num_products):
         #     self.locs.append((int(i / size) * size + 1, (i % size) * size + 1))
@@ -56,10 +59,11 @@ class WarehouseEnv(discrete.DiscreteEnv):
             self.locs = [(2, 1), (0, 3), (4, 4), (2, 7), (4, 9), (0, 9)]
 
         self.locs.append((0, 0))  # start position
-        # maximum number of each product that can be requested
+        # maximum number of each product that can be requested (hard coded)
         self.max_order = max_order = 2
 
-        num_states = (max_order + 1) ** num_products * (num_products + 1)  # all possible number of requests for each product times possible location at each product + start position
+        # all possible number of requests for each product times possible location at each product + start position
+        num_states = (max_order + 1) ** num_products * (num_products + 1)
         initial_state_distrib = np.zeros(num_states)
         initial_state_distrib[num_states - 1] = 1
         num_actions = self.num_products + 1  # 1 for go back to start
@@ -92,11 +96,11 @@ class WarehouseEnv(discrete.DiscreteEnv):
                     new_raw_state = [new_loc]
                     new_raw_state.extend(new_req)
                     new_state = self.encode(*new_raw_state)
-                    # print(raw_state, action, reward, new_raw_state, done)
                     P[state][action].append((1.0, new_state, reward, done))
         initial_state_distrib /= initial_state_distrib.sum()
         discrete.DiscreteEnv.__init__(self, num_states, num_actions, P, initial_state_distrib)
 
+    # Override usual reset function
     # def reset(self):
     #     loc = np.random.randint(0, len(self.locs))
     #     reqs = []

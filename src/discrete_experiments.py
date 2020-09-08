@@ -17,6 +17,7 @@ from envs.fourstate import FourStateEnv
 from envs.warehouse import WarehouseEnv
 
 from agents.Q import QAgent
+from agents.Q_tree import Q_TreeAgent
 from agents.QLiA import QLiAAgent
 from agents.MaxQ import MaxQAgent
 from agents.LOARA_known import LOARA_K_Agent
@@ -214,7 +215,7 @@ def get_params_taxifuel(alg):
         options = [set(), set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3},
                    {4, 7}, {5, 8}, {6, 9}, {11, 10, 12}, ]
     size_state_vars = [5, 5, 5, 4, 14]
-    num_episodes = 50000
+    num_episodes = 30000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -390,6 +391,9 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             env, params = get_params(env_name, alg)
             if alg == 'Q':
                 agents.append(QAgent(env, params))
+            elif alg == 'Q_tree':
+                env, params = get_params(env_name, 'Q')
+                agents.append(Q_TreeAgent(env, params))
             elif alg == 'QLiA':
                 agents.append(QLiAAgent(env, params))
             elif alg == 'QVA':
@@ -425,15 +429,11 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             for i in range(params.num_episodes):
                 agent.reset()
                 if 'AtariARIWrapper' not in str(agent.env):
-                    if 'Noisy' in str(agent.env):
-                        agent.env = NoisyTaxiEnv()
-                        agent.env.reset()
-
                     if j == 0:
                         state = agent.current_state
                         # state_vars = list(agent.env.decode(state))
                         # if i < 300:
-                        #     while state_vars[2] == 3:
+                        #     while state_vars[3] > 2:
                         #         agent.env.reset()
                         #         state = agent.env.s
                         #         state_vars = list(agent.env.decode(state))
@@ -456,12 +456,15 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
             # Q_save = []
             #
             # if agent.name == 'Q':
-            #     for ps in range(10000):
+            #     for ps in range(1000):
             #         sos = agent.env.reset()
             #         sos_decode = list(agent.env.decode(sos))
             #         if np.sum(agent.sa_visits[sos]) > 0 and sos_decode[2] != sos_decode[3]:
             #             best_act = np.argmax(agent.Q_table[sos])
+            #             # val_best_act = max(agent.Q_table[sos])
             #             Q_save.append([*list(agent.env.decode(sos)), best_act])
+            #             # for a in range(agent.action_space):
+            #             #     Q_save.append([*list(agent.env.decode(sos)), a, int(agent.Q_table[sos][a] == val_best_act)])
                 # p = 0
                 # while p < 1000:
                 #     done = False

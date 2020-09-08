@@ -4,7 +4,6 @@ import random, copy
 from helpers import ranges
 
 
-
 class QAgent(BaseAgent):
     def __init__(self, env, params):
         super().__init__(env)
@@ -14,7 +13,7 @@ class QAgent(BaseAgent):
         self.sa_next_state = [[[] for a in range(self.action_space)] for os in range(self.observation_space)]
         self.sa_reward = [[[] for a in range(self.action_space)] for os in range(self.observation_space)]
 
-        self.max_steps = 1
+        self.max_steps = float("inf")
         self.steps = 0
 
     def greedy_action(self, state):

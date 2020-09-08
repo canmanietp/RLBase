@@ -51,10 +51,10 @@ class MergeTree_Agent(QAgent):
                 valid = True
                 for r in rules:
                     if r[1] == 'r':
-                        if s_vars[self.var_names.index(r[3])] <= r[2]:
+                        if s_vars[self.var_names.index(r[3])] < r[2]:
                             valid = False
                     elif r[1] == 'l':
-                        if s_vars[self.var_names.index(r[3])] > r[2]:
+                        if s_vars[self.var_names.index(r[3])] >= r[2]:
                             valid = False
                     else:
                         print("INVALID TREE RULE")
@@ -131,10 +131,10 @@ class MergeTree_Agent(QAgent):
 
     def update_LIA(self, state, action, reward, next_state, done):
         merged_state = [ix for ix, x in enumerate(self.abstraction_mapping[state]) if x]
-        next_val = self.state_value(next_state)
+        # next_val = self.state_value(next_state)
 
         for m in merged_state:
-            self.abstract_states[m].update(action, reward + self.params.DISCOUNT * (not done) * next_val)
+            self.abstract_states[m].update(action, reward + self.params.DISCOUNT * (not done) * max(self.raw_Q_table[next_state]))
 
         self.raw_Q_table[state][action] += self.params.ALPHA * (
                     reward + self.params.DISCOUNT * (not done) * max(self.raw_Q_table[next_state]) -
@@ -142,7 +142,7 @@ class MergeTree_Agent(QAgent):
 
     def do_step(self):
         state = self.current_state
-        action = self.e_greedy_weighted_action(state)
+        action = self.e_greedy_tree_action(state)
         next_state, reward, done = self.step(action)
         if 'SysAdmin' in str(self.env) and self.steps > self.max_steps:
             done = True

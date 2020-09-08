@@ -52,6 +52,14 @@ class QVAAgent(QAgent):
         if self.params.PHI > self.params.PHI_MIN:
             self.params.PHI *= decay_rate
 
+    def return_abstract_state(self, state):
+        state_vars = self.state_decodings[state]
+        sv = list(state_vars)
+        for ir in self.state_mapping:
+            if sv in ir:
+                return ir
+        return None
+
     def heuristic_abstraction_choice(self, state):
         state_vars = self.state_decodings[state]
         if 'TaxiFuel' in str(self.env):
@@ -61,9 +69,11 @@ class QVAAgent(QAgent):
             elif state_vars[2] == 4 and state_vars[4] > 8:  # have passenger and have enough fuel to get to any
                 # destination
                 return self.params.sub_spaces.index([0, 1, 2, 3])
-            elif state_vars[2] == 4 and (state_vars[3] == 0 or state_vars[3] == 2) and state_vars[1] == 0 and state_vars[4] > 4:
+            elif state_vars[2] == 4 and (state_vars[3] == 0 or state_vars[3] == 2) and state_vars[1] == 0 and \
+                    state_vars[4] > 4:
                 return self.params.sub_spaces.index([0, 1, 2, 3])
-            elif state_vars[2] == 4 and (state_vars[3] == 1 or state_vars[3] == 3) and state_vars[1] >= 3 and  state_vars[4] > 4:
+            elif state_vars[2] == 4 and (state_vars[3] == 1 or state_vars[3] == 3) and state_vars[1] >= 3 and \
+                    state_vars[4] > 4:
                 return self.params.sub_spaces.index([0, 1, 2, 3])
             else:
                 return len(self.params.sub_spaces) - 1
@@ -123,6 +133,64 @@ class QVAAgent(QAgent):
             print("ERROR: UNKNOWN HEURISTIC FOR CHOOSING ABSTRACTION")
             quit()
 
+    def percent_diff_action(self, state):
+        if np.random.uniform(0, 1) < self.params.EPSILON:
+            return 0, self.random_action()
+
+        if np.random.uniform(0, 1) < min([1, 5. / (1 + np.sum(self.sa_visits[state]))]):
+            abstract_states = self.return_abstract_state(state)
+
+            if abstract_states is None:
+                return 0, self.greedy_action(state)
+
+            values = []
+            visits = []
+            encoded_states = []
+            for us in abstract_states:
+                es = self.env.encode(*tuple(int(u) for u in us))
+                if np.sum(self.sa_visits[es]) > 0:
+                    values.append(max(self.Q_table[es]))
+                    visits.append(np.sum(self.sa_visits[es]))
+                    encoded_states.append(es)
+
+            return None, np.argmax(self.Q_table[encoded_states[int(np.argmax(values))]]) if encoded_states else self.greedy_action(state)
+        else:
+            return None, self.greedy_action(state)
+
+        # abstract_states = self.return_abstract_state(state)
+        #
+        # if abstract_states is None:
+        #     return 0, self.greedy_action(state)
+        # yes = 0
+        # total = 0
+        # action = np.argmax(self.Q_table[state])
+        #
+        # for us in abstract_states:
+        #     encoded_us = self.env.encode(*tuple(int(u) for u in us))
+        #     if self.sa_visits[encoded_us][action] > 0:
+        #         if np.argmax(self.Q_table[encoded_us]) == action:
+        #             yes += 1
+        #         total += 1
+        #
+        # percent_agreeance = yes / total if total > 0 else 0
+        # # print(self.state_decodings[state], action, percent_agreeance)
+        # return percent_agreeance, action
+
+        # qs = copy.copy(self.Q_table[state])
+        # weighted_one_hot = np.zeros(self.action_space)
+        # beta = 3. / (1 + np.sum(self.sa_visits[state]))
+        #
+        # for im, mv in enumerate(merge_values):
+        #     q = np.zeros(self.action_space)
+        #     q[np.argmax(mv)] = 1 * self.sa_visits[update_states[im]][np.argmax(mv)]
+        #     weighted_one_hot += q
+        #
+        # # qs += beta * weighted_one_hot
+        # if np.random.uniform(0, 1) < self.params.EPSILON:
+        #     qs = weighted_one_hot
+        #
+        # return None, np.argmax(qs), None
+
     def legacy_action(self, state):
         ab_index = self.heuristic_abstraction_choice(state)
         action = self.e_greedy_action(state)
@@ -179,28 +247,21 @@ class QVAAgent(QAgent):
 
             return percent_agreeance, action, np.sum([mv[action] for mv in merge_visits])
 
-    def update_VA(self, state, ab_diff, test, action, reward, next_state, done):
+    def update_VA(self, state, agreeance, action, reward, next_state, done):
         # self.meta_agent.update(state, ab_index, reward, next_state, done)
         # self.update(state, action, reward, next_state, done)
 
-        beta = max([1, 3. / (1 + self.sa_visits[state][action])])
-        # print(self.state_decodings[state], action, beta, ab_diff, beta * ab_diff)
+        # beta = min([1, 10. / (1 + self.sa_visits[state][action])])
+        # print(self.state_decodings[state], action, reward, beta, agreeance, beta * agreeance)
 
-        adjusted_reward = reward - (abs(reward) * ab_diff * beta)
-
-        td_error = adjusted_reward + (not done) * self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action]
-
-        # adjusted_td_error = td_error - beta * ab_diff
-        # print(td_error, ab_diff, adjusted_td_error)
-
-        # print(self.state_decodings[state], action, td_error, adjusted_td_error)
+        td_error = reward + (not done) * self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action]
         self.Q_table[state][action] += self.params.ALPHA * td_error
 
     def do_step(self):
         state = self.current_state
-        ab_diff, action, test = self.legacy_action(state)
+        agreeance, action = self.percent_diff_action(state)
         next_state, reward, done = self.step(action)
-        self.update_VA(state, ab_diff, test, action, reward, next_state, done)
+        self.update_VA(state, agreeance, action, reward, next_state, done)
         self.current_state = next_state
         if self.steps > self.max_steps:
             done = True
