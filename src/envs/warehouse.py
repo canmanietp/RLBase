@@ -140,15 +140,3 @@ class WarehouseEnv(discrete.DiscreteEnv):
         out.append(i)
         assert 0 <= i <= self.max_order
         return reversed(out)
-
-# size = 2
-# blah = WarehouseEnv(size)
-# #
-# for i in range(1):
-#     s = blah.reset()
-#     done = False
-#     while not done:
-#         a = np.random.randint(size ** 2 + 1)
-#         ns, reward, done, _ = blah.step(a)
-#         print(list(blah.decode(s)), a, list(blah.decode(ns)), reward, done)
-#         s = ns
