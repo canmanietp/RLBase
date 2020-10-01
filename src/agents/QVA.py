@@ -20,8 +20,15 @@ class QVAAgent(QAgent):
         self.saved_abs_lookup = {}
         self.state_decodings = self.sweep_state_decodings()
 
-        infile = open('helpers/state_mapping_{}'.format(str(env)), 'rb')
-        self.state_mapping = pickle.load(infile)
+        # infile = open('helpers/state_mapping_{}'.format(str(env)), 'rb')
+        # self.state_mapping = pickle.load(infile)
+
+        self.values_for = {}
+
+        self.values_for_221 = []
+        self.values_for_202 = []
+        self.values_for_313 = []
+        self.values_for_422 = []
 
     def sweep_state_decodings(self):
         st_vars_lookup = []
@@ -86,7 +93,7 @@ class QVAAgent(QAgent):
                 return self.params.sub_spaces.index([1, 2, 3])
             elif state_vars[1] == 4 and state_vars[2] == 8 and (state_vars[3] == 1 or state_vars[3] == 3):
                 return self.params.sub_spaces.index([1, 2, 3])
-            if state_vars[2] < 8:
+            elif state_vars[2] < 8:
                 return self.params.sub_spaces.index([0, 1, 2])
             else:
                 return len(self.params.sub_spaces) - 1
@@ -104,10 +111,6 @@ class QVAAgent(QAgent):
         elif 'CoffeeMail' in str(self.env):
             # [0, 1, 2, 4, 6], [0, 1, 3, 5, 7],
             if state_vars[4] == 1 or state_vars[5] == 1:
-                # if state_vars[5] == 0:
-                #     return self.params.sub_spaces.index([0, 1, 2, 4])
-                # if state_vars[4] == 0:
-                #     return self.params.sub_spaces.index([0, 1, 3, 5])
                 return self.params.sub_spaces.index([0, 1, 2, 3, 4, 5])
             elif state_vars[6] == 0 or state_vars[7] == 0:
                 return self.params.sub_spaces.index([0, 1, 2, 3, 6, 7])
@@ -153,7 +156,8 @@ class QVAAgent(QAgent):
                     visits.append(np.sum(self.sa_visits[es]))
                     encoded_states.append(es)
 
-            return None, np.argmax(self.Q_table[encoded_states[int(np.argmax(values))]]) if encoded_states else self.greedy_action(state)
+            return None, np.argmax(
+                self.Q_table[encoded_states[int(np.argmax(values))]]) if encoded_states else self.greedy_action(state)
         else:
             return None, self.greedy_action(state)
 
@@ -192,9 +196,10 @@ class QVAAgent(QAgent):
         # return None, np.argmax(qs), None
 
     def legacy_action(self, state):
-        ab_index = self.heuristic_abstraction_choice(state)
-        action = self.e_greedy_action(state)
+        if np.random.uniform(0, 1) < self.params.EPSILON:
+            return self.random_action()
 
+        ab_index = self.heuristic_abstraction_choice(state)
         abstraction = self.params.sub_spaces[ab_index]
         update_states = []
         merge_values = []
@@ -203,65 +208,38 @@ class QVAAgent(QAgent):
         if state not in self.saved_abs_lookup:
             self.saved_abs_lookup[state] = {}
 
-        if ab_index not in self.saved_abs_lookup[state]:
-            state_vars = self.state_decodings[state]
-            for st in range(self.observation_space):
-                st_vars = self.state_decodings[st]
-                is_valid = True
-
-                for av in abstraction:
-                    if not state_vars[av] == st_vars[av]:
-                        is_valid = False
-                        break
-
-                if is_valid:
-                    update_states.append(st)
-                    merge_values.append(self.Q_table[st])
-                    merge_visits.append(self.sa_visits[st])
-
-            if not merge_visits:
-                update_states.append(state)
-                merge_values.append(self.Q_table[state])
-                merge_visits.append(self.sa_visits[state])
-
-            self.saved_abs_lookup[state][ab_index] = update_states
+        if len(self.params.sub_spaces[ab_index]) < len(self.params.size_state_vars):
+            abstract_state = list(np.array(self.state_decodings[state])[abstraction])
+            for v in range(len(self.params.size_state_vars)):
+                if v not in abstraction:
+                    abstract_state.insert(v, -1)
+            abstract_state = tuple(abstract_state)
+            if abstract_state in self.values_for:
+                self.values_for[abstract_state].append(self.Q_table[state])
+                if len(self.values_for[abstract_state]) > 15:
+                    dist_action = np.argmax(np.sum(self.values_for[abstract_state][-15:], axis=0))
+                    # print(self.greedy_action(state), dist_action)
+                    action = dist_action
+                else:
+                    action = self.greedy_action(state)
+            else:
+                self.values_for[abstract_state] = [self.Q_table[state]]
+                action = self.greedy_action(state)
         else:
-            for us in self.saved_abs_lookup[state][ab_index]:
-                update_states.append(us)
-                merge_values.append(self.Q_table[us])
-                merge_visits.append(self.sa_visits[us])
+            action = self.greedy_action(state)
 
-        if len(update_states) == 1:
-            return 0, action, 0
-        else:
-            no = 0
-            all = 0
+        return action
 
-            for im, mv in enumerate(merge_values):
-                if self.sa_visits[update_states[im]][action] > 0:
-                    if np.argmax(mv) != action:
-                        no += 1
-                    all += 1
-
-            percent_agreeance = no / all if all > 0 else 0
-
-            return percent_agreeance, action, np.sum([mv[action] for mv in merge_visits])
-
-    def update_VA(self, state, agreeance, action, reward, next_state, done):
-        # self.meta_agent.update(state, ab_index, reward, next_state, done)
-        # self.update(state, action, reward, next_state, done)
-
-        # beta = min([1, 10. / (1 + self.sa_visits[state][action])])
-        # print(self.state_decodings[state], action, reward, beta, agreeance, beta * agreeance)
+    def update_VA(self, state, action, reward, next_state, done):
 
         td_error = reward + (not done) * self.params.DISCOUNT * max(self.Q_table[next_state]) - self.Q_table[state][action]
         self.Q_table[state][action] += self.params.ALPHA * td_error
 
     def do_step(self):
         state = self.current_state
-        agreeance, action = self.percent_diff_action(state)
+        action = self.legacy_action(state)
         next_state, reward, done = self.step(action)
-        self.update_VA(state, agreeance, action, reward, next_state, done)
+        self.update_VA(state, action, reward, next_state, done)
         self.current_state = next_state
         if self.steps > self.max_steps:
             done = True

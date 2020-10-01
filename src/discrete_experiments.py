@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 import time, os, datetime
+import pickle
 
 from envs.taxi import TaxiEnv
 from envs.taxilarge import TaxiLargeEnv
@@ -57,13 +58,13 @@ def get_params_warehouse(alg, size):
     elif size == 2:
         if alg in ['LOARA_known', 'QVA']:
             sub_spaces = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2, 3, 4], [0, 1, 2, 3, 4]]
-        if alg in ['LOARA_unknown']:
+        if alg in ['LOARA_unknown', 'QLiA']:
             sub_spaces = [[1, 2, 3, 4], [0, 1, 2, 3, 4]]  # [0, 1], [0, 2], [0, 3], [0, 4],
         size_state_vars = [5, 3, 3, 3, 3]
         num_episodes = 10000
     elif size == 3:
         if alg in ['LOARA_unknown', 'LOARA_known', 'QVA']:
-            sub_spaces = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]
+            sub_spaces = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6]]  # [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
         size_state_vars = [7, 3, 3, 3, 3, 3, 3]
         num_episodes = 100000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
@@ -121,10 +122,10 @@ def get_params_coffeemail(alg):
     decay_rate = 0.999
     options = None
     sub_spaces = []
-    if alg in ['QLiA', 'QLiA_alt', 'LOARA_known']:
+    if alg in ['QLiA', 'QLiA_alt', 'LOARA_known', 'QVA']:
         sub_spaces = [[0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     elif alg in ['LOARA_unknown']:
-        sub_spaces = [[0, 1, 2], [0, 1, 3], [0, 1, 2, 3, 4, 5, 6, 7]]
+        sub_spaces = [[0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]]
     elif alg in ['MaxQ']:
         # 0 south, 1 north, 2 east, 3 west, 4 take, 5 give, 6 do nothing,
         # 7 go to mail, 8 go to A, 9 go to B, 10 go to coffee,
@@ -136,7 +137,7 @@ def get_params_coffeemail(alg):
                    {8, 5}, {9, 5}, {8, 5}, {9, 5},
                    {7, 4}, {10, 4}, {15, 11, 12}, {16, 13, 14}, {17, 18, 6}, ]
     size_state_vars = [7, 7, 2, 2, 2, 2, 2, 2]
-    num_episodes = 1500
+    num_episodes = 2500
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -224,9 +225,9 @@ def get_params_taxifuel(alg):
 def get_params_taxilarge(alg):
     init_alpha = 1.
     alpha_min = 1.
-    init_epsilon = 0.5
+    init_epsilon = 0.3
     epsilon_min = 0.01
-    init_phi = 0.5
+    init_phi = 0.3
     phi_min = 0.01
     discount = 0.99
     decay_rate = 0.995
@@ -279,9 +280,9 @@ def get_params_taxi(alg):
     init_alpha = 1.
     alpha_min = 1.
     init_epsilon = 0.5
-    epsilon_min = 0.01
+    epsilon_min = 0.5
     init_phi = 0.5
-    phi_min = 0.01
+    phi_min = 0.5
     discount = 0.95
     decay_rate = 0.99
     sub_spaces = None
@@ -294,7 +295,7 @@ def get_params_taxi(alg):
         # south, north, east, west, pickup, droppoff, gotoSource, gotoDestination, get, put, root
         options = [set(), set(), set(), set(), set(), set(), {0, 1, 2, 3}, {0, 1, 2, 3}, {4, 6}, {5, 7}, {8, 9}, ]
     size_state_vars = [5, 5, 5, 4]
-    num_episodes = 600
+    num_episodes = 6000
     return DiscreteParameters(alpha=init_alpha, alpha_min=alpha_min, epsilon=init_epsilon, epsilon_min=epsilon_min,
                               discount=discount, decay=decay_rate, num_episodes=num_episodes, phi=init_phi,
                               phi_min=phi_min, sub_spaces=sub_spaces, size_state_vars=size_state_vars, options=options)
@@ -453,6 +454,8 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 if agent.name != 'QLiA_batch':
                     agent.decay(agent.params.DECAY_RATE)
 
+            # for v in agent.values_for_221:
+            #     print(v)
             # Q_save = []
             #
             # if agent.name == 'Q':
@@ -485,12 +488,22 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                 #             p += 1
                 #         sos = ns
 
-            # Qs = pd.DataFrame(Q_save)
-            # Qs.to_csv('{}/Q_samples_{}.csv'.format(exp_dir, str(agent.env)), header=None, index=None)
+            Q_save = []
 
-            # # # # # elif agent.name in 'LOARA_unknown':
-            # # # # #     for s in range(agent.observation_space):
-            # # # # #         print(s, agent.state_bandit_map[s][-1].Q_table)
+            for s in range(agent.observation_space):
+                if np.sum(agent.sa_visits[s]) > 0:
+                    # Q_save.append([s, *list(agent.env.decode(s)), np.argmax(agent.Q_table[s]), max(agent.Q_table[s]), max([q for q in agent.Q_table[s] if q != max(agent.Q_table[s])])])
+                    Q_save.append([s, list(agent.env.decode(s)), agent.Q_table[s]])
+                    print([s, list(agent.env.decode(s)), agent.Q_table[s]])
+
+            filename = '{}/Q_values_{}'.format(exp_dir, str(agent.env))
+            outfile = open(filename, 'wb')
+            pickle.dump(Q_save, outfile)
+            outfile.close()
+
+            # if agent.name in 'Q':
+            #     for s in range(agent.observation_space):
+            #         print(s, list(agent.env.decode(s)), agent.Q_table[s])
             # elif agent.name in 'LOARA_known':
             #     for s in range(agent.observation_space):
             #         # if list(agent.env.decode(s)) == [4, 1, 1, 0] or list(agent.env.decode(s)) == [4, 1, 1, 2] or list(agent.env.decode(s)) == [4, 1, 1, 3]:
@@ -581,7 +594,7 @@ def run_discrete_experiment(num_trials, env_name, algs, verbose=False, render=Fa
                    "sub_spaces={}\n"
                    "options={}\n"
                    "size_state_vars={}".format(env, alg, ia, num_trials,
-                                               params.num_episodes, np.array(trial_times)[:, ia], params.ALPHA,
+                                               params.num_test_episodes, np.array(trial_times)[:, ia], params.ALPHA,
                                                params.ALPHA_MIN,
                                                params.EPSILON, params.EPSILON_MIN,
                                                params.PHI, params.PHI_MIN, params.DISCOUNT, params.DECAY_RATE,

@@ -89,16 +89,17 @@ class LOARA_K_Agent(QAgent):
             else:
                 return len(self.params.sub_spaces) - 1
         elif 'Taxi' in str(self.env):
-            # if state_vars[0] == 4 and state_vars[1] == 1 or state_vars[0] == 4 and state_vars[1] == 2:
-            #     return self.params.sub_spaces.index([2])
-            # if state_vars[0] == 3 and state_vars[2] == 4 and state_vars[3] == 0:
-            #     return self.params.sub_spaces.index([0, 2, 3])
-            # elif state_vars[1] == 4 and state_vars[2] == 4 and state_vars[3] != 1:
-            #     return self.params.sub_spaces.index([1, 2, 3])
-            if state_vars[2] < 4:
-                return self.params.sub_spaces.index([0, 1, 2])
-            else:
-                return len(self.params.sub_spaces) - 1
+            ix = None
+            if state_vars[0] == 4 and state_vars[1] == 1 or state_vars[0] == 4 and state_vars[1] == 2:
+                ix = self.params.sub_spaces.index([2])
+            elif state_vars[0] == 3 and state_vars[2] == 4 and state_vars[3] == 0:
+                ix = self.params.sub_spaces.index([0, 2, 3])
+            elif state_vars[1] == 4 and state_vars[2] == 4 and state_vars[3] != 1:
+                ix = self.params.sub_spaces.index([1, 2, 3])
+            elif state_vars[2] < 4:
+                ix = self.params.sub_spaces.index([0, 1, 2])
+
+            return ix if ix is not None else len(self.params.sub_spaces) - 1
         elif 'CoffeeMail' in str(self.env):
             # [0, 1, 2, 4, 6], [0, 1, 3, 5, 7],
             if state_vars[4] == 1 or state_vars[5] == 1:
@@ -121,12 +122,14 @@ class LOARA_K_Agent(QAgent):
             else:
                 return len(self.params.sub_spaces) - 1
         elif 'Warehouse' in str(self.env):
+            ix = None
             # if state_vars[0] < len(self.env.locs) - 1 and state_vars[state_vars[0] + 1] > 0:
             #     # print(state_vars, [0, state_vars[0] + 1])
-            #     return self.params.sub_spaces.index([0, state_vars[0] + 1])
+            #     ix = self.params.sub_spaces.index([0, state_vars[0] + 1])
             if np.sum(state_vars[1:]) <= 1:
-                return self.params.sub_spaces.index([*range(1, self.env.num_products + 1)])
-            return len(self.params.sub_spaces) - 1
+                ix = self.params.sub_spaces.index([*range(1, self.env.num_products + 1)])
+
+            return ix if ix is not None else len(self.params.sub_spaces) - 1
         else:
             print("ERROR: UNKNOWN HEURISTIC FOR CHOOSING ABSTRACTION")
             quit()
@@ -143,32 +146,15 @@ class LOARA_K_Agent(QAgent):
         return bandit_index, action
 
     def update_LIA(self, state, bandit_index, action, reward, next_state, done):
+        self.next_bandit, self.next_action = None, None
         self.next_bandit = self.heuristic_bandit_choice(next_state)
         self.next_action = self.state_bandit_map[next_state][self.next_bandit].e_greedy_action(self.params.EPSILON)
         # action_values = [b.Q_table[self.next_action] for ib, b in enumerate(self.state_bandit_map[next_state])]
+
         val = max(self.state_bandit_map[next_state][self.next_bandit].Q_table)
 
-        # if 'Taxi' in str(self.env):
-        #     if self.params.sub_spaces[bandit_index] == [0, 1, 2]:
-        #         state_vars = self.state_decodings[state]
-        #         reward = -1
-        #
-        #         if action == 4:  # pickup
-        #             if not (state_vars[2] < len(self.env.locs) and (state_vars[0], state_vars[1]) == self.env.locs[state_vars[2]]):
-        #                 reward = -10
-        #         elif action == 5:  # dropoff
-        #             if not ((state_vars[0], state_vars[1]) in self.env.locs) and state_vars[2] == 4:
-        #                 reward = -10
-        # if 'Warehouse' in str(self.env):
-        #     if 0 not in self.params.sub_spaces[bandit_index]:
-        #         reward = -1
-        #         state_vars = self.state_decodings[state]
-        #         if action >= len(self.env.locs) - 1 and not all(nr == 0 for nr in state_vars[1:]):
-        #             reward -= 11
-
-        # print(list(self.env.decode(state)), bandit_index, action, reward, list(self.env.decode(next_state)), done)
-
         self.state_bandit_map[state][bandit_index].update(action, reward + self.params.DISCOUNT * (not done) * val)
+        self.update(state, action, reward, next_state, done)
 
     def do_step(self):
         state = self.current_state
@@ -180,6 +166,5 @@ class LOARA_K_Agent(QAgent):
         self.current_state = next_state
         self.steps += 1
         if done:
-            self.next_bandit = None
-            self.next_action = None
+            self.next_bandit, self.next_action = None, None
         return reward, done

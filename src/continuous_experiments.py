@@ -343,7 +343,7 @@ def run_continuous_experiment(num_trials, env_name, algs, scenario=None, verbose
     exp_dir = "tmp/{}".format(date_string)
     os.mkdir(exp_dir)
     env, params = get_params(env_name, scenario)
-    average_every = int(params.num_episodes / 10) if params.num_episodes > 10 else 1
+    average_every = int(params.num_test_episodes / 10) if params.num_test_episodes > 10 else 1
 
     trial_rewards = []
     trial_times = []
@@ -375,7 +375,7 @@ def run_continuous_experiment(num_trials, env_name, algs, scenario=None, verbose
             print("{} Running agent: {}".format(datetime.datetime.now().strftime("%H:%M:%S"), agent.name))
             csvfile = open('{}/trial_{}_agent_{}.csv'.format(exp_dir, t + 1, agent.name), 'w', newline='')
             writer = csv.writer(csvfile)
-            for i in range(params.num_episodes):
+            for i in range(params.num_test_episodes):
                 agent.reset()
                 if j == 0:
                     state = agent.current_state
@@ -438,10 +438,10 @@ def run_continuous_experiment(num_trials, env_name, algs, scenario=None, verbose
                    "discount={}\n"
                    "sub_spaces={}\n"
                    "model={}".format(env, num_trials,
-                                          params.num_episodes, trial_times, params.LEARNING_RATE,
-                                          params.EPSILON, params.EPSILON_MIN,
-                                          params.PHI, params.PHI_MIN, params.DISCOUNT,
-                                          params.sub_spaces, short_model_summary))
+                                     params.num_test_episodes, trial_times, params.LEARNING_RATE,
+                                     params.EPSILON, params.EPSILON_MIN,
+                                     params.PHI, params.PHI_MIN, params.DISCOUNT,
+                                     params.sub_spaces, short_model_summary))
 
         file.close()
 

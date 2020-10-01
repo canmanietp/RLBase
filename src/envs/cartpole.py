@@ -9,6 +9,8 @@ import gym
 from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
+from copy import deepcopy
+
 
 class CartPoleEnv(gym.Env):
     """
@@ -129,10 +131,14 @@ class CartPoleEnv(gym.Env):
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self):
-        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+    def reset(self, reset_state=None):
+        if reset_state is None:
+            reset_state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+            reset_state[0] = np.random.uniform(-1., 1.)
+        self.state = reset_state
         self.steps_beyond_done = None
         return np.array(self.state)
+
 
     def render(self, mode='human'):
         screen_width = 600

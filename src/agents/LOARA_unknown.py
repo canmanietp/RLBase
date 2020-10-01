@@ -104,6 +104,7 @@ class LOARA_UK_Agent(QAgent):
         return bandit_index, action
 
     def update_LIA(self, state, bandit_index, action, reward, next_state, done):
+        self.next_bandit, self.next_action = None, None
         self.next_bandit, val = self.smart_bandit_choice(next_state)
         next_val = (not done) * val
         # print(self.state_decodings[state], bandit_index, action, reward, done, [max(b.Q_table) for b in self.state_bandit_map[state]])
@@ -124,6 +125,5 @@ class LOARA_UK_Agent(QAgent):
         self.update_LIA(state, bandit_index, action, reward, next_state, done)
         self.steps += 1
         if done:
-            self.next_bandit = None
-            self.next_action = None
+            self.next_bandit, self.next_action = None, None
         return reward, done
